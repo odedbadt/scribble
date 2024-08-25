@@ -1,0 +1,38 @@
+<html>
+<head>
+<script>
+function go() {
+    const main_canvas = document.getElementById('main_canvas');
+    const main_context = main_canvas.getContext('2d');
+
+    main_context.lineWidth = 20;
+    main_context.strokeStyle='black';
+    main_context.fillStyle='black';
+    main_context.lineCap="round";
+    main_context.beginPath()
+    main_context.ellipse(100,100,10,10,0,0, Math.PI * 2)
+    main_context.fill()
+    main_context.beginPath()
+    main_context.moveTo(20,20)
+    main_context.lineTo(100,100)
+    main_context.stroke()
+    //main_context.endPath()
+
+    
+    
+    
+}
+
+
+</script>
+
+</head>
+<body onload="go()">
+<canvas id='main_canvas' width="600" height="600">
+
+
+</canvas>
+
+</body>
+
+</html>
