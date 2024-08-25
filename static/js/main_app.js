@@ -29,14 +29,23 @@ class MainApp {
         const button_list = document.getElementsByClassName('button');
         const _this = this;
         Array.from(button_list).forEach(button => {
-            button.addEventListener('click', event => {
-                button.classList.toggle('pressed')
-            })
-        const button_class_list = button.classList;
+            const button_class_list = button.classList;
             const tool_js_class = tool_js_classes[button_class_list[0]];
+            var tool;
             if (tool_js_class) {
-                const tool = new tool_js_class(_this);
+                tool = new tool_js_class(_this);
             }
+            button.addEventListener('click', event => {
+                Array.from(button_list).forEach(other_button => {
+                    other_button.classList.remove('pressed')
+                });    
+
+                button.classList.add('pressed')
+                this.active_tool = tool;
+                if (tool) {
+                    tool.select_tool();
+                }
+            })
         })
     }
     init_color_selector() {
@@ -69,51 +78,19 @@ class MainApp {
         //forward mouse
         const fore = document.getElementById('fore');
         const canvas_area = document.getElementById('canvas-area');
-        // ["mousedown", "mouseup","mouseout","mousemove"].forEach((ename) =>
-        // {
-        //     fore.addEventListener(ename, (ev) => {
-        //         canvas_area.dispatchEvent(ev);
-        //     })
-        // } 
-        // )
+        ["mousedown", "mouseup","mouseout","mousemove"].forEach((ename) =>
+        {
+            canvas_area.addEventListener(ename, (ev) => {
+                if (this.active_tool && this.active_tool[ename]) {
+                    this.active_tool[ename](ev);
+                }
+            })
+        } 
+        )
 
         // bind mouse
         const _this = this;
-        this.main_canvas.addEventListener("mousedown", (event) => {
-            _this.mouse_down=true;
-            _this.main_context.ellipse(event.offsetX, event.offsetY, 10,10, 0, 0, Math.PI * 2)
-            _this.main_context.fill();
-            _this.previous_drawn_point = [event.offsetX, event.offsetY];
-        });
-         this.main_canvas.addEventListener("mouseup", (event) => {
-            _this.previous_drawn_point = null;
-            console.log('U')
-         });
 
-        // this.main_canvas.addEventListener("mouseout", (event) => {
-        //     _this.mouse_down=false;
-        // });
-
-        // this.main_canvas.addEventListener("mouseo", (event) => {
-        //     console.log(event.buttons)
-        //     //_this.mouse_down=;
-        // });
-
-        this.main_canvas.addEventListener("mousemove", (event) => {
-            if (event.buttons) {
-                //_this.main_context.ellipse(event.offsetX, event.offsetY, 10,10, 0, 0, Math.PI * 2)
-                if (_this.previous_drawn_point) {
-                    console.log('D')
-                    _this.main_context.beginPath();
-                    _this.main_context.moveTo(
-                        _this.previous_drawn_point[0],
-                        _this.previous_drawn_point[1]);
-                    _this.main_context.lineTo(event.offsetX, event.offsetY);
-                    _this.main_context.stroke();
-                    _this.previous_drawn_point = [event.offsetX, event.offsetY];
-                }
-            }
-        });
         this.init_color_selector();
         this.init_buttons();
 
@@ -121,7 +98,7 @@ class MainApp {
 }
 export function app_ignite() {
     console.log('here');
-    const app = new MainApp();
-    app.init()
+    window.app = new MainApp();
+    window.app.init()
 }
 window.addEventListener('load', () => {app_ignite()});
