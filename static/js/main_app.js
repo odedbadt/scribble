@@ -1,4 +1,5 @@
 import { ScribbleTool } from './scribble.js'
+import { RectTool } from './rect.js'
 
 // function norm2(v) {
 //     return v[0]*v[0]+v[1]*v[1]
@@ -10,20 +11,21 @@ import { ScribbleTool } from './scribble.js'
 //     return norm2(vec_minus(v2,v1));
 // }
 const tool_js_classes = {
-    scribble: ScribbleTool
+    scribble: ScribbleTool,
+    rect: RectTool
 }
 class MainApp {
     constructor() {
         this.main_canvas = document.getElementById('main-canvas');
-        this.main_context = this.main_canvas.getContext('2d');
+        this.main_context = this.main_canvas.getContext('2d', {willReadFrequently:true});
         this.main_context.fillStyle='black';
         this.main_context.lineWidth=20;
         this.main_context.lineCap="round";      
         this.settings = {
             fore_color: 'black'
-
         }
-
+        this.staging_canvas = document.getElementById('staging-canvas');
+        this.staging_context = this.staging_canvas.getContext('2d',{willReadFrequently:true});
     }
     init_buttons() {
         const button_list = document.getElementsByClassName('button');
@@ -51,7 +53,7 @@ class MainApp {
     init_color_selector() {
         const palette_canvas = document.getElementById('color_selector')
         this.color_selector_element = palette_canvas;
-        this.color_selector_context = palette_canvas.getContext('2d');
+        this.color_selector_context = palette_canvas.getContext('2d',{willReadFrequently:true});
         var img = new Image();
         img.src = "/static/palette.png"; // Replace with the path to your image
         img.onload = () => {
@@ -62,7 +64,6 @@ class MainApp {
         const _this = this
 
         palette_canvas.onclick = (event) => {
-            console.log(event);
             const color = this.color_selector_context.getImageData(event.offsetX, event.offsetY, 1, 1).data;
             const pen_color = `rgb(${color[0]},${color[1]},${color[2]})`;
             _this.settings.fore_color = pen_color;
@@ -72,8 +73,9 @@ class MainApp {
     }
     init() {
         // clear
-        this.main_context.fillStyle='white';
-        this.main_context.fillRect(0,0,600,600);
+        this.main_context.clearRect(0,0,600,600);
+        this.staging_context.clearRect(0,0,600,600)
+
 
         //forward mouse
         const fore = document.getElementById('fore');

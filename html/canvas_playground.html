@@ -4,35 +4,51 @@
 function go() {
     const main_canvas = document.getElementById('main_canvas');
     const main_context = main_canvas.getContext('2d');
+    const overlay_canvas = document.getElementById('overlay_canvas');
+    const overlay_context = overlay_canvas.getContext('2d');
 
-    main_context.lineWidth = 20;
-    main_context.strokeStyle='black';
-    main_context.fillStyle='black';
-    main_context.lineCap="round";
-    main_context.beginPath()
-    main_context.ellipse(100,100,10,10,0,0, Math.PI * 2)
+    main_context.clearRect(0,0,600,600);
+    overlay_context.clearRect(0,0,600,600);
+
+    main_context.fillStyle = 'red';
+    main_context.rect(0,0,100,100);
     main_context.fill()
-    main_context.beginPath()
-    main_context.moveTo(20,20)
-    main_context.lineTo(100,100)
-    main_context.stroke()
-    //main_context.endPath()
-
-    
-    
-    
+    overlay_context.fillStyle='#00FA'
+    overlay_context.rect(50,50,100,100);
+    overlay_context.fill()
 }
 
 
 </script>
+<style>
+#overlay_canvas {
+    left: 0px;
+    top: 0px;
+    z-index: 1;
+    position:absolute;
+    background: transparent;
+}
+#main_canvas {
+    left: 0px;
+    top: 0px;
+    z-index: 0;
+    position:absolute;
+    background: transparent;
+    mix-blend-mode: multiply;
+}
 
+</style>
 </head>
 <body onload="go()">
-<canvas id='main_canvas' width="600" height="600">
+    <canvas id='main_canvas' width="600" height="600">
 
 
-</canvas>
+    </canvas>
+    <canvas id='overlay_canvas' width="600" height="600">
 
+
+    </canvas>
+        
 </body>
 
 </html>
