@@ -2,53 +2,76 @@
 <head>
 <script>
 function go() {
+    const offscreen_canvas = document.createElement('canvas');
+    offscreen_canvas.width = 600;
+    offscreen_canvas.height = 600;
+    
     const main_canvas = document.getElementById('main_canvas');
     const main_context = main_canvas.getContext('2d');
-    const overlay_canvas = document.getElementById('overlay_canvas');
-    const overlay_context = overlay_canvas.getContext('2d');
-
+    const offscreen_context = offscreen_canvas.getContext('2d');
+    main_context.imageSmoothingEnabled = false;
+    main_context.webkitImageSmoothingEnabled = false;
+    main_context.mozImageSmoothingEnabled = false;
     main_context.clearRect(0,0,600,600);
-    overlay_context.clearRect(0,0,600,600);
+    offscreen_context.clearRect(0,0,600,600);
 
-    main_context.fillStyle = 'red';
-    main_context.rect(0,0,100,100);
-    main_context.fill()
-    overlay_context.fillStyle='#00FA'
-    overlay_context.rect(50,50,100,100);
-    overlay_context.fill()
+    offscreen_canvas.fillStyle = 'red';
+    offscreen_context.beginPath();
+    offscreen_context.ellipse(100,100, 50,50, 0, 0, Math.PI * 2)
+    offscreen_context.fill();
+    offscreen_context.globalCompositeOperation = 'darker';
+
+// Draw a black rectangle over the entire canvas
+    offscreen_context.fillStyle = 'black';
+    offscreen_context.fillRect(0, 0, 600,600);
+    offscreen_context.globalCompositeOperation = 'source-over';
+    var offscreen_data = offscreen_context.getImageData(0,0,600,600).data;
+    main_context.drawImage(
+        offscreen_canvas,
+        50,50,100,100,
+        200,200,300,300)
+    // const zoom=3;
+    // for (var x=50; x<150; ++x) {
+    //     for (var y=50; y<150; ++y) {
+    //         var i = (y*600 + x)*4;
+    //         var r = offscreen_data[i  ];
+    //         var g = offscreen_data[i+1];
+    //         var b = offscreen_data[i+2];
+    //         var a = offscreen_data[i+3];
+    //         main_context.fillStyle = "rgba("+r+","+g+","+b+","+(a/255)+")";
+    //         main_context.fillRect(x*zoom,y*zoom,zoom,zoom);
+    //     }
+    // }
+    
+    
+
+
 }
 
 
 </script>
 <style>
-#overlay_canvas {
-    left: 0px;
-    top: 0px;
-    z-index: 1;
+#offscreen_canvas {
+    visibility: none;
     position:absolute;
-    background: transparent;
+}
+.offscreen_canvas {
+    visibility: none;
 }
 #main_canvas {
     left: 0px;
     top: 0px;
     z-index: 0;
     position:absolute;
-    background: transparent;
-    mix-blend-mode: multiply;
 }
 
 </style>
 </head>
 <body onload="go()">
     <canvas id='main_canvas' width="600" height="600">
-
-
     </canvas>
-    <canvas id='overlay_canvas' width="600" height="600">
-
-
-    </canvas>
-        
+    <canvas id='offscreen_canvas' width="600" height="600">
+    </canvas>        
 </body>
 
 </html>

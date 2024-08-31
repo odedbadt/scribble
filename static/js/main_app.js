@@ -16,16 +16,22 @@ const tool_js_classes = {
 }
 class MainApp {
     constructor() {
-        this.main_canvas = document.getElementById('main-canvas');
-        this.main_context = this.main_canvas.getContext('2d', {willReadFrequently:true});
-        this.main_context.fillStyle='black';
-        this.main_context.lineWidth=20;
-        this.main_context.lineCap="round";      
+        this.art_canvas = document.getElementById('art-canvas');
+        this.art_context = this.art_canvas.getContext('2d', {willReadFrequently:true});
+        this.view_canvas = document.getElementById('view-canvas');
+        this.view_context = this.view_canvas.getContext('2d', {willReadFrequently:true});
+        this.view_context.fillStyle='black';
+        this.view_context.lineWidth=20;
+        this.view_context.lineCap="round";      
         this.settings = {
             fore_color: 'black'
         }
         this.staging_canvas = document.getElementById('staging-canvas');
         this.staging_context = this.staging_canvas.getContext('2d',{willReadFrequently:true});
+        this.tool_canvas = document.getElementById('tool-canvas');
+        this.tool_context = this.tool_canvas.getContext('2d',{willReadFrequently:true});
+
+
     }
     init_buttons() {
         const button_list = document.getElementsByClassName('button');
@@ -67,19 +73,21 @@ class MainApp {
             const color = this.color_selector_context.getImageData(event.offsetX, event.offsetY, 1, 1).data;
             const pen_color = `rgb(${color[0]},${color[1]},${color[2]})`;
             _this.settings.fore_color = pen_color;
-            _this.main_context.strokeStyle=pen_color;
+            _this.view_context.strokeStyle=pen_color;
 
         }        
     }
     init() {
         // clear
-        this.main_context.clearRect(0,0,600,600);
-        this.staging_context.clearRect(0,0,600,600)
+        this.view_context.clearRect(0,0,this.view_canvas.width,this.view_canvas.height);
+        this.staging_context.clearRect(0,0,this.staging_canvas.width,this.staging_canvas.height)
+        this.tool_context.clearRect(0,0,200,200)
 
 
         //forward mouse
         const fore = document.getElementById('fore');
         const canvas_area = document.getElementById('canvas-area');
+
         ["mousedown", "mouseup","mouseout","mousemove"].forEach((ename) =>
         {
             canvas_area.addEventListener(ename, (ev) => {

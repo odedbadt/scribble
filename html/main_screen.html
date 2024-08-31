@@ -58,24 +58,34 @@
                 margin: 0;
 
             }
-            #main-canvas {
-                width: 600px;
-                height: 600px;
-                z-index: 0;
+            #view-canvas {
+                width: 200px;
+                height: 200px;
                 position: absolute;
                 left: 100px;
                 box-shadow: rgba(50, 50, 93, 0.25) 0px 13px 27px -5px, rgba(0, 0, 0, 0.3) 0px 8px 16px -8px;
             }
             #staging-canvas {
-                width: 600px;
-                height: 600px;
-                z-index: 1;
+                width: 200px;
+                height: 200px;
                 position: absolute;
-                left: 100px;
-                background: transparent;
+                left: 300px;
+                box-shadow: rgba(50, 50, 93, 0.25) 0px 13px 27px -5px, rgba(0, 0, 0, 0.3) 0px 8px 16px -8px;
             }
-
-
+            #tool-canvas {
+                width: 200px;
+                height: 200px;
+                position: absolute;
+                left: 500px;
+                box-shadow: rgba(50, 50, 93, 0.25) 0px 13px 27px -5px, rgba(0, 0, 0, 0.3) 0px 8px 16px -8px;
+            }
+            #art-canvas {
+                width: 200px;
+                height: 200px;
+                position: absolute;
+                left: 700px;
+                box-shadow: rgba(50, 50, 93, 0.25) 0px 13px 27px -5px, rgba(0, 0, 0, 0.3) 0px 8px 16px -8px;
+            }
         </style>
         <script type="module" src="/static/js/main_app.js" defer></script> 
     </head>
@@ -106,8 +116,10 @@
     
         </div>
         <div id="canvas-area">
-            <canvas id="main-canvas" width="600" height="600"></canvas>
-            <canvas id="staging-canvas" width="600" height="600"></canvas>
+            <canvas id="view-canvas" width="200" height="200"></canvas>
+            <canvas id="staging-canvas" width="200" height="200"></canvas>
+            <canvas id="tool-canvas" width="200" height="200"></canvas>
+            <canvas id="art-canvas" width="200" height="200"></canvas>
 
 
         </div>
