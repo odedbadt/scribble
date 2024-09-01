@@ -16,5 +16,11 @@ export class ScribbleTool {
         
         this.context.stroke();
     }
+    start() {
+
+    }
+    stop() {
+        this._recorded_to = null;
+    }
 
 }

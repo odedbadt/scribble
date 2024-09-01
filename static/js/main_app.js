@@ -93,7 +93,7 @@ class MainApp {
         const fore = document.getElementById('fore');
         const canvas_area = document.getElementById('canvas-area');
 
-        ["mousedown", "mouseup","mouseout","mousemove"].forEach((ename) =>
+        ["mousedown", "mouseup","mouseout","mousemove", "click"].forEach((ename) =>
         {
             canvas_area.addEventListener(ename, (ev) => {
                 if (this.active_tool && this.active_tool[ename]) {

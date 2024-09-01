@@ -59,32 +59,35 @@
 
             }
             #view-canvas {
-                width: 200px;
-                height: 200px;
+                width: 600px;
+                height: 600px;
                 position: absolute;
                 left: 100px;
                 box-shadow: rgba(50, 50, 93, 0.25) 0px 13px 27px -5px, rgba(0, 0, 0, 0.3) 0px 8px 16px -8px;
+                cursor: crosshair;
             }
             #staging-canvas {
-                width: 200px;
-                height: 200px;
+                width: 600px;
+                height: 600px;
                 position: absolute;
-                left: 300px;
                 box-shadow: rgba(50, 50, 93, 0.25) 0px 13px 27px -5px, rgba(0, 0, 0, 0.3) 0px 8px 16px -8px;
+                left: 700px;
             }
             #tool-canvas {
-                width: 200px;
-                height: 200px;
+                width: 600px;
+                height: 600px;
                 position: absolute;
-                left: 500px;
+                left: 100px;
+                top:600px;
                 box-shadow: rgba(50, 50, 93, 0.25) 0px 13px 27px -5px, rgba(0, 0, 0, 0.3) 0px 8px 16px -8px;
             }
             #art-canvas {
-                width: 200px;
-                height: 200px;
+                width: 600px;
+                height: 600px;
                 position: absolute;
-                left: 700px;
                 box-shadow: rgba(50, 50, 93, 0.25) 0px 13px 27px -5px, rgba(0, 0, 0, 0.3) 0px 8px 16px -8px;
+                left: 700px;
+                top:600px;
             }
             .button {
                 background-size: cover;
@@ -125,16 +128,16 @@
                 <div class="button"></div>
                 <div class="button"></div>
                 <div class="button"></div>
-                <canvas id="color_selector" width="100" height="200"></div>
+                <canvas id="color_selector" width="100" height="600"></div>
 
             </div>
     
         </div>
         <div id="canvas-area">
-            <canvas id="view-canvas" width="200" height="200"></canvas>
-            <canvas id="staging-canvas" width="200" height="200"></canvas>
-            <canvas id="tool-canvas" width="200" height="200"></canvas>
-            <canvas id="art-canvas" width="200" height="200"></canvas>
+            <canvas id="view-canvas" width="600" height="600"></canvas>
+            <canvas id="staging-canvas" width="600" height="600"></canvas>
+            <canvas id="tool-canvas" width="600" height="600"></canvas>
+            <canvas id="art-canvas" width="600" height="600"></canvas>
 
 
         </div>
