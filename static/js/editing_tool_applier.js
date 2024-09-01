@@ -29,9 +29,10 @@ export class EditingToolApplier {
         if (this.from) {
             this.app.tool_context.fillStyle = this.app.settings.fore_color;
             this.app.tool_context.strokeStyle = this.app.settings.fore_color;
+            this.app.tool_context.lineWidth = this.app.settings.line_width;
+            this.app.tool_context.lineCap = 'round';
             if (!this.tool.is_incremental) 
                 override_canvas_context(this.app.staging_context, this.app.art_canvas)
-            this.app.tool_context.fillStyle = this.app.settings.fore_color;
             this.app.tool_context.beginPath();
             this.tool.action(this.from, [event.offsetX, event.offsetY])
             this.app.staging_context.drawImage(

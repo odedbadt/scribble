@@ -1,6 +1,7 @@
 import { ScribbleTool } from './scribble.js'
 import { LineTool } from './line.js'
 import { RectTool } from './rect.js'
+import { CircleTool } from './circle.js'
 import { EditingToolApplier } from './editing_tool_applier.js'
 
 // function norm2(v) {
@@ -15,7 +16,8 @@ import { EditingToolApplier } from './editing_tool_applier.js'
 const tool_js_classes = {
     scribble: ScribbleTool,
     rect: RectTool,
-    line: LineTool
+    line: LineTool,
+    circle: CircleTool,
 }
 class MainApp {
     constructor() {
@@ -27,7 +29,8 @@ class MainApp {
         this.view_context.lineWidth=20;
         this.view_context.lineCap="round";      
         this.settings = {
-            fore_color: 'black'
+            fore_color: 'black',
+            line_width: 10
         }
         this.staging_canvas = document.getElementById('staging-canvas');
         this.staging_context = this.staging_canvas.getContext('2d',{willReadFrequently:true});
