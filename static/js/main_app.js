@@ -1,5 +1,7 @@
 import { ScribbleTool } from './scribble.js'
+import { LineTool } from './line.js'
 import { RectTool } from './rect.js'
+import { EditingToolApplier } from './editing_tool_applier.js'
 
 // function norm2(v) {
 //     return v[0]*v[0]+v[1]*v[1]
@@ -12,7 +14,8 @@ import { RectTool } from './rect.js'
 // }
 const tool_js_classes = {
     scribble: ScribbleTool,
-    rect: RectTool
+    rect: RectTool,
+    line: LineTool
 }
 class MainApp {
     constructor() {
@@ -39,21 +42,20 @@ class MainApp {
         Array.from(button_list).forEach(button => {
             const button_class_list = button.classList;
             const tool_js_class = tool_js_classes[button_class_list[0]];
-            var tool;
-            if (tool_js_class) {
-                tool = new tool_js_class(_this);
-            }
-            button.addEventListener('click', event => {
-                Array.from(button_list).forEach(other_button => {
-                    other_button.classList.remove('pressed')
-                });    
+            const editor = tool_js_class ? new EditingToolApplier(_this, tool_js_class) : null;
+            if (editor) {
+                button.addEventListener('click', event => {
+                    Array.from(button_list).forEach(other_button => {
+                        other_button.classList.remove('pressed')
+                    });    
 
-                button.classList.add('pressed')
-                this.active_tool = tool;
-                if (tool) {
-                    tool.select_tool();
-                }
-            })
+                    button.classList.add('pressed')
+                    this.active_tool = editor;
+                    if (editor) {
+                        editor.select_tool();
+                    }
+                })
+            }
         })
     }
     init_color_selector() {
