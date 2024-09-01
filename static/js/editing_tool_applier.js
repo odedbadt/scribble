@@ -27,45 +27,35 @@ export class EditingToolApplier {
     }
 
     mousemove(event) {
-        if (this.from) {
-            this.app.tool_context.fillStyle = this.app.settings.fore_color;
-            this.app.tool_context.strokeStyle = this.app.settings.fore_color;
-            this.app.tool_context.lineWidth = this.app.settings.line_width;
-            this.app.tool_context.lineCap = 'round';
-            if (!this.tool.is_incremental) 
-                override_canvas_context(this.app.staging_context, this.app.art_canvas)
-            this.app.tool_context.beginPath();
-            // Appply action
-            this.tool.action(this.from, [event.offsetX, event.offsetY])
-            
-            this.app.staging_context.drawImage(
-                this.app.tool_canvas,0,0
-            )
-            if (!this.tool.is_incremental) 
-                override_canvas_context(this.app.staging_context, this.app.art_canvas)
-                this.app.staging_context.clearRect(0,0,this.w,this.h);
-            
-
+        this.app.tool_context.fillStyle = this.app.settings.fore_color;
+        this.app.tool_context.strokeStyle = this.app.settings.fore_color;
+        this.app.tool_context.lineWidth = this.app.settings.line_width;
+        this.app.tool_context.lineCap = 'round';
+        if (!this.tool.is_incremental) 
             override_canvas_context(this.app.staging_context, this.app.art_canvas)
-            override_canvas_context(this.app.staging_context, this.app.tool_canvas, true)
-
-            if (!this.tool.is_incremental) {
-                this.app.tool_context.clearRect(0,0,this.w,this.h);
-            }
-            override_canvas_context(this.app.view_context, this.app.staging_canvas)
-
-
-
-
-        } else {
-            override_canvas_context(this.app.staging_context, this.app.art_canvas, false)
-            this.app.staging_context.beginPath()
-            this.app.staging_context.ellipse(event.offsetX, event.offsetY,10,10,0,0,Math.PI*2)
-            this.app.staging_context.fill()
-            override_canvas_context(this.app.view_context, this.app.staging_canvas)
-            
-
+        this.app.tool_context.beginPath();
+        // Appply action
+        if (this.from) {
+            this.tool.action(this.from, [event.offsetX, event.offsetY])
         }
+        this.app.staging_context.drawImage(
+            this.app.tool_canvas,0,0
+        )
+        if (!this.tool.is_incremental) 
+            override_canvas_context(this.app.staging_context, this.app.art_canvas)
+            this.app.staging_context.clearRect(0,0,this.w,this.h);
+        
+
+        override_canvas_context(this.app.staging_context, this.app.art_canvas)
+        override_canvas_context(this.app.staging_context, this.app.tool_canvas, true)
+
+        if (!this.tool.is_incremental) {
+            this.app.tool_context.clearRect(0,0,this.w,this.h);
+        }
+        override_canvas_context(this.app.view_context, this.app.staging_canvas)
+        this.app.view_context.beginPath()
+        this.app.view_context.ellipse(event.offsetX, event.offsetY,10,10,0,0,Math.PI*2)
+        this.app.view_context.fill()
     }
 
     mouseup(event) {
