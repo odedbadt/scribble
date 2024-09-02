@@ -17,12 +17,15 @@ export class EditingToolApplier {
 
     }
     mousedown(event) {
+        if (event.buttons != 1) {
+            return;
+        }
         this.w = this.app.art_canvas.width;
         this.h = this.app.art_canvas.height;
         override_canvas_context(this.app.staging_context, this.app.art_canvas)
         this.from = [event.offsetX, event.offsetY];
         if (this.tool.start) {
-            this.tool.start()
+            this.tool.start(this.from)
         }
     }
 

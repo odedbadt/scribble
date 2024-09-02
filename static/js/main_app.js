@@ -2,6 +2,7 @@ import { ScribbleTool } from './scribble.js'
 import { LineTool } from './line.js'
 import { RectTool } from './rect.js'
 import { CircleTool } from './circle.js'
+import { Dropper } from './dropper.js'
 import { EditingToolApplier } from './editing_tool_applier.js'
 
 // function norm2(v) {
@@ -18,6 +19,7 @@ const tool_js_classes = {
     rect: RectTool,
     line: LineTool,
     circle: CircleTool,
+    dropper: Dropper,
 }
 class MainApp {
     constructor() {
