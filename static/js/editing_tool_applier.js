@@ -57,7 +57,6 @@ export class EditingToolApplier {
         }
         override_canvas_context(this.app.view_context, this.app.staging_canvas)
         this.app.view_context.beginPath()
-        this.app.view_context.ellipse(event.offsetX, event.offsetY,10,10,0,0,Math.PI*2)
         this.app.view_context.fill()
     }
 
