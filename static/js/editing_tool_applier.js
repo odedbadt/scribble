@@ -1,4 +1,15 @@
-
+import { ScribbleTool } from './scribble.js'
+import { LineTool } from './line.js'
+import { RectTool } from './rect.js'
+import { CircleTool } from './circle.js'
+import { Dropper } from './dropper.js'
+const tool_js_classes = {
+    scribble: ScribbleTool,
+    rect: RectTool,
+    line: LineTool,
+    circle: CircleTool,
+    dropper: Dropper,
+}
 export function override_canvas_context(context_to, canvas_from, keep) {
     if (!keep) {
         context_to.clearRect(0,0,canvas_from.width, canvas_from.height);    
@@ -9,9 +20,11 @@ export function override_canvas_context(context_to, canvas_from, keep) {
 }
 
 export class EditingToolApplier {
-    constructor(app,toolClass) {
+    constructor(app,toolName) {
+        const tool_js_class = tool_js_classes[toolName];
+
         this.app = app; 
-        this.tool = new toolClass(app.tool_context, this)
+        this.tool = new tool_js_class(app.tool_context, this)
     }
     select_tool() {
 

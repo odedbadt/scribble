@@ -1,26 +1,5 @@
-import { ScribbleTool } from './scribble.js'
-import { LineTool } from './line.js'
-import { RectTool } from './rect.js'
-import { CircleTool } from './circle.js'
-import { Dropper } from './dropper.js'
 import { EditingToolApplier } from './editing_tool_applier.js'
 
-// function norm2(v) {
-//     return v[0]*v[0]+v[1]*v[1]
-// }
-// function vec_minus(v1,v2) {
-//     return [v2[0] - v1[0], v2[1] - v1[1]]
-// }
-// function dist2(v1,v2) {
-//     return norm2(vec_minus(v2,v1));
-// }
-const tool_js_classes = {
-    scribble: ScribbleTool,
-    rect: RectTool,
-    line: LineTool,
-    circle: CircleTool,
-    dropper: Dropper,
-}
 class MainApp {
     constructor() {
         this.art_canvas = document.getElementById('art-canvas');
@@ -46,20 +25,19 @@ class MainApp {
         const _this = this;
         Array.from(button_list).forEach(button => {
             const button_class_list = button.classList;
-            const tool_js_class = tool_js_classes[button_class_list[0]];
-            const editor = tool_js_class ? new EditingToolApplier(_this, tool_js_class) : null;
-            if (editor) {
+            if (button_class_list[0] != 'button') {
+                const toolName = button_class_list[0];
+                const editor = new EditingToolApplier(_this, toolName);
                 button.addEventListener('click', event => {
-                    Array.from(button_list).forEach(other_button => {
-                        other_button.classList.remove('pressed')
-                    });    
+                Array.from(button_list).forEach(other_button => {
+                    other_button.classList.remove('pressed')
+                });    
 
-                    button.classList.add('pressed')
-                    this.active_tool = editor;
-                    if (editor) {
-                        editor.select_tool();
-                    }
+                button.classList.add('pressed')
+                this.active_tool = editor;
                 })
+            editor.select_tool();
+
             }
         })
     }
