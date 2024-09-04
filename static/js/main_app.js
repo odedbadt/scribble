@@ -17,6 +17,7 @@ class MainApp {
         this.staging_context = this.staging_canvas.getContext('2d',{willReadFrequently:true});
         this.tool_canvas = document.getElementById('tool-canvas');
         this.tool_context = this.tool_canvas.getContext('2d',{willReadFrequently:true});
+        this.editor = new EditingToolApplier(this);
 
 
     }
@@ -34,23 +35,38 @@ class MainApp {
                 });    
 
                 button.classList.add('pressed')
-                this.active_tool = editor;
+                this.editor.select_tool(toolName)
                 })
-            editor.select_tool();
 
             }
         })
     }
+    forward_events_to_editor() {
+        // canvas
+        const fore = document.getElementById('fore');
+        const canvas_area = document.getElementById('canvas-area');
+        ["mousedown", "mouseup","mouseout","mousemove", "click", "keydown"].forEach((ename) =>
+        {
+            canvas_area.addEventListener(ename, (ev) => {
+                if (this.editor[ename]) {
+                    this.editor[ename](ev);
+                }
+            })
+        } 
+        )
+        // body
+        document.body.addEventListener("keydown", (ev) => 
+            this.editor.keydown(ev))
+
+    }
     init_color_selector() {
-        const palette_canvas = document.getElementById('color_selector')
+        const palette_canvas = document.getElementById('color-selector')
         this.color_selector_element = palette_canvas;
         this.color_selector_context = palette_canvas.getContext('2d',{willReadFrequently:true});
         var img = new Image();
-        img.src = "/static/palette.png"; // Replace with the path to your image
+        img.src = "/static/palette.png";
         img.onload = () => {
-            this.color_selector_context.drawImage(img, 0, 0, 
-                25, 100, 0, 0, 100,200);
-                //palette_canvas.width, palette_canvas.height);
+            this.color_selector_context.drawImage(img, 0, 0, 100, 200);
         }
         const _this = this
 
@@ -70,24 +86,14 @@ class MainApp {
 
 
         //forward mouse
-        const fore = document.getElementById('fore');
-        const canvas_area = document.getElementById('canvas-area');
 
-        ["mousedown", "mouseup","mouseout","mousemove", "click"].forEach((ename) =>
-        {
-            canvas_area.addEventListener(ename, (ev) => {
-                if (this.active_tool && this.active_tool[ename]) {
-                    this.active_tool[ename](ev);
-                }
-            })
-        } 
-        )
 
         // bind mouse
         const _this = this;
 
         this.init_color_selector();
         this.init_buttons();
+        this.forward_events_to_editor();
 
     }
 }

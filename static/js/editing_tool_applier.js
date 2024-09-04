@@ -3,6 +3,7 @@ import { LineTool } from './line.js'
 import { RectTool } from './rect.js'
 import { CircleTool } from './circle.js'
 import { Dropper } from './dropper.js'
+import { UndoRedoBuffer } from './undo_redo_buffer.js'
 const tool_js_classes = {
     scribble: ScribbleTool,
     rect: RectTool,
@@ -20,15 +21,18 @@ export function override_canvas_context(context_to, canvas_from, keep) {
 }
 
 export class EditingToolApplier {
-    constructor(app,toolName) {
-        const tool_js_class = tool_js_classes[toolName];
-
+    constructor(app,) {
         this.app = app; 
+        this.undo_redo_buffer = new UndoRedoBuffer(100);
+    }
+    select_tool(toolName) {
+        const tool_js_class = tool_js_classes[toolName]
         this.tool = new tool_js_class(app.tool_context, this)
     }
-    select_tool() {
-
+    deselect_tool() {
+        this.tool = null;
     }
+    
     mousedown(event) {
         if (event.buttons != 1) {
             return;
@@ -43,6 +47,9 @@ export class EditingToolApplier {
     }
 
     mousemove(event) {
+        if (!this.tool) {
+            return;
+        }
         this.app.tool_context.fillStyle = this.app.settings.fore_color;
         this.app.tool_context.strokeStyle = this.app.settings.fore_color;
         this.app.tool_context.lineWidth = this.app.settings.line_width;
@@ -72,9 +79,24 @@ export class EditingToolApplier {
         this.app.view_context.beginPath()
         this.app.view_context.fill()
     }
+    keydown(event) {
+        console.log(event.code);
+        if (event.code == 'KeyU') {
+            const prev_image_data = this.undo_redo_buffer.pop();
+            console.log(prev_image_data);
+            if (prev_image_data) {
+            this.app.staging_context.clearRect(0,0,this.w, this.h);
+            this.app.tool_context.clearRect(0,0,this.w, this.h);
+            this.app.art_context.clearRect(0,0,this.w, this.h);
+            this.app.art_context.putImageData(prev_image_data, 0,0)
+            override_canvas_context(this.app.view_context, this.app.art_canvas)
+            }
 
+        }
+    }
     mouseup(event) {
         this.from = null;
+        this.undo_redo_buffer.push(this.app.art_context.getImageData(0,0,this.w,this.h))
         override_canvas_context(this.app.art_context, this.app.staging_canvas)
         if (this.tool.stop) {
         this.tool.stop()
