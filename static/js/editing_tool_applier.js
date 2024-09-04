@@ -79,19 +79,32 @@ export class EditingToolApplier {
         this.app.view_context.beginPath()
         this.app.view_context.fill()
     }
-    keydown(event) {
-        console.log(event.code);
-        if (event.code == 'KeyU') {
-            const prev_image_data = this.undo_redo_buffer.pop();
-            console.log(prev_image_data);
-            if (prev_image_data) {
+    undo() {
+        const prev_image_data = this.undo_redo_buffer.undo();
+        if (prev_image_data) {
             this.app.staging_context.clearRect(0,0,this.w, this.h);
             this.app.tool_context.clearRect(0,0,this.w, this.h);
             this.app.art_context.clearRect(0,0,this.w, this.h);
             this.app.art_context.putImageData(prev_image_data, 0,0)
             override_canvas_context(this.app.view_context, this.app.art_canvas)
-            }
-
+        }
+    }
+    redo() {
+        const prev_image_data = this.undo_redo_buffer.redo();
+        if (prev_image_data) {
+            this.app.staging_context.clearRect(0,0,this.w, this.h);
+            this.app.tool_context.clearRect(0,0,this.w, this.h);
+            this.app.art_context.clearRect(0,0,this.w, this.h);
+            this.app.art_context.putImageData(prev_image_data, 0,0)
+            override_canvas_context(this.app.view_context, this.app.art_canvas)
+        }
+    }
+    keydown(event) {
+        if (event.code == 'KeyU') {
+            this.undo()
+        }
+        if (event.code == 'KeyR') {
+            this.redo()
         }
     }
     mouseup(event) {

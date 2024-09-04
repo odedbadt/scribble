@@ -7,13 +7,29 @@ export class UndoRedoBuffer {
     }
     pop() {
         if (this.cursor <= 0) {
+            console.log('N')
             return null;
         }
         this.cursor--
+        console.log('S')
         return this.stack[this.cursor];
     }
+    undo() {
+        return this.pop();
+    }
+    redo() {
+        if (this.cursor >this.hwm) {
+            console.log('N')
+            return null;
+        }
+        const v = this.stack[this.cursor]
+        this.cursor++
+        return v;
+
+    }
     push(v) {
-        this.stack[this.cursor++] = v;
+        this.stack[this.cursor] = v;
+        this.cursor++;
         if (this.cursor > this.hwm) {
             this.hwm = this.cursor;
         }
@@ -22,30 +38,4 @@ export class UndoRedoBuffer {
         }
         console.log(this.stack, this.cursor)
     }
-    // undo() {
-    //     return this.pop();
-    //     // if (this.cursor == this.start) {
-    //     //     return null;
-    //     // }
-    //     // const v = this.buffer[(this.cursor - 1) % this.size];
-    //     // this.cursor = (this.cursor - 1 + this.size) % this.size;
-
-
-    //     // return v;
-
-    // }
-    // // redo() {
-    //     if (this.cursor == this.end) {
-    //         return null;
-    //     }
-    //     const v = this.buffer[(this.cursor - 1) % this.size];
-    //     this.cursor = (this.cursor + 1) % this.size;
-
-
-    //     return v;
-        
-    // }
-    // has_redo() {
-
-    // }
 }
