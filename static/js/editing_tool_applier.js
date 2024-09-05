@@ -21,9 +21,14 @@ export function override_canvas_context(context_to, canvas_from, keep) {
 }
 
 export class EditingToolApplier {
-    constructor(app,) {
+    constructor(app) {
         this.app = app; 
+        this.w = this.app.art_canvas.width;
+        this.h = this.app.art_canvas.height;
         this.undo_redo_buffer = new UndoRedoBuffer(100);
+        this.undo_redo_buffer.push(
+            this.app.art_context.getImageData(0,0,this.w,this.h)
+        )
     }
     select_tool(toolName) {
         const tool_js_class = tool_js_classes[toolName]
@@ -37,11 +42,9 @@ export class EditingToolApplier {
         if (event.buttons != 1) {
             return;
         }
-        this.w = this.app.art_canvas.width;
-        this.h = this.app.art_canvas.height;
         override_canvas_context(this.app.staging_context, this.app.art_canvas)
         this.from = [event.offsetX, event.offsetY];
-        if (this.tool.start) {
+        if (this.tool && this.tool.start) {
             this.tool.start(this.from)
         }
     }
@@ -109,9 +112,9 @@ export class EditingToolApplier {
     }
     mouseup(event) {
         this.from = null;
-        this.undo_redo_buffer.push(this.app.art_context.getImageData(0,0,this.w,this.h))
         override_canvas_context(this.app.art_context, this.app.staging_canvas)
-        if (this.tool.stop) {
+        this.undo_redo_buffer.push(this.app.art_context.getImageData(0,0,this.w,this.h))
+        if (this.tool && this.tool.stop) {
         this.tool.stop()
         }
 

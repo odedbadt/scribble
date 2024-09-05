@@ -98,7 +98,6 @@ class MainApp {
     }
 }
 export function app_ignite() {
-    console.log('here');
     window.app = new MainApp();
     window.app.init()
 }

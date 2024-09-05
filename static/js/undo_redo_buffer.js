@@ -1,31 +1,86 @@
+/*
+COMPLETELY EMPTY:
+
+0
+^
+
+ONLY BLANK CANVAS:
+
+01
+X
+ ^
+
+BLANK CANVAS + FIRST LINE:
+
+012
+XA
+US^
+
+CURSOR: INDEX 2
+ON SCREEN: A (INDEX 1)
+UNDO: INDEX 0
+REDO: NONE
+UNDO = CURSOR - 2
+
+BLANK CANVAS + FIRST LINE + SECOND LINE:
+
+0123
+XAB
+ US^
+
+CURSOR: INDEX 3
+ON SCREEN: B (INDEX 2)
+UNDO: INDEX 1
+REDO: NONE
+UNDO = CURSOR - 2
+
+BLANK CANVAS + FIRST LINE + SECOND LINE + UNDO:
+
+0123
+XAB
+US^
+
+CURSOR: INDEX 2
+ON SCREEN: A (INDEX 2)
+UNDO: INDEX 0
+REDO: INDEX 2
+UNDO = CURSOR - 2
+REDO = CURSOR
+
+01
+XA
+^R
+
+XAB
+ ^|
+
+...
+...
+XABCDEF
+    U^|
+
+ABCDEF
+  USR
+    
+
+*/
 export class UndoRedoBuffer {
     constructor(size) {
         this.stack = new Array(size);
         this.hwm = 0;
-        this.cursor = 0;
-        
-    }
-    pop() {
-        if (this.cursor <= 0) {
-            console.log('N')
-            return null;
-        }
-        this.cursor--
-        console.log('S')
-        return this.stack[this.cursor];
+        this.cursor = 0;        
     }
     undo() {
-        return this.pop();
+        console.log(this.cursor, this.stack)
+        const v = this.stack[this.cursor-2] || null;
+        this.cursor--;
+        return v;
     }
     redo() {
-        if (this.cursor >this.hwm) {
-            console.log('N')
-            return null;
-        }
-        const v = this.stack[this.cursor]
-        this.cursor++
+        console.log(this.cursor, this.stack)
+        const v = this.stack[this.cursor] || null;
+        this.cursor++;
         return v;
-
     }
     push(v) {
         this.stack[this.cursor] = v;
