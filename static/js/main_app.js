@@ -66,7 +66,7 @@ class MainApp {
         var img = new Image();
         img.src = "/static/palette.png";
         img.onload = () => {
-            this.color_selector_context.drawImage(img, 0, 0, 100, 200);
+            this.color_selector_context.drawImage(img, 10, 10, 80, 180);
         }
         const _this = this
 
