@@ -1,5 +1,5 @@
 import { EditingToolApplier } from './editing_tool_applier.js'
-
+import { handleAuthClick, handleSignoutClick, add_gdrive_script_tags } from './gdrive.js'
 class MainApp {
     constructor() {
         this.art_canvas = document.getElementById('art-canvas');
@@ -97,8 +97,14 @@ class MainApp {
 
     }
 }
-export function app_ignite() {
+export async function app_ignite() {
+    console.log('E');
+
+    console.log(window.gisInited, window.gapiInited);
     window.app = new MainApp();
     window.app.init()
+    //await listFiles()
 }
-window.addEventListener('load', () => {app_ignite()});
+window.addEventListener('load', () => {add_gdrive_script_tags(); app_ignite();});
+window.addEventListener('click', document.getElementById('authorize_button'), () => {handleAuthClick()});
+window.addEventListener('click', document.getElementById('signout_button'), () => {handleSignoutClick()});

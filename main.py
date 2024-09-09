@@ -25,6 +25,17 @@ def load_model():
 
 
 
+# @app.route("/")
+# def root():
+#     # For the sake of example, use static information to inflate the template.
+#     # This will be replaced with real information in later steps.
+#     return render_template("main_screen.html")
+@app.route("/qs")
+def root_qs():
+    # For the sake of example, use static information to inflate the template.
+    # This will be replaced with real information in later steps.
+    return render_template("drive_quickstart.html")
+
 @app.route("/")
 def root():
     # For the sake of example, use static information to inflate the template.

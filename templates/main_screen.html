@@ -10,7 +10,7 @@
                 position: absolute;
                 left: 0vw;
                 top: 0vh;
-                z-index: 10;
+                z-index: 1;
                 width: 100vw;
                 height: 100vh;
                 overflow: hidden;
@@ -24,6 +24,8 @@
                 border: 1px solid #dde;
                 width: 100px;
                 height: 100vh;
+                top:20px;
+                position: absolute;
                 padding: 0;
                 margin: 0;
                 display: grid;
@@ -87,10 +89,33 @@
             #color-selector {
                 width: 100px;
                 height: 200px;
-                border: 1px solid black inset;
                 background-color: rgb(237, 214, 138) ;
             }
-
+            #thumbnails-area {
+                z-index: 10;
+                background-color: white;
+                width: 500px;
+                height: 500px;
+                top:150px;
+                left:150px;
+                position: absolute;
+                display: grid;
+                grid-template-columns: repeat(10, minmax(50px, 1fr));
+                grid-template-rows: repeat(10,50px);
+                grid-gap: 0;
+                box-sizing: border-box;
+/*                box-shadow: 10px 5px 5px #EEE;*/
+                box-shadow: rgba(50, 50, 93, 0.25) 0px 13px 27px -5px, rgba(0, 0, 0, 0.3) 0px 8px 16px -8px;
+                /*border: 1px solid #AAA;*/
+            }
+            #menu-bar {
+                z-index: 10;
+                background-color: white;
+                width: 100vw;
+                height: 20px;
+                position: absolute;
+                font-family: 'Courier New', Courier, monospace
+            }
             .button {
                 background-size: cover;
             }
@@ -110,7 +135,7 @@
                 background-image: url("/static/dropper.png");
             }
         </style>
-        <script type="module" src="/static/js/main_app.js" defer></script> 
+    
     </head>
     <body>
         <div id="fore">
@@ -146,6 +171,46 @@
 
 
         </div>
+        <div id="thumbnails-area"></div>
+        <div id="menu-bar">
+            <div id="authorize_button">Authorize</div>
+            <button id="signout_button">Sign Out</button>
+        
+        </div>
+        <script>
+            window.API_KEY = 'AIzaSyB3EOx24XRRrxQ9N60WS2ljDAX6Q86MkVc';
+            window.CLIENT_ID = '983437923698-shfpf6udie0o0akgoa3caj7bdvonkhvo.apps.googleusercontent.com';
+            // Discovery doc URL for APIs used by the quickstart
+            window.DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
+
+            // Authorization scopes required by the API; multiple scopes can be
+            // included, separated by spaces.
+            window.SCOPES = 'https://www.googleapis.com/auth/drive.metadata.readonly';
+            // function gapiLoaded() {
+            //     gapi.load('client', initializeGapiClient);
+            // }
+            // async function initializeGapiClient() {
+            //     await gapi.client.init({
+            //         apiKey: API_KEY,
+            //         discoveryDocs: [DISCOVERY_DOC],
+            //     });
+            //     console.log('C');
+            //     window.gapiInited = true;
+            //     console.log('D');
+            // }
+            // function gisLoaded() {
+            //     tokenClient = google.accounts.oauth2.initTokenClient({
+            //         client_id: CLIENT_ID,
+            //         scope: SCOPES,
+            //         callback: '', // defined later
+            //     });
+            //     console.log('A');
+            //     window.gisInited = true;
+            //     console.log('B');
+            // }
+        </script>
+
     </body>
+    <script type="module" src="/static/js/main_app.js" defer></script>
 </html>
 
