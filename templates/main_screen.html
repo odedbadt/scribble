@@ -90,7 +90,39 @@
                 border: 1px solid black inset;
                 background-color: rgb(237, 214, 138) ;
             }
+<<<<<<< Updated upstream
 
+=======
+            #modal {
+                z-index: 10;
+                background-color: white;
+                width: 50vw;
+                height: 50vh;
+                top:25vh;
+                left:25vw;
+                position: absolute;
+                display: grid;
+                grid-template-columns: repeat(10, minmax(50px, 1fr));
+                grid-template-rows: repeat(10,50px);
+                grid-gap: 0;
+                box-sizing: border-box;
+/*                box-shadow: 10px 5px 5px #EEE;*/
+                box-shadow: rgba(50, 50, 93, 0.25) 0px 13px 27px -5px, rgba(0, 0, 0, 0.3) 0px 8px 16px -8px;
+                /*border: 1px solid #AAA;*/
+            }
+            #menu-bar {
+                z-index: 10;
+                background-color: white;
+                width: 100vw;
+                height: 20px;
+                position: absolute;
+                font-family: 'Courier New', Courier, monospace;
+                display: grid;
+                grid-template-columns: repeat(50, 100px);
+                grid-template-rows: repeat(100,20px);
+                cursor: pointer;
+            }
+>>>>>>> Stashed changes
             .button {
                 background-size: cover;
             }
@@ -109,6 +141,10 @@
             .dropper {
                 background-image: url("/static/dropper.png");
             }
+            .menu-bar-button {
+                background-color: white;
+                box-shadow: inset 3px 3px 5px #eee, inset -3px -3px 5px #aaa; /* Emboss effect */
+            }
         </style>
         <script type="module" src="/static/js/main_app.js" defer></script> 
     </head>
@@ -120,6 +156,7 @@
                 <div class="line button"></div>
                 <div class="circle button"></div>
                 <div class="dropper button"></div>
+                <div cless="floodfill button"></div>
                 <div class="button"></div>
                 <div class="button"></div>
                 <div class="button"></div>
@@ -146,6 +183,48 @@
 
 
         </div>
+<<<<<<< Updated upstream
+=======
+        <div id="modal"></div>
+        <div id="menu-bar">
+            <div class="menu-bar-button" id="authorize_button">Authorize</div>
+            <div class="menu-bar-button" id="signout_button">Sign Out</div>
+        
+        </div>
+        <script>
+            window.API_KEY = 'AIzaSyB3EOx24XRRrxQ9N60WS2ljDAX6Q86MkVc';
+            window.CLIENT_ID = '983437923698-shfpf6udie0o0akgoa3caj7bdvonkhvo.apps.googleusercontent.com';
+            // Discovery doc URL for APIs used by the quickstart
+            window.DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
+
+            // Authorization scopes required by the API; multiple scopes can be
+            // included, separated by spaces.
+            window.SCOPES = 'https://www.googleapis.com/auth/drive.metadata.readonly';
+            // function gapiLoaded() {
+            //     gapi.load('client', initializeGapiClient);
+            // }
+            // async function initializeGapiClient() {
+            //     await gapi.client.init({
+            //         apiKey: API_KEY,
+            //         discoveryDocs: [DISCOVERY_DOC],
+            //     });
+            //     console.log('C');
+            //     window.gapiInited = true;
+            //     console.log('D');
+            // }
+            // function gisLoaded() {
+            //     tokenClient = google.accounts.oauth2.initTokenClient({
+            //         client_id: CLIENT_ID,
+            //         scope: SCOPES,
+            //         callback: '', // defined later
+            //     });
+            //     console.log('A');
+            //     window.gisInited = true;
+            //     console.log('B');
+            // }
+        </script>
+
+>>>>>>> Stashed changes
     </body>
 </html>
 

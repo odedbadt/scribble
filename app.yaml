@@ -13,7 +13,10 @@
 # limitations under the License.
 
 runtime: python39
+<<<<<<< Updated upstream
 
+=======
+>>>>>>> Stashed changes
 handlers:
   # This configures Google App Engine to serve the files in the app's static
   # directory.
