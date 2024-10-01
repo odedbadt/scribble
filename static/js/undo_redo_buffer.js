@@ -71,13 +71,12 @@ export class UndoRedoBuffer {
         this.cursor = 0;        
     }
     undo() {
-        console.log(this.cursor, this.stack)
+        
         const v = this.stack[this.cursor-2] || null;
         this.cursor--;
         return v;
     }
     redo() {
-        console.log(this.cursor, this.stack)
         const v = this.stack[this.cursor] || null;
         this.cursor++;
         return v;
@@ -91,6 +90,6 @@ export class UndoRedoBuffer {
         if (this.hwm > this.stack.length) {
             this.stack.length = this.stack.length*2;
         }
-        console.log(this.stack, this.cursor)
+        
     }
 }

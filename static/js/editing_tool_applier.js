@@ -3,6 +3,7 @@ import { LineTool } from './line.js'
 import { RectTool } from './rect.js'
 import { CircleTool } from './circle.js'
 import { Dropper } from './dropper.js'
+import { Floodfill } from './floodfill.js'
 import { UndoRedoBuffer } from './undo_redo_buffer.js'
 const tool_js_classes = {
     scribble: ScribbleTool,
@@ -10,6 +11,7 @@ const tool_js_classes = {
     line: LineTool,
     circle: CircleTool,
     dropper: Dropper,
+    floodfill: Floodfill,
 }
 export function override_canvas_context(context_to, canvas_from, keep) {
     if (!keep) {
@@ -61,7 +63,7 @@ export class EditingToolApplier {
             override_canvas_context(this.app.staging_context, this.app.art_canvas)
         this.app.tool_context.beginPath();
         // Appply action
-        if (this.from) {
+        if (this.from && this.tool.action) {
             this.tool.action(this.from, [event.offsetX, event.offsetY])
         }
         this.app.staging_context.drawImage(
@@ -87,7 +89,8 @@ export class EditingToolApplier {
         if (prev_image_data) {
             this.app.staging_context.clearRect(0,0,this.w, this.h);
             this.app.tool_context.clearRect(0,0,this.w, this.h);
-            this.app.art_context.clearRect(0,0,this.w, this.h);
+            this.app.clear_art_canvas();
+//            this.app.art_context.clearRect(0,0,this.w, this.h);
             this.app.art_context.putImageData(prev_image_data, 0,0)
             override_canvas_context(this.app.view_context, this.app.art_canvas)
         }
@@ -97,7 +100,7 @@ export class EditingToolApplier {
         if (prev_image_data) {
             this.app.staging_context.clearRect(0,0,this.w, this.h);
             this.app.tool_context.clearRect(0,0,this.w, this.h);
-            this.app.art_context.clearRect(0,0,this.w, this.h);
+            this.app.clear_art_canvas();
             this.app.art_context.putImageData(prev_image_data, 0,0)
             override_canvas_context(this.app.view_context, this.app.art_canvas)
         }

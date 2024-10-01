@@ -6,11 +6,11 @@ class MainApp {
         this.art_context = this.art_canvas.getContext('2d', {willReadFrequently:true});
         this.view_canvas = document.getElementById('view-canvas');
         this.view_context = this.view_canvas.getContext('2d', {willReadFrequently:true});
-        this.view_context.fillStyle='black';
+        this.view_context.fillStyle='rgb(0,0,0)';
         this.view_context.lineWidth=20;
         this.view_context.lineCap="round";      
         this.settings = {
-            fore_color: 'black',
+            fore_color: 'rgb(0,0,0)',
             line_width: 10
         }
         this.staging_canvas = document.getElementById('staging-canvas');
@@ -78,11 +78,22 @@ class MainApp {
 
         }        
     }
+    clear_art_canvas() {
+        this.art_context.fillStyle = "rgba(255,255,255,255)"
+        this.art_context.fillRect(0,0,this.view_canvas.width,this.view_canvas.height);
+        this.art_context.fill();
+        console.log(this.art_context.getImageData(0,0,1,1).data[0]);
+
+    }
+
     init() {
         // clear
-        this.view_context.clearRect(0,0,this.view_canvas.width,this.view_canvas.height);
-        this.staging_context.clearRect(0,0,this.staging_canvas.width,this.staging_canvas.height)
-        this.tool_context.clearRect(0,0,200,200)
+        this.view_context.fillStyle = "rgba(255,255,255,0)"
+        this.view_context.fillRect(0,0,this.view_canvas.width,this.view_canvas.height);
+        this.staging_context.fillStyle = "rgba(255,255,255,0)"
+        this.staging_context.fillRect(0,0,this.staging_canvas.width,this.staging_canvas.height)
+        this.clear_art_canvas();
+
 
 
         //forward mouse
@@ -99,6 +110,7 @@ class MainApp {
 }
 export function app_ignite() {
     window.app = new MainApp();
-    window.app.init()
+    window.app.init();
+    
 }
 window.addEventListener('load', () => {app_ignite()});
