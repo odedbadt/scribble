@@ -48,7 +48,10 @@ export class EditingToolApplier {
         this.from = [event.offsetX, event.offsetY];
         if (this.tool && this.tool.start) {
             this.tool.start(this.from)
-        }
+            override_canvas_context(this.app.staging_context, this.app.art_canvas)
+            override_canvas_context(this.app.staging_context, this.app.tool_canvas, true)
+            override_canvas_context(this.app.view_context, this.app.staging_canvas)
+            }
     }
 
     mousemove(event) {
@@ -76,6 +79,7 @@ export class EditingToolApplier {
 
         override_canvas_context(this.app.staging_context, this.app.art_canvas)
         override_canvas_context(this.app.staging_context, this.app.tool_canvas, true)
+        override_canvas_context(this.app.view_context, this.app.staging_canvas)
 
         if (!this.tool.is_incremental) {
             this.app.tool_context.clearRect(0,0,this.w,this.h);
