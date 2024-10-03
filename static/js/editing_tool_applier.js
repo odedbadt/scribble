@@ -1,5 +1,6 @@
 import { ScribbleTool } from './scribble.js'
 import { EraserTool } from './eraser.js'
+import { ClearAllTool } from './clearall.js'
 import { LineTool } from './line.js'
 import { RectTool } from './rect.js'
 import { CircleTool } from './circle.js'
@@ -13,7 +14,8 @@ const tool_js_classes = {
     circle: CircleTool,
     dropper: Dropper,
     floodfill: Floodfill,
-    eraser: EraserTool
+    eraser: EraserTool,
+    clearall:ClearAllTool,
 }
 export function override_canvas_context(context_to, canvas_from, keep) {
     if (!keep) {
@@ -39,6 +41,10 @@ export class EditingToolApplier {
         this.current_tool_name = toolName;
         const tool_js_class = tool_js_classes[toolName]
         this.tool = new tool_js_class(app.tool_context, this)
+        if (this.tool && this.tool.select) {
+            this.tool.select()
+            this.commit()
+        }
     }
     deselect_tool() {
         this.tool = null;
@@ -123,11 +129,18 @@ export class EditingToolApplier {
     }
     mouseup(event) {
         this.from = null;
+        if (this.tool && this.tool.stop) {
+            this.tool.stop()
+        }
+        this.commit()
+
+    }
+    commit() {
+        override_canvas_context(this.app.staging_context, this.app.art_canvas)
+        override_canvas_context(this.app.staging_context, this.app.tool_canvas, true)
+        override_canvas_context(this.app.view_context, this.app.staging_canvas)
         override_canvas_context(this.app.art_context, this.app.staging_canvas)
         this.undo_redo_buffer.push(this.app.art_context.getImageData(0,0,this.w,this.h))
-        if (this.tool && this.tool.stop) {
-        this.tool.stop()
-        }
 
     }
 

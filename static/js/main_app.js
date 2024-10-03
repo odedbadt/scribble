@@ -6,11 +6,8 @@ class MainApp {
         this.art_context = this.art_canvas.getContext('2d', {willReadFrequently:true});
         this.view_canvas = document.getElementById('view-canvas');
         this.view_context = this.view_canvas.getContext('2d', {willReadFrequently:true});
-        this.view_context.fillStyle='rgb(0,0,0)';
-        this.view_context.lineWidth=20;
-        this.view_context.lineCap="round";      
         this.settings = {
-            fore_color: 'rgb(0,0,0)',
+            fore_color: 'rgba(0,0,0,255)',
             line_width: 10
         }
         this.staging_canvas = document.getElementById('staging-canvas');
@@ -75,7 +72,7 @@ class MainApp {
 
         palette_canvas.onclick = (event) => {
             const color = this.color_selector_context.getImageData(event.offsetX, event.offsetY, 1, 1).data;
-            const pen_color = `rgb(${color[0]},${color[1]},${color[2]},255)`;
+            const pen_color = `rgba(${color[0]},${color[1]},${color[2]},255)`;
             document.getElementById('color-selector-div').style.backgroundColor = pen_color
             
             _this.settings.fore_color = pen_color;
@@ -83,11 +80,14 @@ class MainApp {
 
         }        
     }
+    clear_context(context) {
+        context.fillStyle = "rgba(255,255,255,255)"
+        context.fillRect(0,0,this.view_canvas.width,this.view_canvas.height);
+        context.fill();
+
+    }
     clear_art_canvas() {
-        this.art_context.fillStyle = "rgba(255,255,255,255)"
-        this.art_context.fillRect(0,0,this.view_canvas.width,this.view_canvas.height);
-        this.art_context.fill();
-        console.log(this.art_context.getImageData(0,0,1,1).data[0]);
+        this.clear_context(this.art_context)
 
     }
 

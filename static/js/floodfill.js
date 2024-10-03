@@ -3,7 +3,7 @@ function _parseRGBifNeeded(color) {
         return color
     }
     // Match the pattern for "rgb(r, g, b)"
-    let regex = /rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)/;
+    let regex = /rgba\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)/;
     
     // Execute the regex on the input string
     let result = regex.exec(color);
@@ -13,7 +13,8 @@ function _parseRGBifNeeded(color) {
         let r = parseInt(result[1]);
         let g = parseInt(result[2]);
         let b = parseInt(result[3]);
-        return Uint8ClampedArray.from([r, g, b]);
+        let a = parseInt(result[4]);
+        return Uint8ClampedArray.from([r, g, b,a]);
     } else {
         throw new Error("Invalid rgb string format");
     }

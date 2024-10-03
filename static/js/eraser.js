@@ -7,7 +7,7 @@ export class EraserTool {
         }
     action(from, to) {
         if (this._recorded_to) {
-            this.context.strokeStyle = 'rgb(255,255,255,255)'
+            this.context.strokeStyle = 'rgba(255,255,255,255)'
             this.context.lineWidth = 50
             
         this.context.moveTo(
