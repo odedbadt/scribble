@@ -60,10 +60,8 @@ export class EditingToolApplier {
         override_canvas_context(this.app.staging_context, this.app.art_canvas)
         this.from = [event.offsetX, event.offsetY];
         if (this.tool && this.tool.start) {
-            this.tool.start(this.from)
-            override_canvas_context(this.app.staging_context, this.app.art_canvas)
-            override_canvas_context(this.app.staging_context, this.app.tool_canvas, true)
-            override_canvas_context(this.app.view_context, this.app.staging_canvas)
+            this.tool.start(this.from);
+            this.commit();
             }
     }
 
@@ -131,20 +129,26 @@ export class EditingToolApplier {
         }
     }
     mouseup(event) {
-        this.from = null;
+        if (this.from) {
+            override_canvas_context(this.app.art_context, this.app.staging_canvas)
+            this.from = null;
+        }
+        this.undo_redo_buffer.push(this.app.art_context.getImageData(0,0,this.w,this.h))
         if (this.tool && this.tool.stop) {
             this.tool.stop()
         }
-        this.commit()
-
-    }
-    commit() {
+        override_canvas_context(this.app.staging_context, this.app.art_canvas)
+        override_canvas_context(this.app.staging_context, this.app.tool_canvas, true)
+        override_canvas_context(this.app.view_context, this.app.staging_canvas)
+        this.undo_redo_buffer.push(this.app.art_context.getImageData(0,0,this.w,this.h))
+ //       this.commit();
+}
+   commit() {
         override_canvas_context(this.app.staging_context, this.app.art_canvas)
         override_canvas_context(this.app.staging_context, this.app.tool_canvas, true)
         override_canvas_context(this.app.view_context, this.app.staging_canvas)
         override_canvas_context(this.app.art_context, this.app.staging_canvas)
         this.undo_redo_buffer.push(this.app.art_context.getImageData(0,0,this.w,this.h))
-
     }
 
 }
