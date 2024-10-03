@@ -1,4 +1,5 @@
 import { ScribbleTool } from './scribble.js'
+import { EraserTool } from './eraser.js'
 import { LineTool } from './line.js'
 import { RectTool } from './rect.js'
 import { CircleTool } from './circle.js'
@@ -12,6 +13,7 @@ const tool_js_classes = {
     circle: CircleTool,
     dropper: Dropper,
     floodfill: Floodfill,
+    eraser: EraserTool
 }
 export function override_canvas_context(context_to, canvas_from, keep) {
     if (!keep) {

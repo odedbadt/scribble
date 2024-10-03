@@ -21,23 +21,31 @@ class MainApp {
 
 
     }
-    init_buttons() {
-        const button_list = document.getElementsByClassName('button');
+    select_tool(button, tool_name) {
         const _this = this;
+        const button_list = document.getElementsByClassName('button');
+        Array.from(button_list).forEach(other_button => {
+            other_button.classList.remove('pressed')
+        });
+        button.classList.add('pressed')
+        _this.editor.select_tool(tool_name)
+        // const button_list = document.getElementsByClassName('button');
+
+        // button.addEventListener('click', event => {
+        //     Array.from(button_list).forEach(other_button => {
+        //         other_button.classList.remove('pressed')
+        //     });
+        // });
+    }
+    init_buttons() {
+        const _this = this;
+        const button_list = document.getElementsByClassName('button');
         Array.from(button_list).forEach(button => {
             const button_class_list = button.classList;
             if (button_class_list[0] != 'button') {
-                const toolName = button_class_list[0];
-                const editor = new EditingToolApplier(_this, toolName);
                 button.addEventListener('click', event => {
-                Array.from(button_list).forEach(other_button => {
-                    other_button.classList.remove('pressed')
-                });    
-
-                button.classList.add('pressed')
-                this.editor.select_tool(toolName)
+                    _this.select_tool(button, button_class_list[0])
                 })
-
             }
         })
     }
@@ -105,6 +113,9 @@ class MainApp {
         this.init_color_selector();
         this.init_buttons();
         this.forward_events_to_editor();
+        const button_list = document.getElementsByClassName('scribble');
+
+        this.select_tool(button_list[0], 'scribble')
 
     }
 }
