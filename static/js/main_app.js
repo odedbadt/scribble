@@ -21,8 +21,9 @@ class MainApp {
 
 
     }
-    select_tool(button, tool_name) {
+    select_tool(tool_name) {
         const _this = this;
+        const button = document.getElementsByClassName(tool_name)[0];
         const button_list = document.getElementsByClassName('button');
         Array.from(button_list).forEach(other_button => {
             other_button.classList.remove('pressed')
@@ -38,7 +39,7 @@ class MainApp {
             const button_class_list = button.classList;
             if (button_class_list[0] != 'button') {
                 button.addEventListener('click', event => {
-                    _this.select_tool(button, button_class_list[0])
+                    _this.select_tool(button_class_list[0])
                 })
             }
         })
@@ -109,9 +110,8 @@ class MainApp {
         this.init_color_selector();
         this.init_buttons();
         this.forward_events_to_editor();
-        const button_list = document.getElementsByClassName('scribble');
 
-        this.select_tool(button_list[0], 'scribble')
+        this.select_tool('scribble')
 
     }
 }
