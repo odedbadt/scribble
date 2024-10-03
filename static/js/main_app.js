@@ -29,6 +29,31 @@ class MainApp {
         _this.editor.select_tool(tool_name)
 
     }
+    init_undo_redo_buttons() {
+        function click_for_a_second(classname, callback) {
+            const elem = document.getElementsByClassName(classname)[0]
+            elem.addEventListener('click', () =>{
+                elem.classList.add('pressed')
+                callback()
+                window.setTimeout(() => {
+                elem.classList.remove('pressed')
+                },120)
+            })
+        }
+        const _this = this;
+        click_for_a_second('undo',() => {
+        
+                _this.editor.undo()
+            
+            }
+        )
+        click_for_a_second('redo',() => {
+        
+            _this.editor.redo()
+        
+        }
+    )
+    }
     init_buttons() {
         const _this = this;
         const button_list = document.getElementsByClassName('button');
@@ -40,6 +65,7 @@ class MainApp {
                 })
             }
         })
+        this.init_undo_redo_buttons()
     }
     forward_events_to_editor() {
         // canvas

@@ -71,12 +71,24 @@ export class UndoRedoBuffer {
         this.cursor = 0;        
     }
     undo() {
-        
+        console.log(this.cursor);        
+        if (this.cursor <= 1) {
+            console.log('RETURN');        
+            return
+        }
+        console.log('U');        
         const v = this.stack[this.cursor-2] || null;
         this.cursor--;
+        
         return v;
     }
     redo() {
+        console.log(this.cursor);        
+        if (this.cursor >= this.hwm) {
+            console.log('RETURN');        
+            return
+        }
+        console.log('REDO');        
         const v = this.stack[this.cursor] || null;
         this.cursor++;
         return v;
@@ -84,6 +96,7 @@ export class UndoRedoBuffer {
     push(v) {
         this.stack[this.cursor] = v;
         this.cursor++;
+        console.log(this.cursor);        
         if (this.cursor > this.hwm) {
             this.hwm = this.cursor;
         }

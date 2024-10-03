@@ -40,6 +40,9 @@ export class EditingToolApplier {
         this.previous_tool_name = this.current_tool_name;
         this.current_tool_name = toolName;
         const tool_js_class = tool_js_classes[toolName]
+        if (!tool_js_class) {
+            return;
+        }
         this.tool = new tool_js_class(app.tool_context, this)
         if (this.tool && this.tool.select) {
             this.tool.select()

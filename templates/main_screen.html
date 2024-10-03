@@ -28,18 +28,19 @@
                 margin: 0;
                 display: grid;
                 grid-template-columns: repeat(2, minmax(50px, 1fr));
-                grid-template-rows: repeat(100,50px);
+                grid-template-rows: 1em repeat(100,50px);
                 grid-gap: 0;
                 box-sizing: border-box;
             }
-            .button {
+            .button, .buttonsize{
                 background-color: white;
                 box-shadow: inset 3px 3px 5px #eee, inset -3px -3px 5px #aaa; /* Emboss effect */
     
                 width: 50px;
                 height: 50px;
                 background-size: contain;
-            }
+                background-position: center;
+                background-repeat: no-repeat;            }
             .pressed {
                 background-color: #eee;
                 box-shadow: inset 3px 3px 5px #aaa, inset -3px -3px 5px #eee; /* Emboss effect */
@@ -144,12 +145,24 @@
                 background-color: white;
                 box-shadow: inset 3px 3px 5px #eee, inset -3px -3px 5px #aaa; /* Emboss effect */
             }
+            .undo,.redo {
+                height:1em;
+                cursor: pointer;
+            }
+            .undo {
+                background-image: url("/static/undo.png");
+            }            
+            .redo {
+                background-image: url("/static/redo.png");
+            }            
         </style>
         <script type="module" src="/static/js/main_app.js" defer></script> 
     </head>
     <body>
         <div id="fore">
             <div id="toolbar">
+                <div class="undo button"></div>
+                <div class="redo button"></div>
                 <div class="scribble button"></div>
                 <div class="rect button"></div>
                 <div class="line button"></div>
