@@ -29,13 +29,7 @@ class MainApp {
         });
         button.classList.add('pressed')
         _this.editor.select_tool(tool_name)
-        // const button_list = document.getElementsByClassName('button');
 
-        // button.addEventListener('click', event => {
-        //     Array.from(button_list).forEach(other_button => {
-        //         other_button.classList.remove('pressed')
-        //     });
-        // });
     }
     init_buttons() {
         const _this = this;
@@ -74,13 +68,15 @@ class MainApp {
         var img = new Image();
         img.src = "/static/palette.png";
         img.onload = () => {
-            this.color_selector_context.drawImage(img, 10, 10, 80, 180);
+            this.color_selector_context.drawImage(img, 0, 0, 80, 180);
         }
         const _this = this
 
         palette_canvas.onclick = (event) => {
             const color = this.color_selector_context.getImageData(event.offsetX, event.offsetY, 1, 1).data;
-            const pen_color = `rgb(${color[0]},${color[1]},${color[2]})`;
+            const pen_color = `rgb(${color[0]},${color[1]},${color[2]},255)`;
+            document.getElementById('color-selector-div').style.backgroundColor = pen_color
+            
             _this.settings.fore_color = pen_color;
             _this.view_context.strokeStyle=pen_color;
 
