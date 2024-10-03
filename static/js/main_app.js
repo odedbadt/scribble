@@ -62,7 +62,7 @@ class MainApp {
 
     }
     init_color_selector() {
-        const palette_canvas = document.getElementById('color-selector')
+        const palette_canvas = document.getElementById('color-selector-canvas')
         this.color_selector_element = palette_canvas;
         this.color_selector_context = palette_canvas.getContext('2d',{willReadFrequently:true});
         var img = new Image();
