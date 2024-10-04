@@ -25,14 +25,12 @@ export function override_canvas_context(context_to, canvas_from, keep) {
         canvas_from,0,0
     )
 }
-
 export class EditingToolApplier {
     constructor(app) {
         this.app = app;
         this.w = this.app.art_canvas.width;
         this.h = this.app.art_canvas.height;
         this.undo_redo_buffer = new UndoRedoBuffer(100);
-
         this.undo_redo_buffer.push(
             this.app.art_context.getImageData(0,0,this.w,this.h)
         )
@@ -54,7 +52,6 @@ export class EditingToolApplier {
     deselect_tool() {
         this.tool = null;
     }
-
     mousedown(event) {
         if (event.buttons != 1) {
             return;
@@ -66,7 +63,6 @@ export class EditingToolApplier {
             this.dirty = true;
             }
     }
-
     mousemove(event) {
         if (!this.tool) {
             return;
@@ -89,12 +85,9 @@ export class EditingToolApplier {
         if (!this.tool.is_incremental)
             override_canvas_context(this.app.staging_context, this.app.art_canvas)
             this.app.staging_context.clearRect(0,0,this.w,this.h);
-
-
         override_canvas_context(this.app.staging_context, this.app.art_canvas)
         override_canvas_context(this.app.staging_context, this.app.tool_canvas, true)
         override_canvas_context(this.app.view_context, this.app.staging_canvas)
-
         if (!this.tool.is_incremental) {
             this.app.tool_context.clearRect(0,0,this.w,this.h);
         }
@@ -155,5 +148,4 @@ export class EditingToolApplier {
         override_canvas_context(this.app.art_context, this.app.staging_canvas)
         this.undo_redo_buffer.push(this.app.art_context.getImageData(0,0,this.w,this.h))
     }
-
 }

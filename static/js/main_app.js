@@ -1,5 +1,4 @@
 import { EditingToolApplier } from './editing_tool_applier.js'
-
 function click_for_a_second(id, callback) {
     const elem = document.getElementById(id);
     elem.addEventListener('click', () =>{
@@ -26,8 +25,6 @@ class MainApp {
         this.tool_canvas = document.getElementById('tool-canvas');
         this.tool_context = this.tool_canvas.getContext('2d',{willReadFrequently:true});
         this.editor = new EditingToolApplier(this);
-
-
     }
     select_tool(tool_name) {
         const _this = this;
@@ -38,13 +35,11 @@ class MainApp {
         });
         button.classList.add('pressed')
         _this.editor.select_tool(tool_name)
-
     }
     init_load_save() {
         const art_canvas = this.art_canvas;
         const art_context = this.art_context
         click_for_a_second('save_button',() => {
-
             // Generate a PNG from the canvas
             art_canvas.toBlob(function(blob) {
                 const link = document.createElement('a');
@@ -53,16 +48,13 @@ class MainApp {
                 link.click();  // Programmatically click the link to trigger the download
             }, 'image/png');
         });
-
         document.getElementById('file_input').addEventListener('change', function(event) {
             const file = event.target.files[0];
-
             if (file && file.type === 'image/png') {
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     const img = new Image();
                     img.onload = function() {
-
                         // Clear canvas and draw the image
                         art_context.clearRect(0, 0, art_canvas.width, art_canvas.height);
                         art_context.drawImage(img, 0, 0, art_canvas.width, art_canvas.height);  // Draw the image to the canvas
@@ -74,24 +66,18 @@ class MainApp {
                 alert("Please select a valid PNG file.");
             }
         });
-
         click_for_a_second('load_button',() => {
         document.getElementById('file_input').click();
         });
     }
     init_undo_redo_buttons() {
-
         const _this = this;
         click_for_a_second('undo_button',() => {
-
                 _this.editor.undo()
-
             }
         )
         click_for_a_second('redo_button',() => {
-
             _this.editor.redo()
-
         }
     )
     }
@@ -125,7 +111,6 @@ class MainApp {
         // body
         document.body.addEventListener("keydown", (ev) =>
             this.editor.keydown(ev))
-
     }
     init_color_selector() {
         const palette_canvas = document.getElementById('color-selector-canvas')
@@ -137,12 +122,10 @@ class MainApp {
             this.color_selector_context.drawImage(img, 0, 0, 60, 160);
         }
         const _this = this
-
         palette_canvas.onmousedown = (event) => {
             event.preventDefault()
             const color = this.color_selector_context.getImageData(event.offsetX, event.offsetY, 1, 1).data;
             const sampled_color = `rgba(${color[0]},${color[1]},${color[2]},255)`;
-
             if (event.button == 0) {
                 _this.settings.fore_color = sampled_color;
                 _this.view_context.strokeStyle=sampled_color;
@@ -167,13 +150,10 @@ class MainApp {
         context.fillStyle = "rgba(255,255,255,255)"
         context.fillRect(0,0,this.view_canvas.width,this.view_canvas.height);
         context.fill();
-
     }
     clear_art_canvas() {
         this.clear_context(this.art_context)
-
     }
-
     init() {
         // clear
         this.view_context.fillStyle = "rgba(255,255,255,0)"
@@ -181,26 +161,17 @@ class MainApp {
         this.staging_context.fillStyle = "rgba(255,255,255,0)"
         this.staging_context.fillRect(0,0,this.staging_canvas.width,this.staging_canvas.height)
         this.clear_art_canvas();
-
-
-
         //forward mouse
-
-
         // bind mouse
         const _this = this;
-
         this.init_color_selector();
         this.init_buttons();
         this.forward_events_to_editor();
-
         this.select_tool('scribble')
-
     }
 }
 export function app_ignite() {
     window.app = new MainApp();
     window.app.init();
-
 }
 window.addEventListener('load', () => {app_ignite()});

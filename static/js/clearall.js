@@ -3,9 +3,6 @@ export class ClearAllTool {
         this.context = context;
         this.applier = applier;
         this.app = applier.app;
-
-
-
     }
     select() {
         const w = this.context.canvas.clientWidth;
@@ -16,6 +13,4 @@ export class ClearAllTool {
             this.app.select_tool(this.applier.previous_tool_name)
         }
     }
-
-
 }

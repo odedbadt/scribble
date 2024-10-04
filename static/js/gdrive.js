@@ -2,29 +2,22 @@
 /* exported gisLoaded */
 /* exported handleAuthClick */
 /* exported handleSignoutClick */
-
 // TODO(developer): Set to client ID and API key from the Developer Console
 const API_KEY = 'AIzaSyB3EOx24XRRrxQ9N60WS2ljDAX6Q86MkVc';
 const CLIENT_ID = '983437923698-shfpf6udie0o0akgoa3caj7bdvonkhvo.apps.googleusercontent.com';
 // Discovery doc URL for APIs used by the quickstart
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
-
 // Authorization scopes required by the API; multiple scopes can be
 // included, separated by spaces.
 const SCOPES = 'https://www.googleapis.com/auth/drive.metadata.readonly';
-
 let tokenClient;
 let gapiInited = false;
 let gisInited = false;
-
 //document.getElementById('authorize_button').style.visibility = 'hidden';
 //document.getElementById('signout_button').style.visibility = 'hidden';
-
 /**
  * Callback after api.js is loaded.
  */
-
-
 /**
  * Callback after the API client is loaded. Loads the
  * discovery doc to initialize the API.
@@ -38,16 +31,12 @@ export async function initializeGapiClient() {
     maybeEnableButtons();
 }
 function gapiLoaded() {
-
-
     gapi.load('client', initializeGapiClient);
 }
 /**
  * Callback after Google Identity Services are loaded.
  */
 export function initializeGis() {
-
-
     tokenClient = google.accounts.oauth2.initTokenClient({
         client_id: CLIENT_ID,
         scope: SCOPES,
@@ -62,7 +51,6 @@ function add_gdrive_script_tag(src, callback) {
     script_tag.onload = callback
     document.head.appendChild(script_tag);
 }
-
 function link_callback_to_button(button_id, callback) {
     const button_tag = document.getElementById(button_id);
     button_tag.onclick = callback;
@@ -71,20 +59,15 @@ function link_buttons() {
     link_callback_to_button('authorize_button', handleAuthClick)
     link_callback_to_button('signout_button', handleSignoutClick)
 }
-
 export function add_gdrive_script_tags() {
     add_gdrive_script_tag('https://accounts.google.com/gsi/client', initializeGis);
     add_gdrive_script_tag('https://apis.google.com/js/api.js', gapiLoaded);
 }
-
 /**
  * Enables user interaction after all libraries are loaded.
  */
 function maybeEnableButtons() {
-
-
     link_buttons();
-
     if (gapiInited && gisInited) {
         document.getElementById('authorize_button').style.visibility = 'visible';
     }
@@ -92,13 +75,10 @@ function maybeEnableButtons() {
 /**
  * Enables user interaction after all libraries are loaded.
  */
-
 /**
  *  Sign in the user upon button click.
  */
 export function handleAuthClick() {
-
-
     tokenClient.callback = async (resp) => {
         if (resp.error !== undefined) {
             throw (resp);
@@ -108,7 +88,6 @@ export function handleAuthClick() {
         const token = gapi.client.getToken().access_token;
         await list_files();
     };
-
     if (gapi.client.getToken() === null) {
         // Prompt the user to select a Google Account and ask for consent to share their data
         // when establishing a new session.
@@ -117,10 +96,7 @@ export function handleAuthClick() {
         // Skip display of account chooser and consent dialog for an existing session.
         tokenClient.requestAccessToken({ prompt: '' });
     }
-
-
 }
-
 /**
  *  Sign out the user upon button click.
  */
@@ -145,7 +121,6 @@ function get_thumbnail_img(file_id, callback) {
         .then(response => response.json())
         .then(data => {
             const thumbnailLink = data.thumbnailLink;
-
             // Make a GET request to the thumbnail link
             fetch(thumbnailLink, {
                 headers: {
@@ -159,13 +134,9 @@ function get_thumbnail_img(file_id, callback) {
                     callback(img);
                 })
                 .catch(error => {
-
-
                 });
         })
         .catch(error => {
-
-
         });
 }
 /**
@@ -194,12 +165,10 @@ async function list_files() {
         const modal = document.getElementById('modal');
         get_thumbnail_img(file.id, (img) => {
             modal.appendChild(img);
-
         })
     });
     //document.getElementById('thumbnails-area').innerText = output;
 }
-
 export function signIn() {
     gapi.auth2.getAuthInstance().signIn({
         ux_mode: 'popup'
@@ -207,7 +176,6 @@ export function signIn() {
 }
 async function stream_to_blob(stream) {
     const chunks = [];
-
     while (true) {
         const { value, done } = await stream.read();
         if (done) {
@@ -215,6 +183,5 @@ async function stream_to_blob(stream) {
         }
         chunks.push(value);
     }
-
     return new Blob(chunks, { type: 'image/png' });
 }

@@ -4,10 +4,8 @@ function _parseRGBifNeeded(color) {
     }
     // Match the pattern for "rgb(r, g, b)"
     let regex = /rgba\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)/;
-
     // Execute the regex on the input string
     let result = regex.exec(color);
-
     if (result) {
         // Return the extracted r, g, b values as an array of numbers
         let r = parseInt(result[1]);
@@ -19,8 +17,6 @@ function _parseRGBifNeeded(color) {
         throw new Error("Invalid rgb string format");
     }
 }
-
-
 function _equal_colors(c1,c2) {
     return c1[0] == c2[0] &&
     c1[1] == c2[1] &&
@@ -66,11 +62,8 @@ export class Floodfill {
         this.is_incremental = false;
         }
     start(from) {
-
-
         const replaced_color = this.app.art_context.getImageData(from[0],from[1],1,1).data;
         const parsed_fore_color = _parseRGBifNeeded(this.app.settings.fore_color);
         _floodfill(this.app.art_context,replaced_color,parsed_fore_color,from[0],from[1]);
-
     }
 }

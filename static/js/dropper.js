@@ -13,11 +13,7 @@ export class Dropper {
         if (this.applier.previous_tool_name) {
             this.app.select_tool(this.applier.previous_tool_name)
         }
-
-
     }
     end(from) {
-
     }
-
 }
