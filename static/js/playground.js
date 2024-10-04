@@ -4,10 +4,12 @@ function main() {
     const buf = new UndoRedoBuffer(10);
     for (var n=0; n<10; ++n) {
         buf.push(n*10);
-        console.log(buf.start, buf.end);
+
+
     }
     for (var n=0; n<20; ++n) {
-        console.log(buf.pop(), buf.start, buf.end);
+
+
     }
 }
 

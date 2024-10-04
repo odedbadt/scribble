@@ -66,7 +66,8 @@ export class Floodfill {
         this.is_incremental = false;
         }
     start(from) {
-        console.log(from);
+
+
         const replaced_color = this.app.art_context.getImageData(from[0],from[1],1,1).data;
         const parsed_fore_color = _parseRGBifNeeded(this.app.settings.fore_color);
         _floodfill(this.app.art_context,replaced_color,parsed_fore_color,from[0],from[1]);

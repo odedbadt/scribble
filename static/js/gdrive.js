@@ -38,14 +38,16 @@ export async function initializeGapiClient() {
     maybeEnableButtons();
 }
 function gapiLoaded() {
-    console.log('GAPI')
+
+
     gapi.load('client', initializeGapiClient);
 }
 /**
  * Callback after Google Identity Services are loaded.
  */
 export function initializeGis() {
-    console.log('GIS')
+
+
     tokenClient = google.accounts.oauth2.initTokenClient({
         client_id: CLIENT_ID,
         scope: SCOPES,
@@ -79,7 +81,8 @@ export function add_gdrive_script_tags() {
  * Enables user interaction after all libraries are loaded.
  */
 function maybeEnableButtons() {
-    console.log('MAYBE')
+
+
     link_buttons();
 
     if (gapiInited && gisInited) {
@@ -94,7 +97,8 @@ function maybeEnableButtons() {
  *  Sign in the user upon button click.
  */
 export function handleAuthClick() {
-    console.log('AUTH');
+
+
     tokenClient.callback = async (resp) => {
         if (resp.error !== undefined) {
             throw (resp);
@@ -113,7 +117,8 @@ export function handleAuthClick() {
         // Skip display of account chooser and consent dialog for an existing session.
         tokenClient.requestAccessToken({ prompt: '' });
     }
-    console.log('Token: ', gapi.client.getToken())
+
+
 }
 
 /**
@@ -154,11 +159,13 @@ function get_thumbnail_img(file_id, callback) {
                     callback(img);
                 })
                 .catch(error => {
-                    console.error(error);
+
+
                 });
         })
         .catch(error => {
-            console.error(error);
+
+
         });
 }
 /**
