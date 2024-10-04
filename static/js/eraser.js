@@ -2,12 +2,13 @@ export class EraserTool {
     constructor(context, applier) {
             this.context = context; 
             this.applier = applier;
+            this.app = applier.app
             this.is_incremental = true;
 
         }
     action(from, to) {
         if (this._recorded_to) {
-            this.context.strokeStyle = 'rgba(255,255,255,255)'
+            this.context.strokeStyle = this.app.settings.back_color
             this.context.lineWidth = 50
             
         this.context.moveTo(

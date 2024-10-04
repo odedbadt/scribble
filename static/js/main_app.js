@@ -8,6 +8,7 @@ class MainApp {
         this.view_context = this.view_canvas.getContext('2d', {willReadFrequently:true});
         this.settings = {
             fore_color: 'rgba(0,0,0,255)',
+            back_color: 'rgba(255,255,255,255)',
             line_width: 10
         }
         this.staging_canvas = document.getElementById('staging-canvas');
@@ -96,15 +97,23 @@ class MainApp {
         }
         const _this = this
 
-        palette_canvas.onclick = (event) => {
+        palette_canvas.onmousedown = (event) => {
+            event.preventDefault()
             const color = this.color_selector_context.getImageData(event.offsetX, event.offsetY, 1, 1).data;
-            const pen_color = `rgba(${color[0]},${color[1]},${color[2]},255)`;
-            document.getElementById('color-selector-div').style.backgroundColor = pen_color
+            const sampled_color = `rgba(${color[0]},${color[1]},${color[2]},255)`;
             
-            _this.settings.fore_color = pen_color;
-            _this.view_context.strokeStyle=pen_color;
-
-        }        
+            if (event.button == 0) {
+                _this.settings.fore_color = sampled_color;
+                _this.view_context.strokeStyle=sampled_color;
+                document.getElementById('color-selector-div-fore').style.backgroundColor = sampled_color
+            } else if (event.button == 2) {
+                _this.settings.back_color = sampled_color;
+                document.getElementById('color-selector-div-back').style.backgroundColor = sampled_color
+            }
+        }    
+        palette_canvas.addEventListener('contextmenu', (event) => {
+            event.preventDefault();
+          });    
     }
     clear_context(context) {
         context.fillStyle = "rgba(255,255,255,255)"

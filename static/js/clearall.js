@@ -9,8 +9,8 @@ export class ClearAllTool {
     }
     select() {
         const w = this.context.canvas.clientWidth;
-        const h = this. context.canvas.clientHeight;
-        this.context.fillStyle = 'rgb(255,255,255)'
+        const h = this.context.canvas.clientHeight;
+        this.context.fillStyle = this.app.settings.back_color;
         this.context.fillRect(0, 0, w, h);
         if (this.applier.previous_tool_name) {
             this.app.select_tool(this.applier.previous_tool_name)

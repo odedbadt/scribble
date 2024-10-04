@@ -86,12 +86,28 @@
                 top:700px;
                 visibility: hidden;
             }
+            #color-selector-div-back {
+                position: relative;
+                width:80px;
+                height:180px;
+                padding: 10px;
+                background-color:rgba(255,255,255,255);
+            }
+            #color-selector-div-fore {
+                position: relative;
+                width:60px;
+                height:160px;
+                padding: 10px;
+                background-color:rgba(0,0,0,255);
+                z-index:1;
+            }
             #color-selector-canvas {
-                width: 80px;
-                height: 180px;
+                width: 60px;
+                height: 160px;
                 border: 1px solid black inset;
                 background-color: rgba(0, 0, 0,255) ;
                 z-index:1;
+                opacity: 0;
                 position: absolute;
             }
             #color-selector-img-div {
@@ -104,18 +120,9 @@
                 background-position: center;
                 background-size: calc(100% - 20px) calc(100% - 20px); /* Subtract 20px from each side */
                 background-repeat: no-repeat;
-                position: absolute;
                 
                 z-index:0;
                 
-            }
-            #color-selector-div {
-                position: relative;
-                width:80px;
-                height:180px;
-                padding: 10px;
-                background-color:rgba(0,0,0,255);
-                background-size: 80px 180px
             }
             .scribble {
                 background-image: url("/static/scribble.png");
@@ -183,9 +190,11 @@
                 <div class="button"></div>
                 <div class="button"></div>
                 <div class="button"></div>
-                <div id="color-selector-div">
-                    <div id="color-selector-img-div"></div>
-                    <canvas id="color-selector-canvas" width="80" height="180">    
+                <div id="color-selector-div-back">
+                    <div id="color-selector-div-fore">                
+                        <div id="color-selector-img-div"></div>
+                        <canvas id="color-selector-canvas" width="60" height="160"></canvas>
+                    </div>
                 </div>
 
             </div>
