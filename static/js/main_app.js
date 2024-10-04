@@ -1,5 +1,15 @@
 import { EditingToolApplier } from './editing_tool_applier.js'
 
+function click_for_a_second(id, callback) {
+    const elem = document.getElementById(id);
+    elem.addEventListener('click', () =>{
+        elem.classList.add('pressed')
+        callback()
+        window.setTimeout(() => {
+        elem.classList.remove('pressed')
+        },120)
+    })
+}
 class MainApp {
     constructor() {
         this.art_canvas = document.getElementById('art-canvas');
@@ -30,25 +40,55 @@ class MainApp {
         _this.editor.select_tool(tool_name)
 
     }
+    init_load_save() {
+        const art_canvas = this.art_canvas;
+        const art_context = this.art_context
+        click_for_a_second('save_button',() => {
+            
+            // Generate a PNG from the canvas
+            art_canvas.toBlob(function(blob) {
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);  // Create a download link from the Blob
+                link.download = 'image.png';  // Set the file name for download
+                link.click();  // Programmatically click the link to trigger the download
+            }, 'image/png');
+        });
+
+        document.getElementById('file_input').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+
+            if (file && file.type === 'image/png') {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        
+                        // Clear canvas and draw the image
+                        art_context.clearRect(0, 0, art_canvas.width, art_canvas.height);
+                        art_context.drawImage(img, 0, 0, art_canvas.width, art_canvas.height);  // Draw the image to the canvas
+                    };
+                    img.src = e.target.result;  // Load image from FileReader result
+                };
+                reader.readAsDataURL(file);  // Read the file as a Data URL
+            } else {
+                alert("Please select a valid PNG file.");
+            }
+        });
+
+        click_for_a_second('load_button',() => {        
+        document.getElementById('file_input').click();
+        });
+    }
     init_undo_redo_buttons() {
-        function click_for_a_second(classname, callback) {
-            const elem = document.getElementsByClassName(classname)[0]
-            elem.addEventListener('click', () =>{
-                elem.classList.add('pressed')
-                callback()
-                window.setTimeout(() => {
-                elem.classList.remove('pressed')
-                },120)
-            })
-        }
+        
         const _this = this;
-        click_for_a_second('undo',() => {
+        click_for_a_second('undo_button',() => {
         
                 _this.editor.undo()
             
             }
         )
-        click_for_a_second('redo',() => {
+        click_for_a_second('redo_button',() => {
         
             _this.editor.redo()
         
@@ -67,6 +107,7 @@ class MainApp {
             }
         })
         this.init_undo_redo_buttons()
+        this.init_load_save()
     }
     forward_events_to_editor() {
         // canvas
@@ -93,7 +134,7 @@ class MainApp {
         var img = new Image();
         img.src = "/static/palette.png";
         img.onload = () => {
-            this.color_selector_context.drawImage(img, 0, 0, 80, 180);
+            this.color_selector_context.drawImage(img, 0, 0, 60, 160);
         }
         const _this = this
 

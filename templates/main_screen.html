@@ -28,7 +28,7 @@
                 margin: 0;
                 display: grid;
                 grid-template-columns: repeat(2, minmax(50px, 1fr));
-                grid-template-rows: 25px repeat(100,50px);
+                grid-template-rows: 25px 25px repeat(100,50px);
                 grid-gap: 0;
                 box-sizing: border-box;
             }
@@ -152,9 +152,10 @@
                 background-color: white;
                 box-shadow: inset 3px 3px 5px #eee, inset -3px -3px 5px #aaa; /* Emboss effect */
             }
-            .undo,.redo {
+            .undo,.redo, .save, .load {
                 height: 25px;
                 cursor: pointer;
+                font-family: monospace;
             }
             .undo {
                 background-image: url("/static/undo.png");
@@ -168,8 +169,10 @@
     <body>
         <div id="fore">
             <div id="toolbar">
-                <div class="undo button"></div>
-                <div class="redo button"></div>
+                <div id="save_button" class="save button">Save</div>
+                <div id="load_button"class="load button">Load</div>
+                <div id="undo_button" class="undo button"></div>
+                <div id="redo_button" class="redo button"></div>
                 <div class="scribble button"></div>
                 <div class="rect button"></div>
                 <div class="line button"></div>
@@ -198,7 +201,8 @@
                 </div>
 
             </div>
-    
+            
+        
         </div>
         <div id="canvas-area">
             <canvas id="view-canvas" width="700" height="700"></canvas>
@@ -246,7 +250,7 @@
             //     console.log('B');
             // }
         </script>
-
+        <input type="file" id="file_input" accept="image/png" style="display: none;" />
     </body>
 </html>
 
