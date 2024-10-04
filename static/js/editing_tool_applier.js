@@ -36,10 +36,10 @@ export class EditingToolApplier {
         )
         this.dirty = false
     }
-    select_tool(toolName) {
+    select_tool(tool_name) {
         this.previous_tool_name = this.current_tool_name;
-        this.current_tool_name = toolName;
-        const tool_js_class = tool_js_classes[toolName]
+        this.current_tool_name = tool_name;
+        const tool_js_class = tool_js_classes[tool_name]
         if (!tool_js_class) {
             return;
         }

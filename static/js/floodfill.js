@@ -1,4 +1,4 @@
-function _parseRGBifNeeded(color) {
+function _parse_RGBA(color) {
     if (color instanceof Uint8ClampedArray) {
         return color
     }
@@ -63,7 +63,7 @@ export class Floodfill {
         }
     start(from) {
         const replaced_color = this.app.art_context.getImageData(from[0],from[1],1,1).data;
-        const parsed_fore_color = _parseRGBifNeeded(this.app.settings.fore_color);
+        const parsed_fore_color = _parse_RGBA(this.app.settings.fore_color);
         _floodfill(this.app.art_context,replaced_color,parsed_fore_color,from[0],from[1]);
     }
 }
