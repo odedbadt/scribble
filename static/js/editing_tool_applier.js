@@ -45,8 +45,7 @@ export class EditingToolApplier {
         }
         this.tool = new tool_js_class(app.tool_context, this)
         if (this.tool && this.tool.select) {
-            this.tool.select()
-            this.dirty = true
+            this.dirty = !!this.tool.select() || this.dirty
         }
     }
     deselect_tool() {
@@ -80,8 +79,7 @@ export class EditingToolApplier {
         this.app.tool_context.beginPath();
         // Appply action
         if (this.from && this.tool.action) {
-            this.tool.action(this.from, [event.offsetX, event.offsetY])
-            this.dirty = true;
+            this.dirty =  !!this.tool.action(this.from, [event.offsetX, event.offsetY]) || this.dirty;
         }
         this.app.staging_context.drawImage(
             this.app.tool_canvas,0,0
@@ -132,8 +130,7 @@ export class EditingToolApplier {
         if (this.from) {
         }
         if (this.tool && this.tool.stop) {
-            this.tool.stop()
-            this.dirty = true;
+            this.dirty = !!this.tool.stop() || this.dirty;
         }
         if (this.dirty) {
             this.undo_redo_buffer.push(this.app.art_context.getImageData(0,0,this.w,this.h))
