@@ -32,9 +32,12 @@ export class EditingToolApplier {
         this.w = this.app.art_canvas.width;
         this.h = this.app.art_canvas.height;
         this.undo_redo_buffer = new UndoRedoBuffer(100);
+        console.log('CALLING PUSH (0)')
+
         this.undo_redo_buffer.push(
             this.app.art_context.getImageData(0,0,this.w,this.h)
         )
+        this.dirty = false
     }
     select_tool(toolName) {
         this.previous_tool_name = this.current_tool_name;
@@ -46,7 +49,7 @@ export class EditingToolApplier {
         this.tool = new tool_js_class(app.tool_context, this)
         if (this.tool && this.tool.select) {
             this.tool.select()
-            this.commit()
+            this.dirty = true
         }
     }
     deselect_tool() {
@@ -61,7 +64,8 @@ export class EditingToolApplier {
         this.from = [event.offsetX, event.offsetY];
         if (this.tool && this.tool.start) {
             this.tool.start(this.from);
-            this.commit();
+            console.log('CALLING COMMIT')
+            this.dirty = true;
             }
     }
 
@@ -79,6 +83,7 @@ export class EditingToolApplier {
         // Appply action
         if (this.from && this.tool.action) {
             this.tool.action(this.from, [event.offsetX, event.offsetY])
+            this.dirty = true;
         }
         this.app.staging_context.drawImage(
             this.app.tool_canvas,0,0
@@ -130,24 +135,28 @@ export class EditingToolApplier {
     }
     mouseup(event) {
         if (this.from) {
-            override_canvas_context(this.app.art_context, this.app.staging_canvas)
-            this.from = null;
         }
-        this.undo_redo_buffer.push(this.app.art_context.getImageData(0,0,this.w,this.h))
         if (this.tool && this.tool.stop) {
             this.tool.stop()
+            this.dirty = true;
         }
-        override_canvas_context(this.app.staging_context, this.app.art_canvas)
-        override_canvas_context(this.app.staging_context, this.app.tool_canvas, true)
-        override_canvas_context(this.app.view_context, this.app.staging_canvas)
-        this.undo_redo_buffer.push(this.app.art_context.getImageData(0,0,this.w,this.h))
- //       this.commit();
-}
-   commit() {
+        console.log('CALLING PUSH')
+        if (this.dirty) {
+            this.undo_redo_buffer.push(this.app.art_context.getImageData(0,0,this.w,this.h))
+            override_canvas_context(this.app.art_context, this.app.staging_canvas)
+            this.from = null;
+            override_canvas_context(this.app.staging_context, this.app.art_canvas)
+            override_canvas_context(this.app.staging_context, this.app.tool_canvas, true)
+            override_canvas_context(this.app.view_context, this.app.staging_canvas)
+            this.dirty = false
+        }
+    }
+    commit() {
         override_canvas_context(this.app.staging_context, this.app.art_canvas)
         override_canvas_context(this.app.staging_context, this.app.tool_canvas, true)
         override_canvas_context(this.app.view_context, this.app.staging_canvas)
         override_canvas_context(this.app.art_context, this.app.staging_canvas)
+        console.log('CALLING PUSH')
         this.undo_redo_buffer.push(this.app.art_context.getImageData(0,0,this.w,this.h))
     }
 
