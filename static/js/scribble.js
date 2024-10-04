@@ -1,6 +1,6 @@
 export class ScribbleTool {
     constructor(context, applier) {
-            this.context = context; 
+            this.context = context;
             this.applier = applier;
             this.is_incremental = true;
 
@@ -13,7 +13,7 @@ export class ScribbleTool {
             to[0],to[1]);
         }
         this._recorded_to = to;
-        
+
         this.context.stroke();
     }
     start() {

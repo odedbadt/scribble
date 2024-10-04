@@ -4,10 +4,10 @@ function _parseRGBifNeeded(color) {
     }
     // Match the pattern for "rgb(r, g, b)"
     let regex = /rgba\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)/;
-    
+
     // Execute the regex on the input string
     let result = regex.exec(color);
-    
+
     if (result) {
         // Return the extracted r, g, b values as an array of numbers
         let r = parseInt(result[1]);
@@ -42,7 +42,7 @@ function _floodfill(context, replaced_color, tool_color, x, y) {
             x > w ||
             y >= h) {
                 continue
-            } 
+            }
         const offset = (w*y+x)*4;
         const color_at_xy = context_data.slice(offset,offset+4);
         if (!_equal_colors(replaced_color, color_at_xy)) {
@@ -56,17 +56,17 @@ function _floodfill(context, replaced_color, tool_color, x, y) {
         stack.push([x-1,y])
         stack.push([x,y-1])
         stack.push([x,y+1])
-    }   
+    }
     context.putImageData(context_image_data, 0,0);
 }
 export class Floodfill {
     constructor(context, applier) {
-        this.context = context; 
-        this.app = applier.app; 
+        this.context = context;
+        this.app = applier.app;
         this.is_incremental = false;
         }
     start(from) {
-        console.log(from);       
+        console.log(from);
         const replaced_color = this.app.art_context.getImageData(from[0],from[1],1,1).data;
         const parsed_fore_color = _parseRGBifNeeded(this.app.settings.fore_color);
         _floodfill(this.app.art_context,replaced_color,parsed_fore_color,from[0],from[1]);

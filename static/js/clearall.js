@@ -1,10 +1,10 @@
 export class ClearAllTool {
     constructor(context, applier) {
-        this.context = context; 
+        this.context = context;
         this.applier = applier;
         this.app = applier.app;
 
-            
+
 
     }
     select() {
@@ -16,6 +16,6 @@ export class ClearAllTool {
             this.app.select_tool(this.applier.previous_tool_name)
         }
     }
-    
+
 
 }

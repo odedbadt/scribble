@@ -44,7 +44,7 @@ class MainApp {
         const art_canvas = this.art_canvas;
         const art_context = this.art_context
         click_for_a_second('save_button',() => {
-            
+
             // Generate a PNG from the canvas
             art_canvas.toBlob(function(blob) {
                 const link = document.createElement('a');
@@ -62,7 +62,7 @@ class MainApp {
                 reader.onload = function(e) {
                     const img = new Image();
                     img.onload = function() {
-                        
+
                         // Clear canvas and draw the image
                         art_context.clearRect(0, 0, art_canvas.width, art_canvas.height);
                         art_context.drawImage(img, 0, 0, art_canvas.width, art_canvas.height);  // Draw the image to the canvas
@@ -75,23 +75,23 @@ class MainApp {
             }
         });
 
-        click_for_a_second('load_button',() => {        
+        click_for_a_second('load_button',() => {
         document.getElementById('file_input').click();
         });
     }
     init_undo_redo_buttons() {
-        
+
         const _this = this;
         click_for_a_second('undo_button',() => {
-        
+
                 _this.editor.undo()
-            
+
             }
         )
         click_for_a_second('redo_button',() => {
-        
+
             _this.editor.redo()
-        
+
         }
     )
     }
@@ -120,10 +120,10 @@ class MainApp {
                     this.editor[ename](ev);
                 }
             })
-        } 
+        }
         )
         // body
-        document.body.addEventListener("keydown", (ev) => 
+        document.body.addEventListener("keydown", (ev) =>
             this.editor.keydown(ev))
 
     }
@@ -142,7 +142,7 @@ class MainApp {
             event.preventDefault()
             const color = this.color_selector_context.getImageData(event.offsetX, event.offsetY, 1, 1).data;
             const sampled_color = `rgba(${color[0]},${color[1]},${color[2]},255)`;
-            
+
             if (event.button == 0) {
                 _this.settings.fore_color = sampled_color;
                 _this.view_context.strokeStyle=sampled_color;
@@ -151,10 +151,10 @@ class MainApp {
                 _this.settings.back_color = sampled_color;
                 document.getElementById('color-selector-div-back').style.backgroundColor = sampled_color
             }
-        }    
+        }
         palette_canvas.addEventListener('contextmenu', (event) => {
             event.preventDefault();
-          }); 
+          });
         document.getElementById('colorswap').addEventListener('click', () => {
             const tmp_back = _this.settings.back_color;
             _this.settings.back_color = _this.settings.fore_color;
@@ -201,6 +201,6 @@ class MainApp {
 export function app_ignite() {
     window.app = new MainApp();
     window.app.init();
-    
+
 }
 window.addEventListener('load', () => {app_ignite()});

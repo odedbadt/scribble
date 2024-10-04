@@ -19,7 +19,7 @@ const tool_js_classes = {
 }
 export function override_canvas_context(context_to, canvas_from, keep) {
     if (!keep) {
-        context_to.clearRect(0,0,canvas_from.width, canvas_from.height);    
+        context_to.clearRect(0,0,canvas_from.width, canvas_from.height);
     }
     context_to.drawImage(
         canvas_from,0,0
@@ -28,7 +28,7 @@ export function override_canvas_context(context_to, canvas_from, keep) {
 
 export class EditingToolApplier {
     constructor(app) {
-        this.app = app; 
+        this.app = app;
         this.w = this.app.art_canvas.width;
         this.h = this.app.art_canvas.height;
         this.undo_redo_buffer = new UndoRedoBuffer(100);
@@ -54,7 +54,7 @@ export class EditingToolApplier {
     deselect_tool() {
         this.tool = null;
     }
-    
+
     mousedown(event) {
         if (event.buttons != 1) {
             return;
@@ -75,7 +75,7 @@ export class EditingToolApplier {
         this.app.tool_context.strokeStyle = this.app.settings.fore_color;
         this.app.tool_context.lineWidth = this.app.settings.line_width;
         this.app.tool_context.lineCap = 'round';
-        if (!this.tool.is_incremental) 
+        if (!this.tool.is_incremental)
             override_canvas_context(this.app.staging_context, this.app.art_canvas)
         this.app.tool_context.beginPath();
         // Appply action
@@ -86,10 +86,10 @@ export class EditingToolApplier {
         this.app.staging_context.drawImage(
             this.app.tool_canvas,0,0
         )
-        if (!this.tool.is_incremental) 
+        if (!this.tool.is_incremental)
             override_canvas_context(this.app.staging_context, this.app.art_canvas)
             this.app.staging_context.clearRect(0,0,this.w,this.h);
-        
+
 
         override_canvas_context(this.app.staging_context, this.app.art_canvas)
         override_canvas_context(this.app.staging_context, this.app.tool_canvas, true)

@@ -35,7 +35,7 @@
             .button, .buttonsize{
                 background-color: white;
                 box-shadow: inset 3px 3px 5px #eee, inset -3px -3px 5px #aaa; /* Emboss effect */
-    
+
                 width: 50px;
                 height: 50px;
                 background-size: contain;
@@ -121,14 +121,14 @@
                 background-position: center;
                 background-size: calc(100% - 20px) calc(100% - 20px); /* Subtract 20px from each side */
                 background-repeat: no-repeat;
-                
+
                 z-index:0;
-                
+
             }
             #colorswap {
                 font-family: monospace;
                 width: 100px;
-                height: 25px;   
+                height: 25px;
                 cursor: pointer;
                 text-align: center;
             }
@@ -167,12 +167,12 @@
             }
             .undo {
                 background-image: url("/static/undo.png");
-            }            
+            }
             .redo {
                 background-image: url("/static/redo.png");
-            }            
+            }
         </style>
-        <script type="module" src="/static/js/main_app.js" defer></script> 
+        <script type="module" src="/static/js/main_app.js" defer></script>
     </head>
     <body>
         <div id="fore">
@@ -220,15 +220,15 @@
 
 
                 <div id="color-selector-div-back">
-                    <div id="color-selector-div-fore">                
+                    <div id="color-selector-div-fore">
                         <div id="color-selector-img-div"></div>
                         <canvas id="color-selector-canvas" width="60" height="160"></canvas>
                     </div>
                 </div>
                 <div id="colorswap"><<-->></div>
             </div>
-            
-        
+
+
         </div>
         <div id="canvas-area">
             <canvas id="view-canvas" width="700" height="700"></canvas>
@@ -242,7 +242,7 @@
         <div id="menu-bar">
             <div class="menu-bar-button" id="authorize_button">Authorize</div>
             <div class="menu-bar-button" id="signout_button">Sign Out</div>
-        
+
         </div>
         <script>
             window.API_KEY = 'AIzaSyB3EOx24XRRrxQ9N60WS2ljDAX6Q86MkVc';

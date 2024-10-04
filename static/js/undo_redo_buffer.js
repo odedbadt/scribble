@@ -61,14 +61,14 @@ XABCDEF
 
 ABCDEF
   USR
-    
+
 
 */
 export class UndoRedoBuffer {
     constructor(size) {
         this.stack = new Array(size);
         this.hwm = 0;
-        this.cursor = 0;        
+        this.cursor = 0;
     }
     undo() {
         if (this.cursor <= 1) {
@@ -76,7 +76,7 @@ export class UndoRedoBuffer {
         }
         const v = this.stack[this.cursor-2] || null;
         this.cursor--;
-        
+
         return v;
     }
     redo() {
@@ -96,6 +96,6 @@ export class UndoRedoBuffer {
         if (this.hwm > this.stack.length) {
             this.stack.length = this.stack.length*2;
         }
-        
+
     }
 }

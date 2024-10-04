@@ -1,7 +1,7 @@
 export class Dropper {
     constructor(context, applier) {
-        this.context = context; 
-        this.app = applier.app; 
+        this.context = context;
+        this.app = applier.app;
         this.applier = applier;
         this.is_incremental = false;
         }
