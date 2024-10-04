@@ -32,7 +32,6 @@ export class EditingToolApplier {
         this.w = this.app.art_canvas.width;
         this.h = this.app.art_canvas.height;
         this.undo_redo_buffer = new UndoRedoBuffer(100);
-        console.log('CALLING PUSH (0)')
 
         this.undo_redo_buffer.push(
             this.app.art_context.getImageData(0,0,this.w,this.h)
@@ -64,7 +63,6 @@ export class EditingToolApplier {
         this.from = [event.offsetX, event.offsetY];
         if (this.tool && this.tool.start) {
             this.tool.start(this.from);
-            console.log('CALLING COMMIT')
             this.dirty = true;
             }
     }
@@ -140,7 +138,6 @@ export class EditingToolApplier {
             this.tool.stop()
             this.dirty = true;
         }
-        console.log('CALLING PUSH')
         if (this.dirty) {
             this.undo_redo_buffer.push(this.app.art_context.getImageData(0,0,this.w,this.h))
             override_canvas_context(this.app.art_context, this.app.staging_canvas)
@@ -156,7 +153,6 @@ export class EditingToolApplier {
         override_canvas_context(this.app.staging_context, this.app.tool_canvas, true)
         override_canvas_context(this.app.view_context, this.app.staging_canvas)
         override_canvas_context(this.app.art_context, this.app.staging_canvas)
-        console.log('CALLING PUSH')
         this.undo_redo_buffer.push(this.app.art_context.getImageData(0,0,this.w,this.h))
     }
 
