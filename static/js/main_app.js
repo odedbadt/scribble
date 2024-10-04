@@ -116,7 +116,7 @@ class MainApp {
         const palette_canvas = document.getElementById('color-selector-canvas')
         this.color_selector_element = palette_canvas;
         this.color_selector_context = palette_canvas.getContext('2d',{willReadFrequently:true});
-        var img = new Image();
+        let img = new Image();
         img.src = "/static/palette.png";
         img.onload = () => {
             this.color_selector_context.drawImage(img, 0, 0, 60, 160);

@@ -23,7 +23,7 @@ function _equal_colors(c1,c2) {
     c1[2] == c2[2]
 }
 function _floodfill(context, replaced_color, tool_color, x, y) {
-    var stack = [[x,y]];
+    let stack = [[x,y]];
     const w = context.canvas.clientWidth;
     const h = context.canvas.clientHeight;
     const context_image_data = context.getImageData(0,0,w,h)
