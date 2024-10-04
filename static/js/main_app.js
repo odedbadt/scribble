@@ -43,9 +43,9 @@ class MainApp {
             // Generate a PNG from the canvas
             art_canvas.toBlob(function(blob) {
                 const link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);  // Create a download link from the Blob
+                link.href = URL.createObjectURL(blob);
                 link.download = 'image.png';  // Set the file name for download
-                link.click();  // Programmatically click the link to trigger the download
+                link.click();
             }, 'image/png');
         });
         document.getElementById('file_input').addEventListener('change', function(event) {
@@ -57,11 +57,11 @@ class MainApp {
                     img.onload = function() {
                         // Clear canvas and draw the image
                         art_context.clearRect(0, 0, art_canvas.width, art_canvas.height);
-                        art_context.drawImage(img, 0, 0, art_canvas.width, art_canvas.height);  // Draw the image to the canvas
+                        art_context.drawImage(img, 0, 0, art_canvas.width, art_canvas.height);
                     };
-                    img.src = e.target.result;  // Load image from FileReader result
+                    img.src = e.target.result;
                 };
-                reader.readAsDataURL(file);  // Read the file as a Data URL
+                reader.readAsDataURL(file);
             } else {
                 alert("Please select a valid PNG file.");
             }
@@ -161,7 +161,7 @@ class MainApp {
         this.staging_context.fillStyle = "rgba(255,255,255,0)"
         this.staging_context.fillRect(0,0,this.staging_canvas.width,this.staging_canvas.height)
         this.clear_art_canvas();
-        //forward mouse
+        // forward mouse
         // bind mouse
         const _this = this;
         this.init_color_selector();
