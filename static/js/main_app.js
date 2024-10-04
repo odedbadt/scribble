@@ -154,7 +154,14 @@ class MainApp {
         }    
         palette_canvas.addEventListener('contextmenu', (event) => {
             event.preventDefault();
-          });    
+          }); 
+        document.getElementById('colorswap').addEventListener('click', () => {
+            const tmp_back = _this.settings.back_color;
+            _this.settings.back_color = _this.settings.fore_color;
+            _this.settings.fore_color = tmp_back;
+            document.getElementById('color-selector-div-fore').style.backgroundColor = _this.settings.fore_color
+            document.getElementById('color-selector-div-back').style.backgroundColor = _this.settings.back_color
+        })
     }
     clear_context(context) {
         context.fillStyle = "rgba(255,255,255,255)"

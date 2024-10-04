@@ -28,7 +28,7 @@
                 margin: 0;
                 display: grid;
                 grid-template-columns: repeat(2, minmax(50px, 1fr));
-                grid-template-rows: 25px 25px repeat(100,50px);
+                grid-template-rows: 25px 25px repeat(9,50px) 200px 25px;
                 grid-gap: 0;
                 box-sizing: border-box;
             }
@@ -92,6 +92,7 @@
                 height:180px;
                 padding: 10px;
                 background-color:rgba(255,255,255,255);
+                grid-column: span 2;
             }
             #color-selector-div-fore {
                 position: relative;
@@ -123,6 +124,12 @@
                 
                 z-index:0;
                 
+            }
+            #colorswap {
+                font-family: monospace;
+                width: 100px;
+                height: 25px;   
+                cursor: pointer;             
             }
             .scribble {
                 background-image: url("/static/scribble.png");
@@ -173,33 +180,51 @@
                 <div id="load_button"class="load button">Load</div>
                 <div id="undo_button" class="undo button"></div>
                 <div id="redo_button" class="redo button"></div>
+
                 <div class="scribble button"></div>
+                <!-- 1 -->
                 <div class="rect button"></div>
+
                 <div class="line button"></div>
+                <!-- 2 -->
                 <div class="circle button"></div>
+
                 <div class="dropper button"></div>
+                <!-- 3 -->
                 <div class="floodfill button"></div>
+
                 <div class="eraser button"></div>
+                <!-- 4 -->
                 <div class="clearall button"></div>
+
                 <div class="button"></div>
+                <!-- 5 -->
                 <div class="button"></div>
+
                 <div class="button"></div>
+                <!-- 6 -->
                 <div class="button"></div>
+
                 <div class="button"></div>
+                <!-- 7 -->
                 <div class="button"></div>
+
                 <div class="button"></div>
+                <!-- 8 -->
                 <div class="button"></div>
+
                 <div class="button"></div>
+                <!-- 9 -->
                 <div class="button"></div>
-                <div class="button"></div>
-                <div class="button"></div>
+
+
                 <div id="color-selector-div-back">
                     <div id="color-selector-div-fore">                
                         <div id="color-selector-img-div"></div>
                         <canvas id="color-selector-canvas" width="60" height="160"></canvas>
                     </div>
                 </div>
-
+                <div id="colorswap"><<-->></div>
             </div>
             
         
