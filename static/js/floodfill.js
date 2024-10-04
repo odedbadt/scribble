@@ -32,7 +32,8 @@ function _floodfill(context, replaced_color, tool_color, x, y) {
     const h = context.canvas.clientHeight;
     const context_image_data = context.getImageData(0,0,w,h)
     const context_data =  context_image_data.data;
-    while (stack.length > 0) {
+    let safety = 10000000
+    while (stack.length > 0 && safety-- > 0) {
         const dot = stack.pop();
         const x = dot[0];
         const y = dot[1];
