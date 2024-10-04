@@ -9,5 +9,7 @@ export class CircleTool {
         this.context.ellipse(
                 from[0],from[1],r,r,0,0,Math.PI*2);
         this.context.fill();
+        return true
+
     }
 }

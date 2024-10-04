@@ -74,8 +74,9 @@ export class EditingToolApplier {
         this.app.tool_context.strokeStyle = this.app.settings.fore_color;
         this.app.tool_context.lineWidth = this.app.settings.line_width;
         this.app.tool_context.lineCap = 'round';
-        if (!this.tool.is_incremental)
+        if (!this.tool.is_incremental) {
             override_canvas_context(this.app.staging_context, this.app.art_canvas)
+        }
         this.app.tool_context.beginPath();
         // Appply action
         if (this.from && this.tool.action) {
@@ -85,9 +86,9 @@ export class EditingToolApplier {
         this.app.staging_context.drawImage(
             this.app.tool_canvas,0,0
         )
-        if (!this.tool.is_incremental)
+        if (!this.tool.is_incremental) {
             override_canvas_context(this.app.staging_context, this.app.art_canvas)
-            this.app.staging_context.clearRect(0,0,this.w,this.h);
+        }
         override_canvas_context(this.app.staging_context, this.app.art_canvas)
         override_canvas_context(this.app.staging_context, this.app.tool_canvas, true)
         override_canvas_context(this.app.view_context, this.app.staging_canvas)

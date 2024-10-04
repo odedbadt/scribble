@@ -16,6 +16,8 @@ export class EraserTool {
         }
         this._recorded_to = to;
         this.context.stroke();
+        return true
+
     }
     start() {
     }

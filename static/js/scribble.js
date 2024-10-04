@@ -13,6 +13,7 @@ export class ScribbleTool {
         }
         this._recorded_to = to;
         this.context.stroke();
+        return true;
     }
     start() {
     }
