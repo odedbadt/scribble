@@ -64,6 +64,9 @@ export class EditingToolApplier {
             }
     }
     mousemove(event) {
+        if (!!this.from && !!!event.buttons) {
+            return
+        }
         if (!this.tool) {
             return;
         }
@@ -141,8 +144,11 @@ export class EditingToolApplier {
             this.dirty = false
         }
     }
-    mouseout(event) {
-        this.mouseup(event);
+    mousein(event) {
+        if (!!event.buttons) {
+
+        }
+        //this.mouseup(event);
     }
     commit() {
         override_canvas_context(this.app.staging_context, this.app.art_canvas)
