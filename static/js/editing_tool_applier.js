@@ -141,6 +141,9 @@ export class EditingToolApplier {
             this.dirty = false
         }
     }
+    mouseout(event) {
+        this.mouseup(event);
+    }
     commit() {
         override_canvas_context(this.app.staging_context, this.app.art_canvas)
         override_canvas_context(this.app.staging_context, this.app.tool_canvas, true)
