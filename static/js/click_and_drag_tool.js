@@ -7,14 +7,12 @@ export default class ClickAndDragTool extends EditingTool{
             this.start = this.start.bind(this);
             this.action = this.action.bind(this);
             this.stop = this.stop.bind(this);
-            this.dirty = true;
         }
     select() {
     }
     start() {
         this.context.clearRect(0,0,this.w,this.h)
-    
-        this.editing_start();
+        this.dirty = this.editing_start();
     
     }
     editing_start() {
@@ -24,21 +22,20 @@ export default class ClickAndDragTool extends EditingTool{
         override_canvas_context(this.applier.app.staging_context, 
                                 this.applier.app.art_canvas)
         this.applier.app.tool_context.beginPath();
-        this.editing_action(from,to);
+        this.dirty = !!this.editing_action(from,to) || this.dirty;
         this.app.staging_context.drawImage(
             this.app.tool_canvas,0,0
         )
         if (!this.is_incremental) {
             override_canvas_context(this.app.staging_context, this.app.art_canvas)
         }
+
         override_canvas_context(this.app.staging_context, this.app.art_canvas)
         override_canvas_context(this.app.staging_context, this.app.tool_canvas, true)
         override_canvas_context(this.app.view_context, this.app.staging_canvas)
         if (!this.is_incremental) {
             this.context.clearRect(0,0,this.w,this.h);
-        }
-        this.dirty = true;
-    
+        }    
     
     }
     editing_action() {
@@ -47,7 +44,9 @@ export default class ClickAndDragTool extends EditingTool{
     stop() {
         this.dirty = !!this.editing_stop() || this.dirty;
         if (this.dirty) {
-            this.applier.undo_redo_buffer.push(this.app.art_context.getImageData(0,0,this.w,this.h))
+            this.applier.undo_redo_buffer.push(
+                this.app.art_context.getImageData(0,0,this.w,this.h)
+            )
             override_canvas_context(this.app.art_context, this.app.staging_canvas)
             this.from = null;
             override_canvas_context(this.app.staging_context, this.app.art_canvas)

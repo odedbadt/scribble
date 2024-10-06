@@ -171,6 +171,15 @@
             .redo {
                 background-image: url("/static/redo.png");
             }
+            #dbg {
+                position: absolute;
+                left: 200px;
+                top: 80vh;
+                opacity: 50%;
+                font-size: 48;
+                font-family: ui-monospace;
+                border: 1px solid black;
+            }
         </style>
         <script type="module" src="/static/js/main_app.js" defer></script>
     </head>
@@ -237,7 +246,8 @@
             <canvas id="art-canvas" width="300" height="300"></canvas>
 
 
-        </div>
+       </div>
+       <div id="dbg"></div>
         <div id="modal"></div>
         <div id="menu-bar">
             <div class="menu-bar-button" id="authorize_button">Authorize</div>
