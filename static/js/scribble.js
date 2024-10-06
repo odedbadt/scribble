@@ -1,10 +1,11 @@
-export class ScribbleTool {
+import ClickAndDragTool from "./click_and_drag_tool.js" 
+export class ScribbleTool extends ClickAndDragTool{
     constructor(context, applier) {
             this.context = context;
             this.applier = applier;
             this.is_incremental = true;
         }
-    action(from, to) {
+    editing_action(from, to) {
         if (this._recorded_to) {
         this.context.moveTo(
             this._recorded_to[0],this._recorded_to[1]);
@@ -15,7 +16,7 @@ export class ScribbleTool {
         this.context.stroke();
         return true;
     }
-    stop() {
+    editing_stop() {
         this._recorded_to = null;
     }
 }
