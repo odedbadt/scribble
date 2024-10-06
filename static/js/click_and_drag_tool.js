@@ -1,6 +1,6 @@
 import {EditingTool, override_canvas_context} from "./editing_tool.js"
 
-export default class ClickAndDragToolTool extends EditingTool{
+export default class ClickAndDragTool extends EditingTool{
     constructor(context, applier, incremental) {
             super(context, applier);
             this.is_incremental = incremental;
@@ -10,9 +10,9 @@ export default class ClickAndDragToolTool extends EditingTool{
             this.dirty = true;
         }
     select() {
-        this.context.clearRect(0,0,this.w,this.h)
     }
     start() {
+        this.context.clearRect(0,0,this.w,this.h)
     
         this.editing_start();
     

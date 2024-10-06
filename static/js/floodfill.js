@@ -1,3 +1,5 @@
+import ClickTool from "./click_tool.js" 
+
 function _parse_RGBA(color) {
     if (color instanceof Uint8ClampedArray) {
         return color
@@ -22,13 +24,11 @@ function _equal_colors(c1,c2) {
     c1[1] == c2[1] &&
     c1[2] == c2[2]
 }
-function _floodfill(context, replaced_color, tool_color, x, y) {
-    let stack = [[x,y]];
-    const w = context.canvas.clientWidth;
-    const h = context.canvas.clientHeight;
-    const context_image_data = context.getImageData(0,0,w,h)
+function _floodfill(read_context, write_context, replaced_color, tool_color, x, y,w,h) {
+    const context_image_data = read_context.getImageData(0, 0, w, h)
     const context_data =  context_image_data.data;
-    let safety = 10000000
+    let safety = w*h*2
+    let stack = [[x,y]]
     while (stack.length > 0 && safety-- > 0) {
         const dot = stack.pop();
         const x = dot[0];
@@ -37,10 +37,10 @@ function _floodfill(context, replaced_color, tool_color, x, y) {
             y < 0 ||
             x > w ||
             y >= h) {
-                continue
-            }
+            continue
+        }
         const offset = (w*y+x)*4;
-        const color_at_xy = context_data.slice(offset,offset+4);
+        const color_at_xy = context_data.slice(offset, offset+4);
         if (!_equal_colors(replaced_color, color_at_xy)) {
             continue;
         }
@@ -53,18 +53,19 @@ function _floodfill(context, replaced_color, tool_color, x, y) {
         stack.push([x,y-1])
         stack.push([x,y+1])
     }
-    context.putImageData(context_image_data, 0,0);
+    write_context.putImageData(context_image_data, 0,0);
 }
-export class Floodfill {
+export class Floodfill extends ClickTool {
     constructor(context, applier) {
+        super(context, applier)
         this.context = context;
+        this.applier = applier;
         this.app = applier.app;
-        this.is_incremental = false;
-        }
-    start(from) {
+    }
+    editing_start(from) {
         const replaced_color = this.app.art_context.getImageData(from[0],from[1],1,1).data;
         const parsed_fore_color = _parse_RGBA(this.app.settings.fore_color);
-        _floodfill(this.app.art_context,replaced_color,parsed_fore_color,from[0],from[1]);
+        _floodfill(this.app.art_context, this.context, replaced_color, parsed_fore_color,from[0],from[1], this.w, this.h);
         return true
     }
 }

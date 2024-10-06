@@ -1,11 +1,10 @@
-export class EraserTool {
+import ClickAndDragTool from "./click_and_drag_tool.js" 
+
+export class EraserTool  extends ClickAndDragTool{
     constructor(context, applier) {
-            this.context = context;
-            this.applier = applier;
-            this.app = applier.app
-            this.is_incremental = true;
+        super(context, applier, true);
         }
-    action(from, to) {
+    editing_action(from, to) {
         if (this._recorded_to) {
             this.context.strokeStyle = this.app.settings.back_color
             this.context.lineWidth = 50
@@ -19,9 +18,9 @@ export class EraserTool {
         return true
 
     }
-    start() {
+    editing_start() {
     }
-    stop() {
+    editing_stop() {
         this._recorded_to = null;
     }
 }
