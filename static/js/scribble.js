@@ -1,9 +1,8 @@
 import ClickAndDragTool from "./click_and_drag_tool.js" 
+
 export class ScribbleTool extends ClickAndDragTool{
     constructor(context, applier) {
-            this.context = context;
-            this.applier = applier;
-            this.is_incremental = true;
+            super(context, applier, true);
         }
     editing_action(from, to) {
         if (this._recorded_to) {
@@ -17,6 +16,7 @@ export class ScribbleTool extends ClickAndDragTool{
         return true;
     }
     editing_stop() {
+        // nop, implemenet me
         this._recorded_to = null;
     }
 }
