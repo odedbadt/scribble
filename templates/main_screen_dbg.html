@@ -52,39 +52,39 @@
                 z-index: 0;
                 width: 100vw;
                 position: absolute;
-                left: 0vw;
+                left: 100px;
                 top: 0vh;
                 height: 100vh;
                 overflow: hidden;
                 padding: 0;
                 margin: 0;
+                display: grid;
+                grid-template-columns: repeat(2, 300px);
+                grid-template-rows: repeat(2, 300px);
+                grid-gap: 100px;
 
             }
             #view-canvas {
-                position: absolute;
-                left: 100px;
                 box-shadow: rgba(50, 50, 93, 0.25) 0px 13px 27px -5px, rgba(0, 0, 0, 0.3) 0px 8px 16px -8px;
                 cursor: crosshair;
+                width: 300px;
+                height: 300px;
+
             }
             #staging-canvas {
-                position: absolute;
                 box-shadow: rgba(50, 50, 93, 0.25) 0px 13px 27px -5px, rgba(0, 0, 0, 0.3) 0px 8px 16px -8px;
-                left: 700px;
-                visibility: hidden;
+                width: 300px;
+                height: 300px;
             }
             #tool-canvas {
-                position: absolute;
-                left: 100px;
-                top:700px;
                 box-shadow: rgba(50, 50, 93, 0.25) 0px 13px 27px -5px, rgba(0, 0, 0, 0.3) 0px 8px 16px -8px;
-                visibility: hidden;
+                width: 300px;
+                height: 300px;
             }
             #art-canvas {
-                position: absolute;
                 box-shadow: rgba(50, 50, 93, 0.25) 0px 13px 27px -5px, rgba(0, 0, 0, 0.3) 0px 8px 16px -8px;
-                left: 700px;
-                top:700px;
-                visibility: hidden;
+                width: 300px;
+                height: 300px;
             }
             #color-selector-div-back {
                 position: relative;
@@ -231,10 +231,10 @@
 
         </div>
         <div id="canvas-area">
-            <canvas id="view-canvas" width="700" height="700"></canvas>
-            <canvas id="staging-canvas" width="700" height="700"></canvas>
-            <canvas id="tool-canvas" width="700" height="700"></canvas>
-            <canvas id="art-canvas" width="700" height="700"></canvas>
+            <canvas id="view-canvas" width="300" height="300"></canvas>
+            <canvas id="staging-canvas" width="300" height="300"></canvas>
+            <canvas id="tool-canvas" width="300" height="300"></canvas>
+            <canvas id="art-canvas" width="300" height="300"></canvas>
 
 
         </div>
