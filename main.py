@@ -31,6 +31,11 @@ def root():
     # This will be replaced with real information in later steps.
     return render_template("main_screen.html")
 
+@app.route("/dbg")
+def dbg():
+    # For the sake of example, use static information to inflate the template.
+    # This will be replaced with real information in later steps.
+    return render_template("main_screen_dbg.html")
 
 if __name__ == "__main__":
     # This is used when running locally only. When deploying to Google App
