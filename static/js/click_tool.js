@@ -14,8 +14,8 @@ export default class ClickTool extends EditingTool {
         this.editing_start(from);
         override_canvas_context(this.app.staging_context, this.app.tool_canvas, true)
         override_canvas_context(this.app.view_context, this.app.staging_canvas)
-        this.applier.undo_redo_buffer.push(this.app.art_context.getImageData(0,0,this.w,this.h))
         override_canvas_context(this.app.art_context, this.app.staging_canvas)
+        this.applier.undo_redo_buffer.push(this.app.art_context.getImageData(0,0,this.w,this.h))
         override_canvas_context(this.app.staging_context, this.app.art_canvas)
         override_canvas_context(this.app.staging_context, this.app.tool_canvas, true)
         override_canvas_context(this.app.view_context, this.app.staging_canvas)

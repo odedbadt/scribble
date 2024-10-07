@@ -30,9 +30,7 @@ export class EditingToolApplier {
         this.app = app;
         this.w = this.app.art_canvas.width;
         this.h = this.app.art_canvas.height;
-        this.undo_redo_buffer = new UndoRedoBuffer(
-            this.app.art_context.getImageData(0,0,this.w,this.h),
-            100);
+        this.undo_redo_buffer = new UndoRedoBuffer(100);
         this.dirty = false
     }
     select_tool(tool_name) {
@@ -85,22 +83,22 @@ export class EditingToolApplier {
         this.app.view_context.fill()
     }
     undo() {
+        this.app.staging_context.clearRect(0,0,this.w, this.h);
+        this.app.tool_context.clearRect(0,0,this.w, this.h);
         const undone_image_data = this.undo_redo_buffer.undo();
+        this.app.clear_art_canvas();
         if (undone_image_data) {
-            this.app.staging_context.clearRect(0,0,this.w, this.h);
-            this.app.tool_context.clearRect(0,0,this.w, this.h);
-            this.app.clear_art_canvas();
             this.app.art_context.putImageData(undone_image_data, 0,0)
-            override_canvas_context(this.app.view_context, this.app.art_canvas)
         }
+        override_canvas_context(this.app.view_context, this.app.art_canvas)
     }
     redo() {
-        const prev_image_data = this.undo_redo_buffer.redo();
-        if (prev_image_data) {
+        const redone_image_data = this.undo_redo_buffer.redo();
+        if (redone_image_data) {
             this.app.staging_context.clearRect(0,0,this.w, this.h);
             this.app.tool_context.clearRect(0,0,this.w, this.h);
             this.app.clear_art_canvas();
-            this.app.art_context.putImageData(prev_image_data, 0,0)
+            this.app.art_context.putImageData(redone_image_data, 0,0)
             override_canvas_context(this.app.view_context, this.app.art_canvas)
         }
     }
@@ -130,6 +128,5 @@ export class EditingToolApplier {
         override_canvas_context(this.app.staging_context, this.app.tool_canvas, true)
         override_canvas_context(this.app.view_context, this.app.staging_canvas)
         override_canvas_context(this.app.art_context, this.app.staging_canvas)
-        this.undo_redo_buffer.push(this.app.art_context.getImageData(0,0,this.w,this.h))
     }
 }

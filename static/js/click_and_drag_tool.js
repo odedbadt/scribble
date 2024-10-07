@@ -1,5 +1,4 @@
 import {EditingTool, override_canvas_context} from "./editing_tool.js"
-
 export default class ClickAndDragTool extends EditingTool{
     constructor(context, applier, incremental) {
             super(context, applier);
@@ -13,13 +12,12 @@ export default class ClickAndDragTool extends EditingTool{
     start() {
         this.context.clearRect(0,0,this.w,this.h)
         this.dirty = this.editing_start();
-    
     }
     editing_start() {
         // nop, implemenet me
     }
     action(from, to) {
-        override_canvas_context(this.applier.app.staging_context, 
+        override_canvas_context(this.applier.app.staging_context,
                                 this.applier.app.art_canvas)
         this.applier.app.tool_context.beginPath();
         this.dirty = !!this.editing_action(from,to) || this.dirty;
@@ -29,14 +27,12 @@ export default class ClickAndDragTool extends EditingTool{
         if (!this.is_incremental) {
             override_canvas_context(this.app.staging_context, this.app.art_canvas)
         }
-
         override_canvas_context(this.app.staging_context, this.app.art_canvas)
         override_canvas_context(this.app.staging_context, this.app.tool_canvas, true)
         override_canvas_context(this.app.view_context, this.app.staging_canvas)
         if (!this.is_incremental) {
             this.context.clearRect(0,0,this.w,this.h);
-        }    
-    
+        }
     }
     editing_action() {
         throw new "Not fully implemented tool"
@@ -44,21 +40,19 @@ export default class ClickAndDragTool extends EditingTool{
     stop() {
         this.dirty = !!this.editing_stop() || this.dirty;
         if (this.dirty) {
+            override_canvas_context(this.app.art_context, this.app.staging_canvas)
             this.applier.undo_redo_buffer.push(
                 this.app.art_context.getImageData(0,0,this.w,this.h)
             )
-            override_canvas_context(this.app.art_context, this.app.staging_canvas)
             this.from = null;
             override_canvas_context(this.app.staging_context, this.app.art_canvas)
             override_canvas_context(this.app.staging_context, this.app.tool_canvas, true)
             override_canvas_context(this.app.view_context, this.app.staging_canvas)
             this.dirty = false
         }
-
     }
     editing_stop() {
         // nop, implemenet me
     }
-
 
 }

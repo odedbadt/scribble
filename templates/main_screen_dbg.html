@@ -59,32 +59,37 @@
                 padding: 0;
                 margin: 0;
                 display: grid;
-                grid-template-columns: repeat(2, 300px);
-                grid-template-rows: repeat(2, 300px);
-                grid-gap: 100px;
+                grid-template-columns: repeat(4, 100px);
+                grid-template-rows: repeat(2, 100px);
+                grid-gap: 10px;
 
             }
             #view-canvas {
                 box-shadow: rgba(50, 50, 93, 0.25) 0px 13px 27px -5px, rgba(0, 0, 0, 0.3) 0px 8px 16px -8px;
                 cursor: crosshair;
-                width: 300px;
-                height: 300px;
+                width: 80px;
+                height: 80px;
 
             }
             #staging-canvas {
                 box-shadow: rgba(50, 50, 93, 0.25) 0px 13px 27px -5px, rgba(0, 0, 0, 0.3) 0px 8px 16px -8px;
-                width: 300px;
-                height: 300px;
+                width: 80px;
+                height: 80px;
             }
             #tool-canvas {
                 box-shadow: rgba(50, 50, 93, 0.25) 0px 13px 27px -5px, rgba(0, 0, 0, 0.3) 0px 8px 16px -8px;
-                width: 300px;
-                height: 300px;
+                width: 80px;
+                height: 80px;
             }
             #art-canvas {
                 box-shadow: rgba(50, 50, 93, 0.25) 0px 13px 27px -5px, rgba(0, 0, 0, 0.3) 0px 8px 16px -8px;
-                width: 300px;
-                height: 300px;
+                width: 80px;
+                height: 80px;
+            }
+            #dbg-canvas {
+                box-shadow: rgba(50, 50, 93, 0.25) 0px 13px 27px -5px, rgba(0, 0, 0, 0.3) 0px 8px 16px -8px;
+                width: 800px;
+                height: 80px;
             }
             #color-selector-div-back {
                 position: relative;
@@ -173,6 +178,7 @@
             }
             #dbg {
                 position: absolute;
+                visibility: hidden;
                 left: 200px;
                 top: 80vh;
                 opacity: 50%;
@@ -240,10 +246,11 @@
 
         </div>
         <div id="canvas-area">
-            <canvas id="view-canvas" width="300" height="300"></canvas>
-            <canvas id="tool-canvas" width="300" height="300"></canvas>
-            <canvas id="staging-canvas" width="300" height="300"></canvas>
-            <canvas id="art-canvas" width="300" height="300"></canvas>
+            <canvas id="view-canvas" width="80" height="80"></canvas>
+            <canvas id="tool-canvas" width="80" height="80"></canvas>
+            <canvas id="staging-canvas" width="80" height="80"></canvas>
+            <canvas id="art-canvas" width="80" height="80"></canvas>
+            <canvas id="dbg-canvas" width="800" height="80"></canvas>
 
 
        </div>
