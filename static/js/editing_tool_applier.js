@@ -61,16 +61,12 @@ export class EditingToolApplier {
             }
     }
     mousemove(event) {
-        // if (!!this.from && !!!event.buttons) {
-        //     return
-        // }
-        // if (!this.tool) {
-        //     return;
-        // }
-        this.app.tool_context.fillStyle = this.app.settings.fore_color;
-        this.app.tool_context.strokeStyle = this.app.settings.fore_color;
-        this.app.tool_context.lineWidth = this.app.settings.line_width;
-        this.app.tool_context.lineCap = 'round';
+        if (!!this.from && !!!event.buttons) {
+            return
+        }
+        if (!this.tool) {
+            return;
+        }
         if (!this.tool.is_incremental) {
             override_canvas_context(this.app.staging_context, this.app.art_canvas)
         }

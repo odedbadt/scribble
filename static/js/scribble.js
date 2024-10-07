@@ -8,8 +8,9 @@ export class ScribbleTool extends ClickAndDragTool{
         this.tmp_context.fillStyle = 'rgb(255,0,0,128)'
 
         this.tmp_context.beginPath();
+        const r = this.app.settings.line_width / 2;
         this.tmp_context.ellipse(
-            at[0],at[1],10,10,0,0,Math.PI*2);
+            at[0],at[1],r,r,0,0,Math.PI*2);
         this.tmp_context.fill()
 
     }

@@ -11,6 +11,11 @@ export default class ClickAndDragTool extends EditingTool{
     }
     start() {
         this.context.clearRect(0,0,this.w,this.h)
+        this.context.fillStyle = this.app.settings.fore_color;
+        this.context.strokeStyle = this.app.settings.fore_color;
+        this.context.lineWidth = this.app.settings.line_width;
+        this.context.lineCap = 'round';
+
         this.dirty = this.editing_start();
     }
     editing_start() {
