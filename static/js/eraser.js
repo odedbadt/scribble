@@ -1,6 +1,6 @@
 import ClickAndDragTool from "./click_and_drag_tool.js" 
 
-export class EraserTool  extends ClickAndDragTool{
+export class EraserTool extends ClickAndDragTool{
     constructor(context, applier) {
         super(context, applier, true);
         }

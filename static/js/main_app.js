@@ -23,7 +23,10 @@ class MainApp {
         this.staging_canvas = document.getElementById('staging-canvas');
         this.staging_context = this.staging_canvas.getContext('2d',{willReadFrequently:true});
         this.tool_canvas = document.getElementById('tool-canvas');
-        this.tool_context = this.tool_canvas.getContext('2d',{willReadFrequently:true});
+        this.tool_context = this.tool_canvas.getContext('2d');
+        this.tool_tmp_canvas = document.getElementById('tool-tmp-canvas');
+        this.tool_tmp_context = this.tool_tmp_canvas.getContext('2d');
+
         this.editor = new EditingToolApplier(this);
     }
     select_tool(tool_name) {

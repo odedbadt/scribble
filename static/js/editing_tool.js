@@ -8,12 +8,13 @@ export function override_canvas_context(context_to, canvas_from, keep) {
 }
 
 export class EditingTool {
-    constructor(context, applier, incremental) {
+    constructor(context, applier, tmp_context) {
             this.context = context;
             this.w = context.canvas.clientWidth;
             this.h = context.canvas.clientHeight;
             this.applier = applier;
             this.app = applier.app;
+            this.tmp_context = tmp_context;
         }
     select() {
         this.context.clearRect(0, 0, this.w, this.h)

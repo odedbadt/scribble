@@ -1,7 +1,7 @@
 import {EditingTool, override_canvas_context} from "./editing_tool.js"
 export default class ClickAndDragTool extends EditingTool{
-    constructor(context, applier, incremental) {
-            super(context, applier);
+    constructor(context, applier, incremental, tmp_context) {
+            super(context, applier, tmp_context);
             this.is_incremental = incremental;
             this.start = this.start.bind(this);
             this.action = this.action.bind(this);
@@ -21,9 +21,6 @@ export default class ClickAndDragTool extends EditingTool{
                                 this.applier.app.art_canvas)
         this.applier.app.tool_context.beginPath();
         this.dirty = !!this.editing_action(from,to) || this.dirty;
-        this.app.staging_context.drawImage(
-            this.app.tool_canvas,0,0
-        )
         if (!this.is_incremental) {
             override_canvas_context(this.app.staging_context, this.app.art_canvas)
         }
@@ -33,6 +30,17 @@ export default class ClickAndDragTool extends EditingTool{
         if (!this.is_incremental) {
             this.context.clearRect(0,0,this.w,this.h);
         }
+    }
+    hover(at) {
+        this.tmp_context.clearRect(0,0,this.w,this.h);
+        const dirty = this.hover_action(at)
+        if (dirty) {
+            override_canvas_context(this.app.view_context, this.app.tool_tmp_canvas, true);
+        }
+    }
+    hover_action() {
+        // nop
+        return false
     }
     editing_action() {
         throw new "Not fully implemented tool"

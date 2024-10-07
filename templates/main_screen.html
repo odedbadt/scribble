@@ -67,23 +67,15 @@
                 cursor: crosshair;
             }
             #staging-canvas {
-                position: absolute;
-                box-shadow: rgba(50, 50, 93, 0.25) 0px 13px 27px -5px, rgba(0, 0, 0, 0.3) 0px 8px 16px -8px;
-                left: 700px;
                 visibility: hidden;
             }
             #tool-canvas {
-                position: absolute;
-                left: 100px;
-                top:700px;
-                box-shadow: rgba(50, 50, 93, 0.25) 0px 13px 27px -5px, rgba(0, 0, 0, 0.3) 0px 8px 16px -8px;
+                visibility: hidden;
+            }
+            #tool-tmp-canvas {
                 visibility: hidden;
             }
             #art-canvas {
-                position: absolute;
-                box-shadow: rgba(50, 50, 93, 0.25) 0px 13px 27px -5px, rgba(0, 0, 0, 0.3) 0px 8px 16px -8px;
-                left: 700px;
-                top:700px;
                 visibility: hidden;
             }
             #color-selector-div-back {
@@ -234,6 +226,7 @@
             <canvas id="view-canvas" width="700" height="700"></canvas>
             <canvas id="staging-canvas" width="700" height="700"></canvas>
             <canvas id="tool-canvas" width="700" height="700"></canvas>
+            <canvas id="tool-tmp-canvas" width="700" height="700"></canvas>
             <canvas id="art-canvas" width="700" height="700"></canvas>
 
 

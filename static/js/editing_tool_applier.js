@@ -1,3 +1,4 @@
+
 import { ScribbleTool } from './scribble.js'
 import { EraserTool } from './eraser.js'
 import { ClearAllTool } from './clearall.js'
@@ -40,7 +41,7 @@ export class EditingToolApplier {
         if (!tool_js_class) {
             return;
         }
-        this.tool = new tool_js_class(app.tool_context, this)
+        this.tool = new tool_js_class(app.tool_context, this, app.tool_tmp_context)
         if (this.tool && this.tool.select) {
             this.dirty = !!this.tool.select() || this.dirty
         }
@@ -60,12 +61,12 @@ export class EditingToolApplier {
             }
     }
     mousemove(event) {
-        if (!!this.from && !!!event.buttons) {
-            return
-        }
-        if (!this.tool) {
-            return;
-        }
+        // if (!!this.from && !!!event.buttons) {
+        //     return
+        // }
+        // if (!this.tool) {
+        //     return;
+        // }
         this.app.tool_context.fillStyle = this.app.settings.fore_color;
         this.app.tool_context.strokeStyle = this.app.settings.fore_color;
         this.app.tool_context.lineWidth = this.app.settings.line_width;
@@ -76,11 +77,13 @@ export class EditingToolApplier {
         this.app.tool_context.beginPath();
         // Appply action
         if (this.from && this.tool.action) {
-            this.dirty =  !!this.tool.action(this.from, [event.offsetX, event.offsetY]) || this.dirty;
+            this.dirty = !!this.tool.action(this.from, [event.offsetX, event.offsetY]) || this.dirty;
         }
         override_canvas_context(this.app.view_context, this.app.staging_canvas)
-        this.app.view_context.beginPath()
-        this.app.view_context.fill()
+        if (this.tool.hover) {
+            this.tool.hover([event.offsetX, event.offsetY])
+            override_canvas_context(this.app.view_context, this.app.tool_tmp_canvas,true)
+        }
     }
     undo() {
         this.app.staging_context.clearRect(0,0,this.w, this.h);
