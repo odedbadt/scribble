@@ -116,6 +116,10 @@ class MainApp {
             })
         }
         )
+        this.view_canvas.addEventListener('contextmenu', (event) => {
+            event.preventDefault();
+        });
+
         // body
         document.body.addEventListener("keydown", (ev) =>
             this.editor.keydown(ev))
@@ -130,6 +134,7 @@ class MainApp {
             this.color_selector_context.drawImage(img, 0, 0, 60, 160);
         }
         const _this = this
+
         palette_canvas.onmousedown = (event) => {
             event.preventDefault()
             const color = this.color_selector_context.getImageData(event.offsetX, event.offsetY, 1, 1).data;
@@ -145,7 +150,7 @@ class MainApp {
         }
         palette_canvas.addEventListener('contextmenu', (event) => {
             event.preventDefault();
-          });
+        });
         document.getElementById('colorswap').addEventListener('click', () => {
             const tmp_back = _this.settings.back_color;
             _this.settings.back_color = _this.settings.fore_color;

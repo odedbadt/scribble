@@ -49,11 +49,9 @@ export class EditingToolApplier {
         this.tool = null;
     }
     mousedown(event) {
-        if (event.buttons != 1) {
-            return;
-        }
+        event.preventDefault()
         override_canvas_context(this.app.staging_context, this.app.art_canvas)
-        this.tool.start([event.offsetX, event.offsetY]);
+        this.tool.start([event.offsetX, event.offsetY], event.buttons);
     }
     mousemove(event) {
         if (event.buttons) {
