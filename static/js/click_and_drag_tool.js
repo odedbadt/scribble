@@ -24,6 +24,10 @@ export default class ClickAndDragTool extends EditingTool{
         // nop, implemenet me
     }
     action(at) {
+        if (!this.is_incremental) {
+            override_canvas_context(this.app.staging_context, this.app.art_canvas)
+        }
+ 
         override_canvas_context(this.applier.app.staging_context,
                                 this.applier.app.art_canvas)
         this.applier.app.tool_context.beginPath();
@@ -39,6 +43,9 @@ export default class ClickAndDragTool extends EditingTool{
         }
     }
     hover(at) {
+        if (!this.tmp_context) {
+            return
+        }
         this.tmp_context.clearRect(0,0,this.w,this.h);
         const dirty = this.hover_action(at)
         if (dirty) {
