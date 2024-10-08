@@ -6,6 +6,7 @@ export default class ClickAndDragTool extends EditingTool{
             this.start = this.start.bind(this);
             this.action = this.action.bind(this);
             this.stop = this.stop.bind(this);
+            this.dirty = false;
         }
     select() {
     }

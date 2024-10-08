@@ -7,6 +7,7 @@ import { RectTool } from './rect.js'
 import { CircleTool } from './circle.js'
 import { Dropper } from './dropper.js'
 import { Floodfill } from './floodfill.js'
+import { NopTool } from './editing_tool.js'
 import { UndoRedoBuffer } from './undo_redo_buffer.js'
 const tool_js_classes = {
     scribble: ScribbleTool,
@@ -32,7 +33,7 @@ export class EditingToolApplier {
         this.w = this.app.art_canvas.width;
         this.h = this.app.art_canvas.height;
         this.undo_redo_buffer = new UndoRedoBuffer(100);
-        this.dirty = false
+        this.tool = new NopTool(app.tool_context, this, app.tool_tmp_context)
     }
     select_tool(tool_name) {
         this.previous_tool_name = this.current_tool_name;
@@ -42,9 +43,7 @@ export class EditingToolApplier {
             return;
         }
         this.tool = new tool_js_class(app.tool_context, this, app.tool_tmp_context)
-        if (this.tool && this.tool.select) {
-            this.dirty = !!this.tool.select() || this.dirty
-        }
+            this.tool.select()
     }
     deselect_tool() {
         this.tool = null;
@@ -54,27 +53,19 @@ export class EditingToolApplier {
             return;
         }
         override_canvas_context(this.app.staging_context, this.app.art_canvas)
-        this.from = [event.offsetX, event.offsetY];
-        if (this.tool && this.tool.start) {
-            this.tool.start(this.from);
-            this.dirty = true;
-            }
+//        this.from = [event.offsetX, event.offsetY];
+        this.tool.start(this.from);
     }
     mousemove(event) {
-        if (!!this.from && !!!event.buttons) {
+        if (!event.buttons) {
             return
-        }
-        if (!this.tool) {
-            return;
         }
         if (!this.tool.is_incremental) {
             override_canvas_context(this.app.staging_context, this.app.art_canvas)
         }
         this.app.tool_context.beginPath();
         // Appply action
-        if (this.from && this.tool.action) {
-            this.dirty = !!this.tool.action([event.offsetX, event.offsetY]) || this.dirty;
-        }
+        this.tool.action([event.offsetX, event.offsetY]);
         override_canvas_context(this.app.view_context, this.app.staging_canvas)
         if (this.tool.hover) {
             this.tool.hover([event.offsetX, event.offsetY])
@@ -112,9 +103,7 @@ export class EditingToolApplier {
     mouseup(event) {
         if (this.from) {
         }
-        if (this.tool && this.tool.stop) {
-            this.dirty = !!this.tool.stop() || this.dirty;
-        }
+        this.tool.stop();
     }
     mousein(event) {
         if (!!event.buttons) {
