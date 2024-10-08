@@ -1,9 +1,20 @@
 import ClickAndDragTool from "./click_and_drag_tool.js" 
 
 export class EraserTool extends ClickAndDragTool{
-    constructor(context, applier) {
-        super(context, applier, true);
+    constructor(context, applier, tmp_context) {
+        super(context, applier, true, tmp_context);
         }
+    hover_action(at) {
+        this.tmp_context.fillStyle = 'rgb(128,128,128,255)'
+        this.tmp_context.lineWidth = 1
+        this.tmp_context.beginPath();
+        const r = 25;//this.app.settings.line_width / 2;
+        this.tmp_context.ellipse(
+            at[0],at[1],r,r,0,0,Math.PI*2);
+        this.tmp_context.stroke()
+    
+    }
+    
     editing_action(to) {
         if (this._recorded_to) {
             this.context.strokeStyle = this.app.settings.back_color
