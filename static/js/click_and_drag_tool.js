@@ -9,7 +9,7 @@ export default class ClickAndDragTool extends EditingTool{
         }
     select() {
     }
-    start() {
+    start(at) {
         this.context.clearRect(0,0,this.w,this.h)
         this.context.fillStyle = this.app.settings.fore_color;
         this.context.strokeStyle = this.app.settings.fore_color;
@@ -17,15 +17,16 @@ export default class ClickAndDragTool extends EditingTool{
         this.context.lineCap = 'round';
 
         this.dirty = this.editing_start();
+        this.from = at
     }
     editing_start() {
         // nop, implemenet me
     }
-    action(from, to) {
+    action(at) {
         override_canvas_context(this.applier.app.staging_context,
                                 this.applier.app.art_canvas)
         this.applier.app.tool_context.beginPath();
-        this.dirty = !!this.editing_action(from,to) || this.dirty;
+        this.dirty = !!this.editing_action(this.from,at) || this.dirty;
         if (!this.is_incremental) {
             override_canvas_context(this.app.staging_context, this.app.art_canvas)
         }

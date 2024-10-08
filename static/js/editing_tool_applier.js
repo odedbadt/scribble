@@ -73,7 +73,7 @@ export class EditingToolApplier {
         this.app.tool_context.beginPath();
         // Appply action
         if (this.from && this.tool.action) {
-            this.dirty = !!this.tool.action(this.from, [event.offsetX, event.offsetY]) || this.dirty;
+            this.dirty = !!this.tool.action([event.offsetX, event.offsetY]) || this.dirty;
         }
         override_canvas_context(this.app.view_context, this.app.staging_canvas)
         if (this.tool.hover) {
