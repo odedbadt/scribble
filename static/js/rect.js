@@ -4,9 +4,9 @@ export class RectTool extends ClickAndDragTool {
     constructor(context, applier) {
         super(context, applier, false);
     }
-    editing_action(from, to) {
+    editing_action(to) {
         this.context.rect(
-                from[0],from[1],to[0] - from[0], to[1] - from[1]);
+                this.from[0],this.from[1],to[0] - this.from[0], to[1] - this.from[1]);
         this.context.fill();
         return true;
     }

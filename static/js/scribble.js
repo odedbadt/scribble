@@ -14,7 +14,7 @@ export class ScribbleTool extends ClickAndDragTool{
         this.tmp_context.fill()
 
     }
-    editing_action(from, to) {
+    editing_action(to) {
         if (this._recorded_to) {
         this.context.moveTo(
             this._recorded_to[0],this._recorded_to[1]);

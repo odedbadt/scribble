@@ -4,7 +4,7 @@ export class EraserTool extends ClickAndDragTool{
     constructor(context, applier) {
         super(context, applier, true);
         }
-    editing_action(from, to) {
+    editing_action(to) {
         if (this._recorded_to) {
             this.context.strokeStyle = this.app.settings.back_color
             this.context.lineWidth = 50

@@ -26,7 +26,7 @@ export default class ClickAndDragTool extends EditingTool{
         override_canvas_context(this.applier.app.staging_context,
                                 this.applier.app.art_canvas)
         this.applier.app.tool_context.beginPath();
-        this.dirty = !!this.editing_action(this.from,at) || this.dirty;
+        this.dirty = !!this.editing_action(at) || this.dirty;
         if (!this.is_incremental) {
             override_canvas_context(this.app.staging_context, this.app.art_canvas)
         }
