@@ -1,4 +1,4 @@
-import { EditingToolApplier } from './editing_tool_applier.js'
+import { EditingToolApplier, override_canvas_context } from './editing_tool_applier.js'
 function click_for_a_second(id, callback) {
     const elem = document.getElementById(id);
     elem.addEventListener('click', () =>{
@@ -42,6 +42,8 @@ class MainApp {
     init_load_save() {
         const art_canvas = this.art_canvas;
         const art_context = this.art_context
+        const view_context = this.view_context
+        const staging_context = this.staging_context
         click_for_a_second('save_button',() => {
             // Generate a PNG from the canvas
             art_canvas.toBlob(function(blob) {
@@ -51,7 +53,7 @@ class MainApp {
                 link.click();
             }, 'image/png');
         });
-        document.getElementById('file_input').addEventListener('change', function(event) {
+        document.getElementById('file_input').addEventListener('change', (event) =>{
             const file = event.target.files[0];
             if (file && file.type === 'image/png') {
                 const reader = new FileReader();
@@ -61,6 +63,8 @@ class MainApp {
                         // Clear canvas and draw the image
                         art_context.clearRect(0, 0, art_canvas.width, art_canvas.height);
                         art_context.drawImage(img, 0, 0, art_canvas.width, art_canvas.height);
+                        override_canvas_context(view_context, art_canvas)
+                        override_canvas_context(staging_context, art_canvas)
                     };
                     img.src = e.target.result;
                 };
@@ -69,9 +73,9 @@ class MainApp {
                 alert("Please select a valid PNG file.");
             }
         });
-        click_for_a_second('load_button',() => {
-        document.getElementById('file_input').click();
-        });
+        document.getElementById('load_button').addEventListener('click',() => {
+            document.getElementById('file_input').click()
+        })
     }
     init_undo_redo_buttons() {
         const _this = this;
@@ -176,5 +180,10 @@ class MainApp {
 export function app_ignite() {
     window.app = new MainApp();
     window.app.init();
+
+
+    
 }
+
+
 window.addEventListener('load', () => {app_ignite()});
