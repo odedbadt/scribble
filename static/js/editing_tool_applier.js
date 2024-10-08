@@ -57,13 +57,17 @@ export class EditingToolApplier {
     }
     mousemove(event) {
         if (event.buttons) {
-            return
+            this.tool.action([event.offsetX, event.offsetY]);
+            this.tool.hover([event.offsetX, event.offsetY])
+            override_canvas_context(this.app.view_context, this.app.tool_tmp_canvas,true)
+        } else {
+            this.tool.hover([event.offsetX, event.offsetY])
+            override_canvas_context(this.app.view_context, this.app.tool_tmp_canvas,true)
+            
         }
         // Appply action
-        this.tool.action([event.offsetX, event.offsetY]);
         override_canvas_context(this.app.view_context, this.app.staging_canvas)
         if (this.tool.hover) {
-            this.tool.hover([event.offsetX, event.offsetY])
             override_canvas_context(this.app.view_context, this.app.tool_tmp_canvas,true)
         }
     }
