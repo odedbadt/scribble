@@ -30,4 +30,8 @@ export default class ClickTool extends EditingTool {
     stop() {
     }
 
+    hover() {
+        
+    }
+
 }

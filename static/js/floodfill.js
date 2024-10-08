@@ -27,7 +27,7 @@ function _equal_colors(c1,c2) {
 function _floodfill(read_context, write_context, replaced_color, tool_color, x, y,w,h) {
     const context_image_data = read_context.getImageData(0, 0, w, h)
     const context_data =  context_image_data.data;
-    let safety = w*h*2
+    let safety = w*h*4;
     let stack = [[x,y]]
     while (stack.length > 0 && safety-- > 0) {
         const dot = stack.pop();
@@ -62,10 +62,10 @@ export class Floodfill extends ClickTool {
         this.applier = applier;
         this.app = applier.app;
     }
-    editing_start(from) {
-        const replaced_color = this.app.art_context.getImageData(from[0],from[1],1,1).data;
+    editing_start(at) {
+        const replaced_color = this.app.art_context.getImageData(at[0],at[1],1,1).data;
         const parsed_fore_color = _parse_RGBA(this.app.settings.fore_color);
-        _floodfill(this.app.art_context, this.context, replaced_color, parsed_fore_color,from[0],from[1], this.w, this.h);
+        _floodfill(this.app.art_context, this.context, replaced_color, parsed_fore_color,at[0],at[1], this.w, this.h);
         return true
     }
 }
