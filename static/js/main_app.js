@@ -72,6 +72,7 @@ class MainApp {
             } else {
                 alert("Please select a valid PNG file.");
             }
+            document.getElementById('file_input').value = '';
         });
         document.getElementById('load_button').addEventListener('click',() => {
             document.getElementById('file_input').click()
@@ -179,10 +180,7 @@ class MainApp {
 }
 export function app_ignite() {
     window.app = new MainApp();
-    window.app.init();
-
-
-    
+    window.app.init();    
 }
 
 
