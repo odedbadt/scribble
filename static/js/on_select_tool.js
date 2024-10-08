@@ -18,9 +18,9 @@ export default class OnSelectTool extends EditingTool{
         override_canvas_context(this.app.staging_context, this.app.tool_canvas, true)
         override_canvas_context(this.app.view_context, this.app.staging_canvas)
     }
-    start() {    
+    start(at) {    
     }
-    action(from, to) {
+    action(at) {
     }
     stop() {
     }
