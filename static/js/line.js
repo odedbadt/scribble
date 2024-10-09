@@ -4,11 +4,11 @@ export class LineTool  extends ClickAndDragTool {
     constructor(context, applier) {
         super(context, applier, false);
     }
-    editing_action(from, to) {
+    editing_action(at) {
         this.context.moveTo(
-            from[0],from[1]);
+            this.from[0],this.from[1]);
         this.context.lineTo(
-            to[0],to[1]);
+            at[0],at[1]);
         this.context.stroke();
     }
 }
