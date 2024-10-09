@@ -121,22 +121,37 @@ body {
     text-align: center;
 }
 .scribble {
-    background-image: url("/static/scribble.png");
+    background-image: url("/static/icons.png");
+    background-size: 200px 200px;
+    background-position: -5px -5px;
+    background-repeat: no-repeat;
+
 }
 .rect {
-    background-image: url("/static/rectangle.png");
+    background-image: url(/static/icons.png);
+    background-size: 200px 200px;
+    background-position: -52px -142px;
+    background-repeat: no-repeat;
 }
 .line {
-    background-image: url("/static/line.png");
+    background-image: url("/static/icons.png");
+    background-size: 200px 200px;
+    background-position: -97px -54px;
+    background-repeat: no-repeat;
 }
 .circle {
-    background-image: url("/static/circle.png");
-}
+    background-image: url(/static/icons.png);
+    background-size: 200px 200px;
+    background-position: -97px -5px;
+    background-repeat: no-repeat;}
 .dropper {
     background-image: url("/static/dropper.png");
 }
 .floodfill {
-    background-image: url("/static/floodfill.png");
+    background-image: url("/static/icons.png");
+    background-size: 200px 200px;
+    background-position: -5px -54px;
+    background-repeat: no-repeat;
 }
 .eraser {
     background-image: url("/static/eraser.png");
