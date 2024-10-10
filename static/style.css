@@ -24,24 +24,25 @@ body {
     margin: 0;
     display: grid;
     grid-template-columns: repeat(2, minmax(50px, 1fr));
-    grid-template-rows: 25px 25px repeat(9,50px) 200px 25px;
+    grid-template-rows: 25px repeat(10,50px) 200px 25px;
     grid-gap: 0;
     box-sizing: border-box;
 }
-.button, .buttonsize{
-    background-color: white;
-    box-shadow: inset 3px 3px 5px #eee, inset -3px -3px 5px #aaa; /* Emboss effect */
-
+.button, .buttonsize {
     width: 50px;
     height: 50px;
     background-size: contain;
     background-position: center;
-    background-repeat: no-repeat;            }
-.pressed {
-    background-color: #eee;
-    box-shadow: inset 3px 3px 5px #aaa, inset -3px -3px 5px #eee; /* Emboss effect */
+    background-repeat: no-repeat;            
+    background-color: rgb(220,220,209);
+    box-shadow: inset 0px  3px  5px rgb(151, 151, 140), 
+                inset 0px -3px 5px rgb(112, 112, 103); 
+}
+.button.pressed {
+    background-color: rgb(220,220,209);
+    box-shadow: inset 0px  -3px  5px rgb(151, 151, 140), 
+                inset 0px 3px    5px  rgb(112, 112, 103);
 
-    box-shadow: inset -3px -3px -5px #eee, inset 3px 3px -5px #aaa; /* Emboss effect */
 }
 #canvas-area {
     background-color:white;
@@ -145,7 +146,9 @@ body {
     background-position: -97px -5px;
     background-repeat: no-repeat;}
 .dropper {
-    background-image: url("/static/dropper.png");
+    background-image: url(/static/icons2.png);
+    background-size: 200px 200px;
+    background-position: -72px -9px
 }
 .floodfill {
     background-image: url("/static/icons.png");
@@ -154,25 +157,34 @@ body {
     background-repeat: no-repeat;
 }
 .eraser {
-    background-image: url("/static/eraser.png");
+    background-image: url(/static/icons3.png);
+    background-size: 100px 100px;
+    background-position: -9px -4px;
 }
 .clearall {
-    background-image: url("/static/clearall.png");
+    background-image: url(/static/icons2.png);
+    background-size: 200px 200px;
+    background-position: 0px -104px;
+
 }
 .menu-bar-button {
     background-color: white;
     box-shadow: inset 3px 3px 5px #eee, inset -3px -3px 5px #aaa; /* Emboss effect */
 }
-.undo,.redo, .save, .load {
+.save, .load {
     height: 25px;
     cursor: pointer;
     font-family: monospace;
 }
 .undo {
-    background-image: url("/static/undo.png");
+    background-image: url(/static/undoredo.png);
+    background-size: 100px 100px;
+    background-position: -4px -22px;
 }
 .redo {
-    background-image: url("/static/redo.png");
+    background-image: url("/static/undoredo.png");
+    background-size: 100px 100px;
+    background-position: -50px -22px;
 }
 #file_input {
     display: none;
