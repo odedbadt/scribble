@@ -5,7 +5,7 @@ export class ScribbleTool extends ClickAndDragTool{
             super(context, applier, true, tmp_context);
         }
     hover_action(at) {
-        this.tmp_context.fillStyle = 'rgb(255,0,0,128)'
+        this.tmp_context.fillStyle = this.app.settings.fore_color;
 
         this.tmp_context.beginPath();
         const r = this.app.settings.line_width / 2;
