@@ -5,6 +5,7 @@ import { ClearAllTool } from './clearall.js'
 import { LineTool } from './line.js'
 import { RectTool } from './rect.js'
 import { CircleTool } from './circle.js'
+import { CursorSize } from './cursor_size.js'
 import { Dropper } from './dropper.js'
 import { Floodfill } from './floodfill.js'
 import { NopTool } from './editing_tool.js'
@@ -18,6 +19,7 @@ const tool_js_classes = {
     floodfill: Floodfill,
     eraser: EraserTool,
     clearall:ClearAllTool,
+    cursor_size: CursorSize
 }
 export function override_canvas_context(context_to, canvas_from, keep) {
     if (!keep) {
@@ -65,9 +67,7 @@ export class EditingToolApplier {
         }
         // Appply action
         override_canvas_context(this.app.view_context, this.app.staging_canvas)
-        if (this.tool.hover) {
-            override_canvas_context(this.app.view_context, this.app.tool_tmp_canvas,true)
-        }
+        override_canvas_context(this.app.view_context, this.app.tool_tmp_canvas,true)
     }
     undo() {
         this.app.staging_context.clearRect(0,0,this.w, this.h);
