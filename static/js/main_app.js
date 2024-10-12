@@ -107,7 +107,7 @@ class MainApp {
         // canvas
         const fore = document.getElementById('fore');
         const canvas_area = document.getElementById('canvas-area');
-        ["mousedown", "mouseup","mouseout","mousemove", "click", "keydown"].forEach((ename) =>
+        ["mousedown", "mouseup","mouseout", "mouseleave", "mousemove", "click", "keydown"].forEach((ename) =>
         {
             canvas_area.addEventListener(ename, (ev) => {
                 if (this.editor[ename]) {
