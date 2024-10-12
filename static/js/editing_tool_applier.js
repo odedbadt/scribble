@@ -109,14 +109,10 @@ export class EditingToolApplier {
         //this.mouseup(event);
     }
     mouseleave(event) {
-       this.app.tool_tmp_context.clearRect(0,0,this.w,this.h);
-        override_canvas_context(this.app.view_context, this.app.art_canvas)
-        this.app.staging_context.clearRect(0,0,this.w,this.h);
-    }
-    commit() {
+        this.app.tool_tmp_context.clearRect(0,0,this.w,this.h);
         override_canvas_context(this.app.staging_context, this.app.art_canvas)
         override_canvas_context(this.app.staging_context, this.app.tool_canvas, true)
         override_canvas_context(this.app.view_context, this.app.staging_canvas)
-        override_canvas_context(this.app.art_context, this.app.staging_canvas)
+        //override_canvas_context(this.app.staging_context, this.app.tool_canvas, true)
     }
 }

@@ -106,7 +106,7 @@ class MainApp {
     forward_events_to_editor() {
         // canvas
         const fore = document.getElementById('fore');
-        const canvas_area = document.getElementById('canvas-area');
+        const canvas_area = document.getElementById('view-canvas');
         ["mousedown", "mouseup","mouseout", "mouseleave", "mousemove", "click", "keydown"].forEach((ename) =>
         {
             canvas_area.addEventListener(ename, (ev) => {
