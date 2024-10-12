@@ -1,4 +1,5 @@
-import {EditingTool, override_canvas_context} from "./editing_tool.js"
+import { EditingTool } from "./editing_tool.js"
+import { override_canvas_context } from "./utils";
 
 export default class ClickTool extends EditingTool {
     constructor(context, applier) {

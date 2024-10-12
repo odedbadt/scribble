@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "es6",                 // Specify ECMAScript target version
+    "module": "commonjs",            // Specify module code generation
+    "outDir": "./static/dist",         // Output directory for compiled files
+    "rootDir": "./src",              // Root directory of source files
+    "allowJs": true,                 // Allow JavaScript files to be compiled
+    "checkJs": false,                // Disable type checking on JavaScript files (set to true to enable)
+    "strict": true,                   // Enable strict type checking
+    "esModuleInterop": true           // Enable compatibility for CommonJS and ES Modules
+  },
+  "include": [
+    "src/**/*"                        // Include all files in the src directory
+  ],
+  "exclude": [
+    "node_modules"                   // Exclude node_modules
+  ]
+}
