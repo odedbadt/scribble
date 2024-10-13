@@ -142,7 +142,7 @@ body {
     background-size: 200px 200px;
     background-position: -97px -5px;
     background-repeat: no-repeat;}
-.dropper {
+.dropper, .cursor_size {
     background-image: url(/static/icons2.png);
     background-size: 200px 200px;
     background-position: -72px -9px

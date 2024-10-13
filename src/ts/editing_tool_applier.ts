@@ -10,6 +10,7 @@ import { Floodfill } from "./floodfill.js";
 import { LineTool } from "./line.js";
 import { RectTool } from "./rect.js";
 import { override_canvas_context } from "./utils.js";
+import { CursorSize } from './cursor_size.js'
 const v:new (...args:any[])=>EditingTool = ScribbleTool
  const tool_classes = new Map<string, new (...args:any[])=>EditingTool>
  ([
@@ -21,6 +22,7 @@ const v:new (...args:any[])=>EditingTool = ScribbleTool
     ,["floodfill",  Floodfill]
     ,["eraser",  EraserTool]
     ,["clearall", ClearAllTool]
+    ,["cursor_size", CursorSize]
  ])
 export class EditingToolApplier {
     app: any;
@@ -68,9 +70,7 @@ export class EditingToolApplier {
         }
         // Appply action
         override_canvas_context(this.app.view_context, this.app.staging_canvas);
-        if (this.tool.hover) {
-            override_canvas_context(this.app.view_context, this.app.tool_tmp_canvas, true);
-        }
+        override_canvas_context(this.app.view_context, this.app.tool_tmp_canvas, true);
     }
     undo() {
         this.app.staging_context.clearRect(0, 0, this.w, this.h);

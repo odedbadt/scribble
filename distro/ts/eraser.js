@@ -8,7 +8,7 @@ export class EraserTool extends ClickAndDragTool {
         this.tmp_context.strokeStyle = this.app.settings.fore_color;
         this.tmp_context.lineWidth = 1;
         this.tmp_context.beginPath();
-        const r = 25; //this.app.settings.line_width / 2;
+        const r = this.app.settings.line_width;
         this.tmp_context.ellipse(at.x, at.y, r, r, 0, 0, Math.PI * 2);
         this.tmp_context.fill();
         this.tmp_context.stroke();
@@ -17,7 +17,7 @@ export class EraserTool extends ClickAndDragTool {
     editing_action(to) {
         if (this._recorded_to) {
             this.context.strokeStyle = this.app.settings.back_color;
-            this.context.lineWidth = 50;
+            this.context.lineWidth = this.app.settings.line_width * 2;
             this.context.moveTo(this._recorded_to.x, this._recorded_to.y);
             this.context.lineTo(to.x, to.y);
         }
