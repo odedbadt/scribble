@@ -1,44 +1,27 @@
-import { UndoRedoBuffer } from "./undo_redo_buffer.js"
-import { EditingTool, NopTool } from './editing_tool.js'
-import { MainApp } from "./main_app.js";
-import { ScribbleTool } from "./scribble.js";
-import { CircleTool } from "./circle.js";
-import { ClearAllTool } from "./clearall.js";
-import { Dropper } from "./dropper.js";
-import { EraserTool } from "./eraser.js";
-import { Floodfill } from "./floodfill.js";
-import { LineTool } from "./line.js";
-import { RectTool } from "./rect.js";
-import { override_canvas_context } from "./utils.js";
-const v:new (...args:any[])=>EditingTool = ScribbleTool
- const tool_classes = new Map<string, new (...args:any[])=>EditingTool>
- ([
-     ["scribble", ScribbleTool]    
-    ,["rect",  RectTool]
-    ,["line",  LineTool]
-    ,["circle",  CircleTool]
-    ,["dropper",  Dropper]
-    ,["floodfill",  Floodfill]
-    ,["eraser",  EraserTool]
-    ,["clearall", ClearAllTool]
- ])
+import { UndoRedoBuffer } from './undo_redo_buffer';
+import { NopTool } from './editing_tool';
+import { ScribbleTool } from './scribble';
+import { override_canvas_context } from './utils';
+const v = ScribbleTool;
+const tool_classes = new Map([
+    ["scribble", ScribbleTool]
+    //      //,["rect",  RectTool]
+    //     // ,["line",  LineTool]
+    //     // ,["circle",  CircleTool]
+    //     // ,["dropper",  Dropper]
+    //     // ,["floodfill",  Floodfill]
+    //     // ,["eraser",  EraserTool]
+    //     // ,["clearall", ClearAllTool]]
+]);
 export class EditingToolApplier {
-    app: any;
-    w: any;
-    h: any;
-    undo_redo_buffer: UndoRedoBuffer<RenderingContext>;
-    tool: any;
-    previous_tool_name: any;
-    current_tool_name: any;
-    from: any;
-    constructor(app: MainApp) {
+    constructor(app) {
         this.app = app;
         this.w = this.app.art_canvas.width;
         this.h = this.app.art_canvas.height;
         this.undo_redo_buffer = new UndoRedoBuffer(100);
         this.tool = new NopTool(app.tool_context, this, app.tool_tmp_context);
     }
-    select_tool(tool_name:string) {
+    select_tool(tool_name) {
         this.previous_tool_name = this.current_tool_name;
         this.current_tool_name = tool_name;
         const tool_class = tool_classes.get(tool_name);
@@ -51,12 +34,12 @@ export class EditingToolApplier {
     deselect_tool() {
         this.tool = null;
     }
-    mousedown(event:MouseEvent) {
+    mousedown(event) {
         event.preventDefault();
         override_canvas_context(this.app.staging_context, this.app.art_canvas);
         this.tool.start({ x: event.offsetX, y: event.offsetY }, event.buttons);
     }
-    mousemove(event:MouseEvent) {
+    mousemove(event) {
         if (event.buttons) {
             this.tool.action({ x: event.offsetX, y: event.offsetY });
             this.tool.hover({ x: event.offsetX, y: event.offsetY });
@@ -92,7 +75,7 @@ export class EditingToolApplier {
             override_canvas_context(this.app.view_context, this.app.art_canvas);
         }
     }
-    keydown(event:KeyboardEvent) {
+    keydown(event) {
         if (event.code == 'KeyU') {
             this.undo();
         }
@@ -100,17 +83,17 @@ export class EditingToolApplier {
             this.redo();
         }
     }
-    mouseup(event:MouseEvent) {
+    mouseup(event) {
         if (this.from) {
         }
         this.tool.stop();
     }
-    mousein(event:MouseEvent) {
+    mousein(event) {
         if (!!event.buttons) {
         }
         //this.mouseup(event);
     }
-    mouseleave(event:MouseEvent) {
+    mouseleave(event) {
         this.app.tool_tmp_context.clearRect(0, 0, this.w, this.h);
         override_canvas_context(this.app.staging_context, this.app.art_canvas);
         override_canvas_context(this.app.staging_context, this.app.tool_canvas, true);
