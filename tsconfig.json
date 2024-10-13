@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
     "target": "es6",                 // Specify ECMAScript target version
-    "module": "commonjs",            // Specify module code generation
-    "outDir": "./static/dist",         // Output directory for compiled files
+    "module": "es6",            // Specify module code generation
+    "outDir": "./distro",         // Output directory for compiled files
     "rootDir": "./src",              // Root directory of source files
     "allowJs": true,                 // Allow JavaScript files to be compiled
     "checkJs": false,                // Disable type checking on JavaScript files (set to true to enable)

@@ -1,10 +1,12 @@
-import ClickAndDragTool from "./click_and_drag_tool.js" 
-
+import { ClickAndDragTool } from "./click_and_drag_tool.js" 
+import { EditingToolApplier } from "./editing_tool_applier.js";
 export class EraserTool extends ClickAndDragTool{
-    constructor(context, applier, tmp_context) {
+    private _recorded_to: any;
+    constructor(context:CanvasRenderingContext2D
+        , applier:EditingToolApplier, tmp_context:CanvasRenderingContext2D) {
         super(context, applier, true, tmp_context);
         }
-    hover_action(at) {
+    hover_action(at:Vector2):boolean {
         this.tmp_context.fillStyle = this.app.settings.back_color
         this.tmp_context.strokeStyle = this.app.settings.fore_color
         
@@ -12,30 +14,33 @@ export class EraserTool extends ClickAndDragTool{
         this.tmp_context.beginPath();
         const r = 25;//this.app.settings.line_width / 2;
         this.tmp_context.ellipse(
-            at[0],at[1],r,r,0,0,Math.PI*2);
+            at.x,at.y,r,r,0,0,Math.PI*2);
         this.tmp_context.fill()
         this.tmp_context.stroke()
+        return true
         
     
     }
     
-    editing_action(to) {
+    editing_action(to:Vector2) {
         if (this._recorded_to) {
             this.context.strokeStyle = this.app.settings.back_color
             this.context.lineWidth = 50
         this.context.moveTo(
-            this._recorded_to[0],this._recorded_to[1]);
+            this._recorded_to.x,this._recorded_to.y);
         this.context.lineTo(
-            to[0],to[1]);
+            to.x,to.y);
         }
         this._recorded_to = to;
         this.context.stroke();
         return true
 
     }
-    editing_start() {
+    editing_start():boolean {
+        return false
     }
-    editing_stop() {
+    editing_stop():boolean {
         this._recorded_to = null;
+        return false
     }
 }

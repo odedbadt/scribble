@@ -1,8 +1,10 @@
-import {EditingTool, override_canvas_context} from "./editing_tool.js"
+import {EditingTool } from "./editing_tool.js"
+import { EditingToolApplier } from "./editing_tool_applier.js";
+import { override_canvas_context } from "./utils.js";
 
-export default class OnSelectTool extends EditingTool{
-    constructor(context, applier) {
-            super(context, applier);
+export abstract class OnSelectTool extends EditingTool{
+    constructor(context:CanvasRenderingContext2D, applier:EditingToolApplier, tmp_context?:CanvasRenderingContext2D) {
+            super(context, applier, tmp_context);
             this.select = this.select.bind(this);
         }
     select() {
@@ -18,12 +20,5 @@ export default class OnSelectTool extends EditingTool{
         override_canvas_context(this.app.staging_context, this.app.tool_canvas, true)
         override_canvas_context(this.app.view_context, this.app.staging_canvas)
     }
-    start(at) {    
-    }
-    action(at) {
-    }
-    stop() {
-    }
-
-
+    abstract select_action():void
 }

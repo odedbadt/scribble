@@ -6,7 +6,7 @@ COMPLETELY EMPTY STACK WITH LINE DRWN:
  ^
 
 next_index: INDEX: -1
-ON SCREEN: A  
+ON SCREEN: A
 UNDO: NULL
 REDO: NULL
 
@@ -65,17 +65,13 @@ ABCDEF
 
 
 */
-export class UndoRedoBuffer<T> {
-    stack: T[];
-    next_index: number;
-    high_water_mark: number;
-    constructor(size:number, log_level?:number) {
+export class UndoRedoBuffer {
+    constructor(size, log_level) {
         this.stack = new Array(size);
         this.next_index = 0;
         this.high_water_mark = 0; // abuse of notation, h.w.m. of "next" actually
-        this.log(`INIT ${this.next_index}, ${this.high_water_mark}`)
+        this.log(`INIT ${this.next_index}, ${this.high_water_mark}`);
         //, ${v.data[0]}, ${v.data[1]}, ${v.data[2]}`)
-
     }
     dump_to_canvas() {
         // if (!this._log_level) {
@@ -85,7 +81,6 @@ export class UndoRedoBuffer<T> {
         // const context = canvas.getContext('2d');
         // context.fillStyle = 'rgb(128,128,128)';
         // context.fillRect(0,0,800,80)
-
         // for (let j = 0; j < this.high_water_mark; ++j) {
         //     const v = this.stack[j];
         //     if (v && v.data) {
@@ -102,9 +97,9 @@ export class UndoRedoBuffer<T> {
         // context.fillRect(this.next_index*82+20,60,5,10)
         // context.fillStyle = 'rgb(0,0,255)';
         // context.fillRect(this.high_water_mark*82+20,70,5,10)
-    } 
-    log(msg:string) {
-        console.log(msg)
+    }
+    log(msg) {
+        console.log(msg);
         // if (this._log_level) {
         //     console.log(msg)
         //     try {
@@ -112,46 +107,45 @@ export class UndoRedoBuffer<T> {
         //         document.getElementById('dbg').style.visibility = 'visible'
         //         document.getElementById('dbg').innerHTML = msg
         //     } catch {
-
         //     }
         // }
     }
-    undo():T|null {
-        if (this.next_index <=1) {
-            this.log(`UNDO RET ${this.next_index}, ${this.high_water_mark}`)
+    undo() {
+        if (this.next_index <= 1) {
+            this.log(`UNDO RET ${this.next_index}, ${this.high_water_mark}`);
             if (this.next_index == 1) {
                 this.next_index--;
             }
-            this.dump_to_canvas()
-            return null
+            this.dump_to_canvas();
+            return null;
         }
-        const v = this.stack[this.next_index-2] || null;
+        const v = this.stack[this.next_index - 2] || null;
         this.next_index--;
-        this.log(`UNDO ${this.next_index}, ${this.high_water_mark} `)
-        this.dump_to_canvas()
+        this.log(`UNDO ${this.next_index}, ${this.high_water_mark} `);
+        this.dump_to_canvas();
         return v;
     }
-    redo():T |null{
+    redo() {
         if (this.next_index >= this.high_water_mark) {
-            this.dump_to_canvas()
-            return null
+            this.dump_to_canvas();
+            return null;
         }
         const v = this.stack[this.next_index] || null;
         this.next_index++;
-        this.dump_to_canvas()
-        this.log(`REDO ${this.next_index}, ${this.high_water_mark}, `)
+        this.dump_to_canvas();
+        this.log(`REDO ${this.next_index}, ${this.high_water_mark}, `);
         return v;
     }
-    push(v:T) {
+    push(v) {
         this.stack[this.next_index] = v;
         this.next_index++;
         if (this.next_index > this.high_water_mark) {
             this.high_water_mark = this.next_index;
         }
         if (this.high_water_mark > this.stack.length) {
-            this.stack.length = this.stack.length*2;
+            this.stack.length = this.stack.length * 2;
         }
-        this.dump_to_canvas()
-        this.log(`PUSH ${this.next_index}, ${this.high_water_mark}, `)
+        this.dump_to_canvas();
+        this.log(`PUSH ${this.next_index}, ${this.high_water_mark}, `);
     }
 }

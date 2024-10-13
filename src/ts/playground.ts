@@ -1,4 +1,4 @@
-import { UndoRedoBuffer } from './undo_redo_buffer.js'
+import { UndoRedoBuffer } from "./undo_redo_buffer.js"
 function main() {
     const buf = new UndoRedoBuffer(10);
     for (var n=0; n<10; ++n) {

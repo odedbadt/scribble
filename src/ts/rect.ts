@@ -1,12 +1,13 @@
-import ClickAndDragTool from "./click_and_drag_tool.js" 
+import { ClickAndDragTool } from "./click_and_drag_tool.js" 
+import { EditingToolApplier } from "./editing_tool_applier.js";
 
 export class RectTool extends ClickAndDragTool {
-    constructor(context, applier) {
+    constructor(context:CanvasRenderingContext2D, applier:EditingToolApplier) {
         super(context, applier, false);
     }
-    editing_action(to) {
+    editing_action(to:Vector2) {
         this.context.rect(
-                this.from[0],this.from[1],to[0] - this.from[0], to[1] - this.from[1]);
+                this.from.x,this.from.y,to.x - this.from.x, to.y - this.from.y);
         this.context.fill();
         return true;
     }

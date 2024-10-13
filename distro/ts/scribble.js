@@ -1,14 +1,9 @@
-import {ClickAndDragTool} from './click_and_drag_tool.js'
-import { EditingToolApplier } from "./editing_tool_applier.js";
+import { ClickAndDragTool } from './click_and_drag_tool.js';
 export class ScribbleTool extends ClickAndDragTool {
-    private _recorded_to: any;
-    constructor(context: CanvasRenderingContext2D, 
-                applier: EditingToolApplier, 
-                tmp_context: CanvasRenderingContext2D) {
+    constructor(context, applier, tmp_context) {
         super(context, applier, true, tmp_context);
     }
-
-    hover_action(at: { x: any; y: any; }) {
+    hover_action(at) {
         if (!this.tmp_context) {
             return false;
         }
@@ -19,7 +14,7 @@ export class ScribbleTool extends ClickAndDragTool {
         this.tmp_context.fill();
         return true;
     }
-    editing_action(to: { x: any; y: any; }) {
+    editing_action(to) {
         if (this._recorded_to) {
             this.context.moveTo(this._recorded_to.x, this._recorded_to.y);
             this.context.lineTo(to.x, to.y);
@@ -28,9 +23,9 @@ export class ScribbleTool extends ClickAndDragTool {
         this.context.stroke();
         return true;
     }
-    editing_stop(at:Vector2):boolean {
+    editing_stop(at) {
         // nop, implemenet me
         this._recorded_to = null;
-        return false
+        return false;
     }
 }
