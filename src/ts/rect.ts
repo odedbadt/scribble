@@ -1,4 +1,4 @@
-import { ClickAndDragTool } from "./click_and_drag_tool.js" 
+import { ClickAndDragTool } from "./click_and_drag_tool.js"
 import { EditingToolApplier } from "./editing_tool_applier.js";
 
 export class RectTool extends ClickAndDragTool {
@@ -8,7 +8,7 @@ export class RectTool extends ClickAndDragTool {
     editing_action(to:Vector2) {
         if (!this.from) {
             return false;
-        }                
+        }
 
         this.context.rect(
                 this.from.x,this.from.y,to.x - this.from.x, to.y - this.from.y);

@@ -2,8 +2,8 @@ import {ClickAndDragTool} from './click_and_drag_tool.js'
 import { EditingToolApplier } from "./editing_tool_applier.js";
 export class ScribbleTool extends ClickAndDragTool {
     private _recorded_to: any;
-    constructor(context: CanvasRenderingContext2D, 
-                applier: EditingToolApplier, 
+    constructor(context: CanvasRenderingContext2D,
+                applier: EditingToolApplier,
                 tmp_context: CanvasRenderingContext2D) {
         super(context, applier, true, tmp_context);
     }

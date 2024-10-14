@@ -1,4 +1,4 @@
-import { ClickTool }from "./click_tool.js" 
+import { ClickTool }from "./click_tool.js"
 import { EditingToolApplier } from "./editing_tool_applier.js";
 
 function _parse_RGBA(color:string | Uint8ClampedArray):Uint8ClampedArray
@@ -26,8 +26,8 @@ function _equal_colors(c1:Uint8ClampedArray,c2:Uint8ClampedArray):boolean {
     c1[1] == c2[1] &&
     c1[2] == c2[2]
 }
-function _floodfill(read_context:CanvasRenderingContext2D, write_context:CanvasRenderingContext2D, 
-                    replaced_color:Uint8ClampedArray, tool_color:Uint8ClampedArray, 
+function _floodfill(read_context:CanvasRenderingContext2D, write_context:CanvasRenderingContext2D,
+                    replaced_color:Uint8ClampedArray, tool_color:Uint8ClampedArray,
                     x:number, y:number, w:number, h:number) {
     const context_image_data = read_context.getImageData(0, 0, w, h)
     const context_data =  context_image_data.data;
@@ -81,5 +81,5 @@ export class Floodfill extends ClickTool {
         _floodfill(this.app.art_context, this.context, replaced_color, parsed_fore_color,at.x,at.y, this.w, this.h);
         return true
     }
-    
+
 }

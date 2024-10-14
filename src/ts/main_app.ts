@@ -9,7 +9,7 @@ function click_for_a_second(id:string, callback:Function) {
             window.setTimeout(() => {
             elem.classList.remove('pressed')
             },120)
-    
+
         })
     }
 }
@@ -72,7 +72,7 @@ export class MainApp {
                     alert('invalid choice, not saving')
                     return
                 }
-                
+
                 const link = document.createElement('a');
                 link.href = URL.createObjectURL(blob);
                 link.download = 'image.png';  // Set the file name for download
@@ -84,7 +84,7 @@ export class MainApp {
             const input = event.target as HTMLInputElement;
 
             if (input
-                && input.files 
+                && input.files
                 && input.files.length > 0
                 && input.files[0]
                 && input.files[0].type === 'image/png') {
@@ -105,7 +105,7 @@ export class MainApp {
                 };
                 reader.readAsDataURL(file);
             } else {
-                alert("Please select a valid PNG file.");            
+                alert("Please select a valid PNG file.");
             }
             file_input.value = '';
         });
@@ -218,7 +218,7 @@ export class MainApp {
 }
 export function app_ignite() {
     (window as any).app = new MainApp();
-    (window as any).app.init();    
+    (window as any).app.init();
 }
 
 

@@ -1,5 +1,5 @@
 import { EditingToolApplier } from "./editing_tool_applier.js";
-import { OnSelectTool } from "./on_select_tool.js" 
+import { OnSelectTool } from "./on_select_tool.js"
 
 export class ClearAllTool extends OnSelectTool {
     start(at: Vector2, buttons:number):boolean {

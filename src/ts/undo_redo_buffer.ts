@@ -6,7 +6,7 @@ COMPLETELY EMPTY STACK WITH LINE DRWN:
  ^
 
 next_index: INDEX: -1
-ON SCREEN: A  
+ON SCREEN: A
 UNDO: NULL
 REDO: NULL
 
@@ -101,7 +101,7 @@ export class UndoRedoBuffer<T> {
         // context.fillRect(this.next_index*82+20,60,5,10)
         // context.fillStyle = 'rgb(0,0,255)';
         // context.fillRect(this.high_water_mark*82+20,70,5,10)
-    } 
+    }
     log(msg:string) {
         console.log(msg)
         // if (this._log_level) {

@@ -2,7 +2,7 @@ import { ClickAndDragTool } from "./click_and_drag_tool.js"
 import { override_canvas_context } from "./utils.js"
 import { EditingToolApplier } from "./editing_tool_applier.js";
 export class CursorSize  extends ClickAndDragTool {
-    constructor(context:CanvasRenderingContext2D, applier:EditingToolApplier, 
+    constructor(context:CanvasRenderingContext2D, applier:EditingToolApplier,
         tmp_context:CanvasRenderingContext2D) {
         super(context, applier, false, tmp_context);
     }
@@ -22,7 +22,7 @@ export class CursorSize  extends ClickAndDragTool {
         }
         if (!this.tmp_context) {
             return false;
-        }      
+        }
         this.app.tool_tmp_context.clearRect(0,0,this.w,this.h);
         override_canvas_context(this.app.staging_context, this.app.art_canvas);
         override_canvas_context(this.app.view_context, this.app.staging_canvas);
@@ -45,6 +45,6 @@ export class CursorSize  extends ClickAndDragTool {
         if (this.applier.previous_tool_name) {
             this.app.select_tool(this.applier.previous_tool_name)
         }
-        return false;        
+        return false;
     }
 }

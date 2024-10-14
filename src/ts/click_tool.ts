@@ -11,8 +11,8 @@ export abstract class ClickTool extends EditingTool {
     }
     start(at:Vector2, buttons:number):boolean {
         this.context.clearRect(0,0,this.w,this.h);
-        override_canvas_context(this.applier.app.staging_context, 
-                                this.applier.app.art_canvas)    
+        override_canvas_context(this.applier.app.staging_context,
+                                this.applier.app.art_canvas)
         this.editing_start(at, buttons);
         override_canvas_context(this.app.staging_context, this.app.tool_canvas, true)
         override_canvas_context(this.app.view_context, this.app.staging_canvas)

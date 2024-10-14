@@ -14,7 +14,7 @@ import { CursorSize } from './cursor_size.js'
 const v:new (...args:any[])=>EditingTool = ScribbleTool
  const tool_classes = new Map<string, new (...args:any[])=>EditingTool>
  ([
-     ["scribble", ScribbleTool]    
+     ["scribble", ScribbleTool]
     ,["rect",  RectTool]
     ,["line",  LineTool]
     ,["circle",  CircleTool]

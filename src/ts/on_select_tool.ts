@@ -9,8 +9,8 @@ export abstract class OnSelectTool extends EditingTool{
         }
     select() {
         this.context.clearRect(0,0,this.w,this.h);
-        override_canvas_context(this.applier.app.staging_context, 
-                                this.applier.app.art_canvas)    
+        override_canvas_context(this.applier.app.staging_context,
+                                this.applier.app.art_canvas)
         this.select_action();
         override_canvas_context(this.app.staging_context, this.app.tool_canvas, true)
         override_canvas_context(this.app.view_context, this.app.staging_canvas)

@@ -1,4 +1,4 @@
-import { ClickAndDragTool } from "./click_and_drag_tool.js" 
+import { ClickAndDragTool } from "./click_and_drag_tool.js"
 import { EditingToolApplier } from "./editing_tool_applier.js";
 export class EraserTool extends ClickAndDragTool{
     private _recorded_to: any;
@@ -9,11 +9,11 @@ export class EraserTool extends ClickAndDragTool{
     hover_action(at:Vector2):boolean {
         if (!this.tmp_context) {
             return false;
-        }                
+        }
 
         this.tmp_context.fillStyle = this.app.settings.back_color
         this.tmp_context.strokeStyle = this.app.settings.fore_color
-        
+
         this.tmp_context.lineWidth = 1
         this.tmp_context.beginPath();
         const r = this.app.settings.line_width;
@@ -22,10 +22,10 @@ export class EraserTool extends ClickAndDragTool{
         this.tmp_context.fill()
         this.tmp_context.stroke()
         return true
-        
-    
+
+
     }
-    
+
     editing_action(to:Vector2) {
         if (this._recorded_to) {
             this.context.strokeStyle = this.app.settings.back_color
