@@ -1,15 +1,13 @@
 import {EditingTool} from "./editing_tool.js"
 import { EditingToolApplier } from "./editing_tool_applier.js";
+import { MainApp } from "./main_app.js";
 import { override_canvas_context } from "./utils.js";
 
 export abstract class ClickAndDragTool extends EditingTool {
     is_incremental: boolean;
     dirty: boolean;
-    context: any;
-    app: any;
-    from: any;
-    applier: any;
-    tmp_context: any;
+    from: Vector2 | null;
+    tmp_context: CanvasRenderingContext2D | undefined;
     constructor(context: CanvasRenderingContext2D, applier: EditingToolApplier, incremental: boolean |  null, tmp_context?: CanvasRenderingContext2D) {
         super(context, applier, tmp_context);
         this.is_incremental = !!incremental;
@@ -17,6 +15,9 @@ export abstract class ClickAndDragTool extends EditingTool {
         this.action = this.action.bind(this);
         this.stop = this.stop.bind(this);
         this.dirty = false;
+        this.from = null;
+    }
+    select(): void {
     }
     start(at: Vector2, buttons:number):boolean {
         this.context.clearRect(0, 0, this.w, this.h);
@@ -33,9 +34,6 @@ export abstract class ClickAndDragTool extends EditingTool {
         return false;
     }
     action(at: Vector2):boolean {
-        if (!this.is_incremental) {
-            override_canvas_context(this.app.staging_context, this.app.art_canvas);
-        }
         override_canvas_context(this.applier.app.staging_context, this.applier.app.art_canvas);
         this.applier.app.tool_context.beginPath();
         this.dirty = !!this.editing_action(at) || this.dirty;
@@ -45,6 +43,7 @@ export abstract class ClickAndDragTool extends EditingTool {
         override_canvas_context(this.app.staging_context, this.app.art_canvas);
         override_canvas_context(this.app.staging_context, this.app.tool_canvas, true);
         override_canvas_context(this.app.view_context, this.app.staging_canvas);
+        override_canvas_context(this.app.view_context, this.app.tool_tmp_canvas, true);
         if (!this.is_incremental) {
             this.context.clearRect(0, 0, this.w, this.h);
         }

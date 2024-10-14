@@ -33,12 +33,14 @@ export class EditingToolApplier {
     previous_tool_name: any;
     current_tool_name: any;
     from: any;
+    private _last_hover_spot: Vector2 | null;
     constructor(app: MainApp) {
         this.app = app;
         this.w = this.app.art_canvas.width;
         this.h = this.app.art_canvas.height;
         this.undo_redo_buffer = new UndoRedoBuffer(100);
         this.tool = new NopTool(app.tool_context, this, app.tool_tmp_context);
+        this._last_hover_spot = null;
     }
     select_tool(tool_name:string) {
         this.previous_tool_name = this.current_tool_name;
@@ -49,6 +51,10 @@ export class EditingToolApplier {
         }
         this.tool = new tool_class(this.app.tool_context, this, this.app.tool_tmp_context);
         this.tool.select();
+        if (this._last_hover_spot) {
+            this.tool.hover(this._last_hover_spot);
+            override_canvas_context(this.app.view_context, this.app.tool_tmp_canvas, true);
+        }
     }
     deselect_tool() {
         this.tool = null;
@@ -59,6 +65,7 @@ export class EditingToolApplier {
         this.tool.start({ x: event.offsetX, y: event.offsetY }, event.buttons);
     }
     mousemove(event:MouseEvent) {
+        this._last_hover_spot = { x: event.offsetX, y: event.offsetY }
         if (event.buttons) {
             this.tool.action({ x: event.offsetX, y: event.offsetY });
             this.tool.hover({ x: event.offsetX, y: event.offsetY });
@@ -101,8 +108,7 @@ export class EditingToolApplier {
         }
     }
     mouseup(event:MouseEvent) {
-        if (this.from) {
-        }
+        this.tool.hover({ x: event.offsetX, y: event.offsetY });
         this.tool.stop();
     }
     mousein(event:MouseEvent) {
@@ -116,5 +122,6 @@ export class EditingToolApplier {
         override_canvas_context(this.app.staging_context, this.app.tool_canvas, true);
         override_canvas_context(this.app.view_context, this.app.staging_canvas);
         //override_canvas_context(this.app.staging_context, this.app.tool_canvas, true)
+        this._last_hover_spot = null
     }
 }

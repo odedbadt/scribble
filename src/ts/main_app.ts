@@ -42,7 +42,7 @@ export class MainApp {
         this.tool_tmp_context = this.tool_tmp_canvas.getContext('2d')! as CanvasRenderingContext2D;
         this.palette_canvas = document.getElementById('color-selector-canvas')!  as HTMLCanvasElement
         this.color_selector_element = this.palette_canvas;
-        this.color_selector_context = this.color_selector_element.getContext('2d')! as CanvasRenderingContext2D;
+        this.color_selector_context = this.color_selector_element.getContext('2d', {willReadFrequently:true})! as CanvasRenderingContext2D;
         this.editor = new EditingToolApplier(this);
         this.settings = {
             fore_color: 'rgba(0,0,0,255)',

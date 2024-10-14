@@ -6,6 +6,10 @@ export class RectTool extends ClickAndDragTool {
         super(context, applier, false);
     }
     editing_action(to:Vector2) {
+        if (!this.from) {
+            return false;
+        }                
+
         this.context.rect(
                 this.from.x,this.from.y,to.x - this.from.x, to.y - this.from.y);
         this.context.fill();

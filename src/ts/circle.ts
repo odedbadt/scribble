@@ -5,6 +5,9 @@ export class CircleTool  extends ClickAndDragTool {
         super(context, applier, false);
     }
     editing_action(at:Vector2) {
+        if (this.from == null) {
+            return false;
+        }
         const r = Math.sqrt((at.x - this.from.x)*(at.x - this.from.x)+
         (at.y - this.from.y)*(at.y - this.from.y))
         this.context.ellipse(

@@ -6,6 +6,9 @@ export class LineTool  extends ClickAndDragTool {
         super(context, applier, false);
     }
     editing_action(at:Vector2) {
+        if (!this.from) {
+            return false;
+        }                
         this.context.moveTo(
             this.from.x,this.from.y);
         this.context.lineTo(

@@ -1,17 +1,18 @@
 import { EditingToolApplier } from "./editing_tool_applier.js"
 import { MainApp } from "./main_app.js";
+
 export abstract class EditingTool {
     context: CanvasRenderingContext2D;
+    applier: EditingToolApplier;
     w: number;
     h: number;
-    applier: EditingToolApplier;
     app: MainApp;
     tmp_context: CanvasRenderingContext2D | undefined;
     constructor(context:CanvasRenderingContext2D, applier:EditingToolApplier, tmp_context?:CanvasRenderingContext2D) {
         this.context = context;
+        this.applier = applier;
         this.w = context.canvas.clientWidth;
         this.h = context.canvas.clientHeight;
-        this.applier = applier;
         this.app = applier.app;
         this.tmp_context = tmp_context;
     }

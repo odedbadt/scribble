@@ -7,6 +7,10 @@ export class EraserTool extends ClickAndDragTool{
         super(context, applier, true, tmp_context);
         }
     hover_action(at:Vector2):boolean {
+        if (!this.tmp_context) {
+            return false;
+        }                
+
         this.tmp_context.fillStyle = this.app.settings.back_color
         this.tmp_context.strokeStyle = this.app.settings.fore_color
         
