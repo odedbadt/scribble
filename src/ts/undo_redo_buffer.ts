@@ -73,7 +73,6 @@ export class UndoRedoBuffer<T> {
         this.stack = new Array(size);
         this.next_index = 0;
         this.high_water_mark = 0; // abuse of notation, h.w.m. of "next" actually
-        this.log(`INIT ${this.next_index}, ${this.high_water_mark}`)
         //, ${v.data[0]}, ${v.data[1]}, ${v.data[2]}`)
 
     }
@@ -118,7 +117,6 @@ export class UndoRedoBuffer<T> {
     }
     undo():T|null {
         if (this.next_index <=1) {
-            this.log(`UNDO RET ${this.next_index}, ${this.high_water_mark}`)
             if (this.next_index == 1) {
                 this.next_index--;
             }
@@ -127,7 +125,6 @@ export class UndoRedoBuffer<T> {
         }
         const v = this.stack[this.next_index-2] || null;
         this.next_index--;
-        this.log(`UNDO ${this.next_index}, ${this.high_water_mark} `)
         this.dump_to_canvas()
         return v;
     }
@@ -139,7 +136,6 @@ export class UndoRedoBuffer<T> {
         const v = this.stack[this.next_index] || null;
         this.next_index++;
         this.dump_to_canvas()
-        this.log(`REDO ${this.next_index}, ${this.high_water_mark}, `)
         return v;
     }
     push(v:T) {
@@ -152,6 +148,5 @@ export class UndoRedoBuffer<T> {
             this.stack.length = this.stack.length*2;
         }
         this.dump_to_canvas()
-        this.log(`PUSH ${this.next_index}, ${this.high_water_mark}, `)
     }
 }
