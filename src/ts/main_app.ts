@@ -142,9 +142,10 @@ export class MainApp {
         // canvas
         const fore = document.getElementById('fore')!!!;
         const canvas_area = document.getElementById('view-canvas')!!;
-        ["mousedown", "mouseup","mouseout", "mouseleave", "mousemove", "click", "keydown"].forEach((ename) =>
+        ["pointerdown", "pointerup","pointerout", "pointerleave", "pointermove", "click", "keydown"].forEach((ename) =>
         {
             canvas_area.addEventListener(ename, (ev) => {
+                ev.preventDefault()
                 if (this.editor[ename as keyof EditingToolApplier]) {
                     (this.editor[ename as keyof EditingToolApplier]  as Function)(ev);
                 }
@@ -168,7 +169,7 @@ export class MainApp {
         }
         const _this = this
 
-        this.palette_canvas.onmousedown = (event:MouseEvent) => {
+        this.palette_canvas.onpointerdown = (event:MouseEvent) => {
             event.preventDefault()
             const color = this.color_selector_context.getImageData(event.offsetX, event.offsetY, 1, 1).data;
             const sampled_color = `rgba(${color[0]},${color[1]},${color[2]},255)`;
@@ -207,8 +208,8 @@ export class MainApp {
         this.staging_context.fillStyle = "rgba(255,255,255,0)"
         this.staging_context.fillRect(0,0,this.staging_canvas.width,this.staging_canvas.height)
         this.clear_art_canvas();
-        // forward mouse
-        // bind mouse
+        // forward pointer
+        // bind pointer
         const _this = this;
         this.init_color_selector();
         this.init_buttons();
