@@ -209,6 +209,17 @@ export class MainApp {
     clear_art_canvas() {
         this.clear_context(this.art_context)
     }
+    init_view_canvas_size() {
+        const resizeObserver = new ResizeObserver(entries => {
+            entries.forEach(entry => {
+                // entry == view-canvas
+                console.log('Element resized:', entry.target);
+                console.log('New dimensions:', entry.contentRect.width, 'x', entry.contentRect.height);
+            })
+        })
+        resizeObserver.observe(document.getElementById('canvas-area')!);
+
+    }
     init() {
         // clear
         this.view_context.fillStyle = "rgba(255,255,255,0)"
@@ -222,7 +233,8 @@ export class MainApp {
         this.init_color_selector();
         this.init_buttons();
         this.forward_events_to_editor();
-        this.select_tool('scribble')
+        this.select_tool('scribble');
+        this.init_view_canvas_size();
     }
 }
 export function app_ignite() {
