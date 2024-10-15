@@ -59,12 +59,12 @@ export class EditingToolApplier {
     deselect_tool() {
         this.tool = null;
     }
-    mousedown(event:MouseEvent) {
+    pointerdown(event:MouseEvent) {
         event.preventDefault();
         override_canvas_context(this.app.staging_context, this.app.art_canvas);
         this.tool.start({ x: event.offsetX, y: event.offsetY }, event.buttons);
     }
-    mousemove(event:MouseEvent) {
+    pointermove(event:MouseEvent) {
         this._last_hover_spot = { x: event.offsetX, y: event.offsetY }
         if (event.buttons) {
             this.tool.action({ x: event.offsetX, y: event.offsetY });
@@ -107,16 +107,16 @@ export class EditingToolApplier {
             this.redo();
         }
     }
-    mouseup(event:MouseEvent) {
+    pointerup(event:MouseEvent) {
         this.tool.hover({ x: event.offsetX, y: event.offsetY });
         this.tool.stop();
     }
-    mousein(event:MouseEvent) {
+    pointerin(event:MouseEvent) {
         if (!!event.buttons) {
         }
-        //this.mouseup(event);
+        //this.pointerup(event);
     }
-    mouseleave(event:MouseEvent) {
+    pointerleave(event:MouseEvent) {
         this.app.tool_tmp_context.clearRect(0, 0, this.w, this.h);
         override_canvas_context(this.app.staging_context, this.app.art_canvas);
         override_canvas_context(this.app.staging_context, this.app.tool_canvas, true);
