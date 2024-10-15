@@ -60,6 +60,7 @@ body {
 #canvas-area canvas {
     width: 700px;
     height: 700px;
+    touch-action: none;
 }
 #view-canvas {
     position: absolute;
