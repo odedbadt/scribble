@@ -27,4 +27,7 @@ export class Dropper extends ClickTool{
         }
         return false
     }
+    hover(at:Vector2):boolean {
+        return false
+    }    
 }

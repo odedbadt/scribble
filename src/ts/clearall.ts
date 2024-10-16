@@ -22,6 +22,8 @@ export class ClearAllTool extends OnSelectTool {
         const h = this.context.canvas.clientHeight;
         this.context.fillStyle = this.app.settings.back_color;
         this.context.fillRect(0, 0, w, h);
-
     }
+    hover(at:Vector2):boolean {
+        return false
+    }    
 }

@@ -1,26 +1,7 @@
 import { ClickTool }from "./click_tool.js"
 import { EditingToolApplier } from "./editing_tool_applier.js";
+import { parse_RGBA } from "./utils.js";
 
-function _parse_RGBA(color:string | Uint8ClampedArray):Uint8ClampedArray
- {
-    if (color instanceof Uint8ClampedArray) {
-        return color
-    }
-    // Match the pattern for "rgb(r, g, b)"
-    let regex = /rgba\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)/;
-    // Execute the regex on the input string
-    let result = regex.exec(color);
-    if (result) {
-        // Return the extracted r, g, b values as an array of numbers
-        let r = parseInt(result[1]);
-        let g = parseInt(result[2]);
-        let b = parseInt(result[3]);
-        let a = parseInt(result[4]);
-        return Uint8ClampedArray.from([r, g, b,a]);
-    } else {
-        throw new Error("Invalid rgb string format");
-    }
-}
 function _equal_colors(c1:Uint8ClampedArray,c2:Uint8ClampedArray):boolean {
     return c1[0] == c2[0] &&
     c1[1] == c2[1] &&
@@ -32,7 +13,7 @@ function _floodfill(read_context:CanvasRenderingContext2D, write_context:CanvasR
     const context_image_data = read_context.getImageData(0, 0, w, h)
     const context_data =  context_image_data.data;
     let safety = w*h*4;
-    let stack = [{x:x,y:y}]
+    let stack = [{x:Math.floor(x),y:Math.floor(y)}]
     while (stack.length > 0 && safety-- > 0) {
         const dot = stack.pop();
         if (!dot) {
@@ -64,9 +45,11 @@ function _floodfill(read_context:CanvasRenderingContext2D, write_context:CanvasR
 }
 export class Floodfill extends ClickTool {
     action(at: Vector2): boolean {
+        return false;
         throw new Error("Method not implemented.");
     }
     stop(at: Vector2): boolean {
+        return false;
         throw new Error("Method not implemented.");
     }
     constructor(context:CanvasRenderingContext2D, applier:EditingToolApplier) {
@@ -77,9 +60,13 @@ export class Floodfill extends ClickTool {
     }
     editing_start(at:Vector2) {
         const replaced_color = this.app.art_context.getImageData(at.x,at.y,1,1).data;
-        const parsed_fore_color = _parse_RGBA(this.app.settings.fore_color);
+        const parsed_fore_color = parse_RGBA(this.app.settings.fore_color);
         _floodfill(this.app.art_context, this.context, replaced_color, parsed_fore_color,at.x,at.y, this.w, this.h);
         return true
     }
+    hover(at:Vector2):boolean {
+        return false
+    }
+
 
 }

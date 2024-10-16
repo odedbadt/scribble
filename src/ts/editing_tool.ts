@@ -22,6 +22,8 @@ export abstract class EditingTool {
     abstract start(at:Vector2, buttons:number):boolean;
     abstract action(at:Vector2):boolean;
     abstract stop(at:Vector2):boolean;
+    abstract hover(at:Vector2):boolean;
+
 }
 export class NopTool extends EditingTool {
     constructor(context:CanvasRenderingContext2D, applier:EditingToolApplier, tmp_context?:CanvasRenderingContext2D) {
@@ -39,4 +41,9 @@ export class NopTool extends EditingTool {
     stop(at:Vector2):boolean {
         return false
     }
+    hover(at:Vector2):boolean {
+        return false
+    }
+
+
 }
