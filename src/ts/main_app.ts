@@ -32,6 +32,7 @@ export class MainApp {
     constructor() {
         this.art_canvas = document.getElementById('art-canvas')! as HTMLCanvasElement;
         this.art_context = this.art_canvas.getContext('2d', {willReadFrequently:true}) as CanvasRenderingContext2D;
+
         this.view_canvas = document.getElementById('view-canvas')!  as HTMLCanvasElement;
         this.view_context = this.view_canvas.getContext('2d', {willReadFrequently:true})  as CanvasRenderingContext2D;
         this.staging_canvas = document.getElementById('staging-canvas')!  as HTMLCanvasElement;
@@ -39,7 +40,7 @@ export class MainApp {
         this.tool_canvas = document.getElementById('tool-canvas')!  as HTMLCanvasElement;
         this.tool_context = this.tool_canvas.getContext('2d')! as CanvasRenderingContext2D;
         this.tool_tmp_canvas = document.getElementById('tool-tmp-canvas')!  as HTMLCanvasElement;
-        this.tool_tmp_context = this.tool_tmp_canvas.getContext('2d')! as CanvasRenderingContext2D;
+        this.tool_tmp_context = this.tool_tmp_canvas.getContext('2d', {willReadFrequently:true})! as CanvasRenderingContext2D;
         this.palette_canvas = document.getElementById('color-selector-canvas')!  as HTMLCanvasElement
         this.color_selector_element = this.palette_canvas;
         this.color_selector_context = this.color_selector_element.getContext('2d', {willReadFrequently:true})! as CanvasRenderingContext2D;
@@ -49,6 +50,13 @@ export class MainApp {
             back_color: 'rgba(255,255,255,255)',
             line_width: 10
         }
+        this.art_context.imageSmoothingEnabled = false;
+        this.art_context.globalCompositeOperation = 'source-over';
+        this.staging_context.imageSmoothingEnabled = false;
+        this.staging_context.globalCompositeOperation = 'source-over';
+        this.tool_context.globalCompositeOperation = 'source-over';
+        this.tool_context.imageSmoothingEnabled = false;
+        this.color_selector_context.imageSmoothingEnabled = false;
     }
     select_tool(tool_name:string) {
         const _this = this;
