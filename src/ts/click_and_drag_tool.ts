@@ -41,9 +41,9 @@ export abstract class ClickAndDragTool extends EditingTool {
             override_canvas_context(this.app.staging_context, this.app.art_canvas);
         }
         override_canvas_context(this.app.staging_context, this.app.art_canvas);
-        override_canvas_context(this.app.staging_context, this.app.tool_canvas, true);
+        override_canvas_context(this.app.staging_context, this.app.tool_canvas, true, true);
         override_canvas_context(this.app.view_context, this.app.staging_canvas);
-        override_canvas_context(this.app.view_context, this.app.tool_tmp_canvas, true);
+        override_canvas_context(this.app.view_context, this.app.tool_tmp_canvas, true, true);
         if (!this.is_incremental) {
             this.context.clearRect(0, 0, this.w, this.h);
         }
