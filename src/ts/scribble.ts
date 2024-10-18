@@ -30,6 +30,7 @@ export class ScribbleTool extends ClickAndDragTool {
         return true;
     }
     editing_stop(at:Vector2):boolean {
-        return false
+        this._recorded_to = null;
+        return true
     }
 }
