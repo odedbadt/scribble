@@ -1,5 +1,5 @@
 import { ClickTool }from "./click_tool.js"
-import { EditingToolApplier } from "./editing_tool_applier.js";
+import { Editor } from "./editor.js";
 import { parse_RGBA } from "./utils.js";
 
 function _equal_colors(c1:Uint8ClampedArray,c2:Uint8ClampedArray):boolean {
@@ -52,11 +52,11 @@ export class Floodfill extends ClickTool {
         return false;
         throw new Error("Method not implemented.");
     }
-    constructor(context:CanvasRenderingContext2D, applier:EditingToolApplier) {
-        super(context, applier)
+    constructor(context:CanvasRenderingContext2D, editor:Editor) {
+        super(context, editor)
         this.context = context;
-        this.applier = applier;
-        this.app = applier.app;
+        this.editor = editor;
+        this.app = editor.app;
     }
     editing_start(at:Vector2) {
         const replaced_color = this.app.art_context.getImageData(at.x,at.y,1,1).data;

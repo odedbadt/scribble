@@ -1,8 +1,8 @@
-import { EditingToolApplier } from "./editing_tool_applier.js"
+import { Editor } from "./editor.js"
 import { ClickAndDragTool } from "./click_and_drag_tool.js"
 export class CircleTool  extends ClickAndDragTool {
-    constructor(context:CanvasRenderingContext2D, applier:EditingToolApplier) {
-        super(context, applier, false);
+    constructor(context:CanvasRenderingContext2D, editor:Editor) {
+        super(context, editor, false);
     }
     editing_action(at:Vector2) {
         if (this.from == null) {

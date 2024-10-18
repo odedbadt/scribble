@@ -1,5 +1,5 @@
 import {EditingTool} from "./editing_tool.js"
-import { EditingToolApplier } from "./editing_tool_applier.js";
+import { Editor } from "./editor.js";
 import { MainApp } from "./main_app.js";
 import { override_canvas_context } from "./utils.js";
 
@@ -8,8 +8,8 @@ export abstract class ClickAndDragTool extends EditingTool {
     dirty: boolean;
     from: Vector2 | null;
     tmp_context: CanvasRenderingContext2D | undefined;
-    constructor(context: CanvasRenderingContext2D, applier: EditingToolApplier, incremental: boolean |  null, tmp_context?: CanvasRenderingContext2D) {
-        super(context, applier, tmp_context);
+    constructor(context: CanvasRenderingContext2D, editor: Editor, incremental: boolean |  null, tmp_context?: CanvasRenderingContext2D) {
+        super(context, editor, tmp_context);
         this.is_incremental = !!incremental;
         this.start = this.start.bind(this);
         this.action = this.action.bind(this);
@@ -34,8 +34,8 @@ export abstract class ClickAndDragTool extends EditingTool {
         return false;
     }
     action(at: Vector2):boolean {
-        override_canvas_context(this.applier.app.staging_context, this.applier.app.art_canvas);
-        this.applier.app.tool_context.beginPath();
+        override_canvas_context(this.editor.app.staging_context, this.editor.app.art_canvas);
+        this.editor.app.tool_context.beginPath();
         this.dirty = !!this.editing_action(at) || this.dirty;
         if (!this.is_incremental) {
             override_canvas_context(this.app.staging_context, this.app.art_canvas);
@@ -72,7 +72,7 @@ export abstract class ClickAndDragTool extends EditingTool {
         this.dirty = !!this.editing_stop(at) || this.dirty;
         if (this.dirty) {
             override_canvas_context(this.app.art_context, this.app.staging_canvas);
-            this.applier.undo_redo_buffer.push(this.app.art_context.getImageData(0, 0, this.w, this.h));
+            this.editor.undo_redo_buffer.push(this.app.art_context.getImageData(0, 0, this.w, this.h));
             this.from = null;
             override_canvas_context(this.app.staging_context, this.app.art_canvas);
             override_canvas_context(this.app.staging_context, this.app.tool_canvas, true);

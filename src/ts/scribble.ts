@@ -1,12 +1,12 @@
 import {ClickAndDragTool} from './click_and_drag_tool.js'
-import { EditingToolApplier } from "./editing_tool_applier.js";
+import { Editor } from "./editor.js";
 import { parse_RGBA } from './utils.js';
 export class ScribbleTool extends ClickAndDragTool {
     private _recorded_to: any;
     constructor(context: CanvasRenderingContext2D,
-                applier: EditingToolApplier,
+                editor: Editor,
                 tmp_context: CanvasRenderingContext2D) {
-        super(context, applier, true, tmp_context);
+        super(context, editor, true, tmp_context);
     }
 
     hover_action(at: { x: any; y: any; }) {

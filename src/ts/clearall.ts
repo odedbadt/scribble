@@ -1,4 +1,4 @@
-import { EditingToolApplier } from "./editing_tool_applier.js";
+import { Editor } from "./editor.js";
 import { OnSelectTool } from "./on_select_tool.js"
 
 export class ClearAllTool extends OnSelectTool {
@@ -11,11 +11,11 @@ export class ClearAllTool extends OnSelectTool {
     stop(at: Vector2):boolean {
         throw new Error("Method not implemented.");
     }
-    constructor(context:CanvasRenderingContext2D, applier:EditingToolApplier) {
-        super(context, applier)
+    constructor(context:CanvasRenderingContext2D, editor:Editor) {
+        super(context, editor)
         this.context = context;
-        this.applier = applier;
-        this.app = applier.app;
+        this.editor = editor;
+        this.app = editor.app;
     }
     select_action() {
         const w = this.context.canvas.clientWidth;

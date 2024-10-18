@@ -1,5 +1,5 @@
 import { ClickTool } from  "./click_tool.js"
-import { EditingToolApplier } from "./editing_tool_applier.js";
+import { Editor } from "./editor.js";
 
 export class Dropper extends ClickTool{
     action(at: Vector2): boolean {
@@ -8,8 +8,8 @@ export class Dropper extends ClickTool{
     stop(at: Vector2): boolean {
         throw new Error("Method not implemented.");
     }
-    constructor(context:CanvasRenderingContext2D, applier:EditingToolApplier) {
-        super(context, applier);
+    constructor(context:CanvasRenderingContext2D, editor:Editor) {
+        super(context, editor);
         }
     editing_start(at:Vector2, buttons:number):boolean {
 
@@ -22,8 +22,8 @@ export class Dropper extends ClickTool{
             this.app.settings.back_color = sampled_color;
             document.getElementById('color-selector-div-back')!.style.backgroundColor = sampled_color
         }
-        if (this.applier.previous_tool_name) {
-            this.app.select_tool(this.applier.previous_tool_name)
+        if (this.editor.previous_tool_name) {
+            this.app.select_tool(this.editor.previous_tool_name)
         }
         return false
     }

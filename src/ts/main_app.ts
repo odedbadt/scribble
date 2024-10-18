@@ -1,4 +1,4 @@
-import { EditingToolApplier } from "./editing_tool_applier.js"
+import { Editor } from "./editor.js"
 import { override_canvas_context } from "./utils.js"
 function click_for_a_second(id:string, callback:Function) {
     const elem = document.getElementById(id);
@@ -24,7 +24,7 @@ export class MainApp {
     tool_context: CanvasRenderingContext2D;
     tool_tmp_canvas: HTMLCanvasElement;
     tool_tmp_context: CanvasRenderingContext2D;
-    editor: EditingToolApplier;
+    editor: Editor;
     color_selector_element: HTMLCanvasElement;
     color_selector_context: CanvasRenderingContext2D;
     settings: { fore_color: string; back_color: string; line_width: number; };
@@ -38,13 +38,13 @@ export class MainApp {
         this.staging_canvas = document.getElementById('staging-canvas')!  as HTMLCanvasElement;
         this.staging_context = this.staging_canvas.getContext('2d',{willReadFrequently:true})! as CanvasRenderingContext2D;
         this.tool_canvas = document.getElementById('tool-canvas')!  as HTMLCanvasElement;
-        this.tool_context = this.tool_canvas.getContext('2d')! as CanvasRenderingContext2D;
+        this.tool_context = this.tool_canvas.getContext('2d', {willReadFrequently:true})! as CanvasRenderingContext2D;
         this.tool_tmp_canvas = document.getElementById('tool-tmp-canvas')!  as HTMLCanvasElement;
         this.tool_tmp_context = this.tool_tmp_canvas.getContext('2d', {willReadFrequently:true})! as CanvasRenderingContext2D;
         this.palette_canvas = document.getElementById('color-selector-canvas')!  as HTMLCanvasElement
         this.color_selector_element = this.palette_canvas;
         this.color_selector_context = this.color_selector_element.getContext('2d', {willReadFrequently:true})! as CanvasRenderingContext2D;
-        this.editor = new EditingToolApplier(this);
+        this.editor = new Editor(this);
         this.settings = {
             fore_color: 'rgba(0,0,0,255)',
             back_color: 'rgba(255,255,255,255)',
@@ -154,8 +154,8 @@ export class MainApp {
         {
             canvas_area.addEventListener(ename, (ev) => {
                 ev.preventDefault()
-                if (this.editor[ename as keyof EditingToolApplier]) {
-                    (this.editor[ename as keyof EditingToolApplier]  as Function)(ev);
+                if (this.editor[ename as keyof Editor]) {
+                    (this.editor[ename as keyof Editor]  as Function)(ev);
                 }
             })
         }
@@ -212,9 +212,10 @@ export class MainApp {
     init_view_canvas_size() {
         const resizeObserver = new ResizeObserver(entries => {
             entries.forEach(entry => {
-                // entry == view-canvas
-                console.log('Element resized:', entry.target);
-                console.log('New dimensions:', entry.contentRect.width, 'x', entry.contentRect.height);
+                // asserting entry == view-canvas
+                const view_canvas = entry.target as HTMLCanvasElement;
+                view_canvas.width = entry.contentRect.width;
+                view_canvas.height = entry.contentRect.height;
             })
         })
         resizeObserver.observe(document.getElementById('canvas-area')!);

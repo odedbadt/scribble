@@ -24,7 +24,7 @@ const v:new (...args:any[])=>EditingTool = ScribbleTool
     ,["clearall", ClearAllTool]
     ,["cursor_size", CursorSize]
  ])
-export class EditingToolApplier {
+export class Editor {
     app: any;
     w: any;
     h: any;

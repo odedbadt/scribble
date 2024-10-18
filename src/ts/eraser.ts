@@ -1,10 +1,10 @@
 import { ClickAndDragTool } from "./click_and_drag_tool.js"
-import { EditingToolApplier } from "./editing_tool_applier.js";
+import { Editor } from "./editor.js";
 export class EraserTool extends ClickAndDragTool{
     private _recorded_to: any;
     constructor(context:CanvasRenderingContext2D
-        , applier:EditingToolApplier, tmp_context:CanvasRenderingContext2D) {
-        super(context, applier, true, tmp_context);
+        , editor:Editor, tmp_context:CanvasRenderingContext2D) {
+        super(context, editor, true, tmp_context);
         }
     hover_action(at:Vector2):boolean {
         if (!this.tmp_context) {
