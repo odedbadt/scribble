@@ -15,13 +15,7 @@ export class Dropper extends ClickTool{
 
         const color = this.app.art_context.getImageData(at.x,at.y,1,1).data;
         const sampled_color = `rgba(${color[0]},${color[1]},${color[2]},255)`;
-        if (buttons & 1) {
-            this.app.settings.fore_color = sampled_color;
-            document.getElementById('color-selector-div-fore')!.style.backgroundColor = sampled_color
-        } else if (buttons & 2){
-            this.app.settings.back_color = sampled_color;
-            document.getElementById('color-selector-div-back')!.style.backgroundColor = sampled_color
-        }
+        this.app.select_color(sampled_color, (buttons & 1) > 0, true)
         if (this.editor.previous_tool_name) {
             this.app.select_tool(this.editor.previous_tool_name)
         }

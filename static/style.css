@@ -24,11 +24,11 @@ body {
     margin: 0;
     display: grid;
     grid-template-columns: repeat(2, minmax(5vw, 1fr));
-    grid-template-rows: 5vw repeat(10,5vw) 200px 5vw;
+    grid-template-rows: 5vw repeat(8,5vw) repeat(4,2vw) 200px 5vw;
     grid-gap: 0;
     box-sizing: border-box;
 }
-.button, .buttonsize {
+.button, .buttonsize, .color_stack_item {
     width: 5vw;
     height: 5vw;
     background-size: contain;
@@ -37,6 +37,10 @@ body {
     background-color: rgb(220,220,209);
     box-shadow: inset 0px  3px  5px rgb(151, 151, 140), 
                 inset 0px -3px 5px rgb(112, 112, 103); 
+}
+.color_stack_item {
+    width: 5vw;
+    height: 2vw;
 }
 .button.pressed {
     background-color: rgb(220,220,209);
@@ -76,7 +80,7 @@ body {
 #color-selector-div-back {
     position: relative;
     width:100%;
-    height:180px;
+    height:15vw;
     padding: 10px;
     background-color:rgba(255,255,255,255);
     grid-column: span 2;
@@ -90,13 +94,18 @@ body {
     z-index:1;
 }
 #color-selector-canvas {
-    width: 60px;
-    height: 160px;
+    position: relative;
+    width:80%;
+    height:80%;
     border: 1px solid black inset;
     background-color: rgba(0, 0, 0,255) ;
     z-index:1;
     opacity: 0;
     position: absolute;
+    vertical-align: center;
+}
+#palette_canvas {
+    cursor: crosshair;
 }
 #color-selector-img-div {
     position: absolute;

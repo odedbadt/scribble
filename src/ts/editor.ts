@@ -76,11 +76,12 @@ export class Editor {
             override_canvas_context(this.app.view_context, this.app.tool_tmp_canvas, true);
         }
         // Appply action
+        
         override_canvas_context(this.app.view_context, this.app.staging_canvas);
         override_canvas_context(this.app.view_context, this.app.tool_tmp_canvas, true);
     }
     undo() {
-        this.app.staging_context.clearRect(0, 0, this.w, this.h);
+        override_canvas_context(this.app.staging_context, this.app.art_canvas);
         this.app.tool_context.clearRect(0, 0, this.w, this.h);
         const undone_image_data = this.undo_redo_buffer.undo();
         this.app.clear_art_canvas();

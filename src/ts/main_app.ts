@@ -29,6 +29,7 @@ export class MainApp {
     color_selector_context: CanvasRenderingContext2D;
     settings: { fore_color: string; back_color: string; line_width: number; };
     palette_canvas: HTMLCanvasElement;
+    color_stack: any;
     constructor() {
         this.art_canvas = document.getElementById('art-canvas')! as HTMLCanvasElement;
         this.art_context = this.art_canvas.getContext('2d', {willReadFrequently:true}) as CanvasRenderingContext2D;
@@ -57,6 +58,7 @@ export class MainApp {
         this.tool_context.globalCompositeOperation = 'source-over';
         this.tool_context.imageSmoothingEnabled = false;
         this.color_selector_context.imageSmoothingEnabled = false;
+        this.color_stack = new Array<string>(8);
     }
     select_tool(tool_name:string) {
         const _this = this;
@@ -168,12 +170,46 @@ export class MainApp {
         document.body.addEventListener("keydown", (ev) =>
             this.editor.keydown(ev))
     }
+    select_color(color:string, is_fore:boolean, update_stack:boolean) {
+        if (is_fore) {
+        this.settings.fore_color = color;
+        } else {
+            this.settings.back_color = color;
+        }
+        document.getElementById(is_fore ?
+            'color-selector-div-fore' :
+            'color-selector-div-back')!.style.backgroundColor = color;
+        if (update_stack) {
+            this.color_stack.push(color);
+            this.refresh_color_stack()
+
+        }
+ 
+    }
+    refresh_color_stack() {
+        const slots = document.getElementsByClassName('color_stack_item')
+        const l = this.color_stack.length;
+        const _this = this;
+        for (let j = 0; j < slots.length; ++j) {
+            const slot:HTMLElement = slots[j]! as HTMLElement
+            if (j < l) {
+                const color = this.color_stack.at(l-1-j)
+                slot.style.backgroundColor = color;
+                slot.addEventListener('click', (event) => {
+                    _this.select_color(color, event.button ==  0, false)
+                })
+            }
+        }
+    }
     init_color_selector() {
-        this.color_selector_context = this.palette_canvas.getContext('2d',{willReadFrequently:true})!;
         let img = new Image();
         img.src = "/static/palette.png";
+        this.palette_canvas.width = this.palette_canvas.offsetWidth;
+        this.palette_canvas.height = this.palette_canvas.offsetHeight;
+        const w = this.palette_canvas.width;
+        const h = this.palette_canvas.height;
         img.onload = () => {
-            this.color_selector_context.drawImage(img, 0, 0, 60, 160);
+            this.color_selector_context.drawImage(img, 0, 0, w, h);
         }
         const _this = this
 
@@ -181,6 +217,11 @@ export class MainApp {
             event.preventDefault()
             const color = this.color_selector_context.getImageData(event.offsetX, event.offsetY, 1, 1).data;
             const sampled_color = `rgba(${color[0]},${color[1]},${color[2]},255)`;
+            this.color_stack.push(sampled_color);
+            if (this.color_stack.length > 8) {
+                this.color_stack.shift();
+            }
+            this.refresh_color_stack()
             if (event.button == 0) {
                 _this.settings.fore_color = sampled_color;
                 _this.view_context.strokeStyle=sampled_color;
@@ -232,7 +273,7 @@ export class MainApp {
         // bind pointer
         const _this = this;
         this.init_color_selector();
-        this.init_buttons();
+        this.init_buttons();    
         this.forward_events_to_editor();
         this.select_tool('scribble');
         this.init_view_canvas_size();
