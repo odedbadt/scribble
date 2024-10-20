@@ -89,6 +89,7 @@ export class Editor {
             this.app.art_context.putImageData(undone_image_data, 0, 0);
         }
         override_canvas_context(this.app.view_context, this.app.art_canvas);
+        override_canvas_context(this.app.staging_context, this.app.art_canvas);
     }
     redo() {
         const redone_image_data = this.undo_redo_buffer.redo();
@@ -98,6 +99,7 @@ export class Editor {
             this.app.clear_art_canvas();
             this.app.art_context.putImageData(redone_image_data, 0, 0);
             override_canvas_context(this.app.view_context, this.app.art_canvas);
+            override_canvas_context(this.app.staging_context, this.app.art_canvas);
         }
     }
     keydown(event:KeyboardEvent) {

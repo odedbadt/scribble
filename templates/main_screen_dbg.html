@@ -4,15 +4,15 @@
         <style>
             #canvas-area {
                 display: grid;
-                grid-template-columns: repeat(4, 70px);
-                grid-template-rows: repeat(4, 70px);
+                grid-template-columns: repeat(2, 100px);
+                grid-template-rows: repeat(3, 100px);
                 grid-gap: 20px;
 
 
             }
             #canvas-area canvas {
-                width: 70px;
-                height: 70px;
+                width: 100px;
+                height: 100px;
             }
             #staging-canvas, #tool-canvas, #tool-tmp-canvas, #art-canvas {
                 visibility: visible;
@@ -82,11 +82,11 @@
             <div id="colorswap"><<-->></div>
         </div>
         <div id="canvas-area">
-            <canvas id="view-canvas" width="70" height="70"></canvas>
-            <canvas id="staging-canvas" width="70" height="70"></canvas>
-            <canvas id="tool-canvas" width="70" height="70"></canvas>
-            <canvas id="tool-tmp-canvas" width="70" height="70"></canvas>
-            <canvas id="art-canvas" width="70" height="70"></canvas>
+            <canvas id="view-canvas" width="100" height="100"></canvas>
+            <canvas id="staging-canvas" width="100" height="100"></canvas>
+            <canvas id="tool-canvas" width="100" height="100"></canvas>
+            <canvas id="tool-tmp-canvas" width="100" height="100"></canvas>
+            <canvas id="art-canvas" width="100" height="100"></canvas>
         </div>
         <input type="file" id="file_input" accept="image/png"/>
     </body>
