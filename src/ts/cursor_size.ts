@@ -16,6 +16,10 @@ export class CursorSize  extends ClickAndDragTool {
         this.tmp_context.lineCap = 'round';
         return false;
     }
+    start(at:Vector2, buttons:number):boolean {
+        this.app.settings.line_width = 1;
+        return false
+    }
     editing_action(at:Vector2) {
         if (this.from == null) {
             return false;
