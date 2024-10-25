@@ -180,8 +180,10 @@ export class MainApp {
             'color-selector-div-fore' :
             'color-selector-div-back')!.style.backgroundColor = color;
         if (update_stack) {
-            this.color_stack.push(color);
-            this.refresh_color_stack()
+            if (this.color_stack.indexOf(color) == -1) {
+                this.color_stack.push(color);
+                this.refresh_color_stack()
+            }
 
         }
  
