@@ -23,7 +23,7 @@ body {
     margin: 0;
     display: grid;
     grid-template-columns: repeat(2, 50px);
-    grid-template-rows: 25px repeat(8,50px) repeat(4,25px) 200px 1em;
+    grid-template-rows: 25px repeat(8,50px)  200px 1em;
     grid-gap: 0;
     box-sizing: border-box;
 }
@@ -33,9 +33,10 @@ body {
     left: 0px;    
 }
 #right-toolbar {
-    grid-template-columns: repeat(2, 50px);
+    grid-template-columns: repeat(1, 50px);
     grid-template-rows: repeat(10,50px);
     position: absolute;
+    width: 50px;
     right: 0px;    
 
 }
@@ -51,7 +52,7 @@ body {
 }
 .color_stack_item {
     width: 50px;
-    height: 25px;
+    height: 50px;
 
 }
 .button.pressed {
