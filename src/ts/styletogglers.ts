@@ -26,7 +26,10 @@ export class FillStyleToggler extends OnSelectTool {
     }
     select_action() {
         this.app.settings.filled = !this.app.settings.filled;
-        document.getElementsByClassName('fillstyle')[0].classList.toggle('filled')
+        const styled_buttons = document.getElementsByClassName('fillable')
+        for (let j = 0; j < styled_buttons.length; ++j) {
+            styled_buttons[j].classList.toggle('filled')
+        }
     }
 
 

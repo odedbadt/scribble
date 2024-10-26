@@ -147,14 +147,12 @@ body {
     background-repeat: no-repeat;
 
 }
-.rect.nonfilled {
-    background-image: url(/static/rect.png);
-    background-size: 200px 200px;
-    background-position: -52px -142px;
-    background-repeat: no-repeat;
-}
 .rect {
     background-image: url(/static/rect.png);
+    background-repeat: no-repeat;
+}
+.rect.filled{
+    background-image: url(/static/rect.filled.png);
     background-repeat: no-repeat;
 }
 
@@ -165,10 +163,14 @@ body {
     background-repeat: no-repeat;
 }
 .circle {
-    background-image: url(/static/icons.png);
-    background-size: 200px 200px;
-    background-position: -97px -5px;
-    background-repeat: no-repeat;}
+    background-image: url(/static/circle.png);
+    background-repeat: no-repeat;
+}
+.circle.filled {
+    background-image: url(/static/circle.filled.png);
+    background-repeat: no-repeat;
+}
+
 .dropper, .cursor_size {
     background-image: url(/static/icons2.png);
     background-size: 200px 200px;
