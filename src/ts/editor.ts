@@ -11,6 +11,8 @@ import { LineTool } from "./line.js";
 import { RectTool } from "./rect.js";
 import { override_canvas_context } from "./utils.js";
 import { CursorSize } from './cursor_size.js'
+import { FillStyleToggler } from './styletogglers.js'
+
 const v:new (...args:any[])=>EditingTool = ScribbleTool
  const tool_classes = new Map<string, new (...args:any[])=>EditingTool>
  ([
@@ -23,6 +25,7 @@ const v:new (...args:any[])=>EditingTool = ScribbleTool
     ,["eraser",  EraserTool]
     ,["clearall", ClearAllTool]
     ,["cursor_size", CursorSize]
+    ,["fillstyle", FillStyleToggler]
  ])
 export class Editor {
     app: any;

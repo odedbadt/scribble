@@ -12,7 +12,11 @@ export class CircleTool  extends ClickAndDragTool {
         (at.y - this.from.y)*(at.y - this.from.y))
         this.context.ellipse(
                 this.from.x,this.from.y,r,r,0,0,Math.PI*2);
-        this.context.fill();
+        if (this.app.settings.filled) {
+            this.context.fill();
+        } else {
+            this.context.stroke();
+        }
         return true;
 
     }

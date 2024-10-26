@@ -27,7 +27,9 @@ export class MainApp {
     editor: Editor;
     color_selector_element: HTMLCanvasElement;
     color_selector_context: CanvasRenderingContext2D;
-    settings: { fore_color: string; back_color: string; line_width: number; };
+    settings: {
+        filled: boolean; fore_color: string; back_color: string; line_width: number; 
+};
     palette_canvas: HTMLCanvasElement;
     color_stack: any;
     constructor() {
@@ -49,7 +51,9 @@ export class MainApp {
         this.settings = {
             fore_color: 'rgba(0,0,0,255)',
             back_color: 'rgba(255,255,255,255)',
-            line_width: 10
+            line_width: 10,
+            filled: true,
+
         }
         this.art_context.imageSmoothingEnabled = false;
         this.art_context.globalCompositeOperation = 'source-over';

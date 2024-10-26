@@ -1,7 +1,14 @@
-import { Editor } from "./editor.js";
 import { OnSelectTool } from "./on_select_tool.js"
+import { Editor } from "./editor.js";
+import { parse_RGBA } from "./utils.js";
 
-export class ClearAllTool extends OnSelectTool {
+function _equal_colors(c1:Uint8ClampedArray,c2:Uint8ClampedArray):boolean {
+    return c1[0] == c2[0] &&
+    c1[1] == c2[1] &&
+    c1[2] == c2[2]
+}
+
+export class FillStyleToggler extends OnSelectTool {
     start(at: Vector2, buttons:number):boolean {
         throw new Error("Method not implemented.");
     }
@@ -18,12 +25,9 @@ export class ClearAllTool extends OnSelectTool {
         this.app = editor.app;
     }
     select_action() {
-        const w = this.context.canvas.clientWidth;
-        const h = this.context.canvas.clientHeight;
-        this.context.fillStyle = this.app.settings.back_color;
-        this.context.fillRect(0, 0, w, h);
+        this.app.settings.filled = !this.app.settings.filled;
+        document.getElementsByClassName('fillstyle')[0].classList.toggle('filled')
     }
-    hover():boolean {
-        return false
-    }    
+
+
 }

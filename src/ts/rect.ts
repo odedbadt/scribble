@@ -12,7 +12,11 @@ export class RectTool extends ClickAndDragTool {
 
         this.context.rect(
                 this.from.x,this.from.y,to.x - this.from.x, to.y - this.from.y);
-        this.context.fill();
+        if (this.app.settings.filled) {
+            this.context.fill();
+        } else {
+            this.context.stroke();
+        }
         return true;
     }
 }
