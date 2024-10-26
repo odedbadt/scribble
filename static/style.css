@@ -152,6 +152,10 @@ body {
     background-image: url(/static/rect.png);
     background-repeat: no-repeat;
 }
+.mandala {
+    background-image: url(/static/mandala.png);
+    background-repeat: no-repeat;
+}
 .rect.filled{
     background-image: url(/static/rect.filled.png);
     background-repeat: no-repeat;
@@ -171,9 +175,14 @@ body {
     background-image: url(/static/circle.filled.png);
     background-repeat: no-repeat;
 }
+.dropper {
+    background-image: url(/static/linewidth.png);
+    background-size: 200px 200px;
+    background-position: -72px -9px
+}
 
-.dropper, .cursor_size {
-    background-image: url(/static/icons2.png);
+.cursor_size {
+    background-image: url(/static/linewidth.png);
     background-size: 200px 200px;
     background-position: -72px -9px
 }
