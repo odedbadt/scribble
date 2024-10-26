@@ -19,12 +19,11 @@ body {
     visibility: visible;
     border: 1px solid #dde;
     width: 100px;
-    height: 100vh;
     padding: 0;
     margin: 0;
     display: grid;
     grid-template-columns: repeat(2, minmax(50px, 1fr));
-    grid-template-rows: 25px repeat(8,50px) repeat(4,25px) 200px 25px;
+    grid-template-rows: 25px repeat(8,50px) repeat(4,25px) 200px 1em;
     grid-gap: 0;
     box-sizing: border-box;
 }
@@ -122,9 +121,12 @@ body {
 #colorswap {
     font-family: monospace;
     width: 100px;
-    height: 25px;
+    height: 2em;
     cursor: pointer;
-    text-align: center;
+    justify-content: center;
+    display: flex;
+    align-items: center;
+    color: #444;
 }
 .scribble {
     background-image: url("/static/icons.png");
