@@ -26,6 +26,7 @@ export abstract class ClickAndDragTool extends EditingTool {
         this.context.lineWidth = this.app.settings.line_width;
         this.context.lineCap = 'round';
         this.dirty = this.editing_start();
+        console.log(at)
         this.from = at;
         return false
     }

@@ -56,7 +56,6 @@ export class MainApp {
             back_color: 'rgba(255,255,255,255)',
             line_width: 10,
             filled: true,
-
         }
         this.art_context.imageSmoothingEnabled = false;
         this.art_context.globalCompositeOperation = 'source-over';
@@ -160,7 +159,7 @@ export class MainApp {
         // canvas
         const fore = document.getElementById('fore')!!!;
         const canvas_area = document.getElementById('view-canvas')!!;
-        ["pointerup", "pointerup","pointerout", "pointerleave", "pointermove", "click", "keydown"].forEach((ename) =>
+        ["pointerdown", "pointerup","pointerout", "pointerleave", "pointermove", "click", "keydown"].forEach((ename) =>
         {
             canvas_area.addEventListener(ename, (ev) => {
                 ev.preventDefault()
