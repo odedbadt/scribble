@@ -1,6 +1,6 @@
-import { OnSelectTool } from "./on_select_tool.js"
-import { Editor } from "./editor.js";
-import { parse_RGBA } from "./utils.js";
+import { OnSelectTool } from "./on_select_tool"
+import { Editor } from "./editor";
+import { parse_RGBA } from "./utils";
 
 function _equal_colors(c1:Uint8ClampedArray,c2:Uint8ClampedArray):boolean {
     return c1[0] == c2[0] &&

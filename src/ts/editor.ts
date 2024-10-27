@@ -1,18 +1,18 @@
-import { UndoRedoBuffer } from "./undo_redo_buffer.js"
-import { EditingTool, NopTool } from './editing_tool.js'
-import { MainApp } from "./main_app.js";
-import { ScribbleTool } from "./scribble.js";
-import { CircleTool } from "./circle.js";
-import { ClearAllTool } from "./clearall.js";
-import { Dropper } from "./dropper.js";
-import { EraserTool } from "./eraser.js";
-import { Floodfill } from "./floodfill.js";
-import { LineTool } from "./line.js";
-import { RectTool } from "./rect.js";
-import { override_canvas_context } from "./utils.js";
-import { CursorSize } from './cursor_size.js'
-import { FillStyleToggler } from './styletogglers.js'
-import { mandala } from "./mandala.js";
+import { UndoRedoBuffer } from "./undo_redo_buffer"
+import { EditingTool, NopTool } from './editing_tool'
+import { MainApp } from "./main_app";
+import { ScribbleTool } from "./scribble";
+import { CircleTool } from "./circle";
+import { ClearAllTool } from "./clearall";
+import { Dropper } from "./dropper";
+import { EraserTool } from "./eraser";
+import { Floodfill } from "./floodfill";
+import { LineTool } from "./line";
+import { RectTool } from "./rect";
+import { override_canvas_context } from "./utils";
+import { CursorSize } from './cursor_size'
+import { FillStyleToggler } from './styletogglers'
+import { mandala } from "./mandala";
 const v:new (...args:any[])=>EditingTool = ScribbleTool
  const tool_classes = new Map<string, new (...args:any[])=>EditingTool>
  ([

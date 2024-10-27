@@ -1,6 +1,6 @@
-import {EditingTool } from "./editing_tool.js"
-import { Editor } from "./editor.js";
-import { override_canvas_context } from "./utils.js";
+import {EditingTool } from "./editing_tool"
+import { Editor } from "./editor";
+import { override_canvas_context } from "./utils";
 
 export abstract class OnSelectTool extends EditingTool{
     constructor(context:CanvasRenderingContext2D, editor:Editor, tmp_context?:CanvasRenderingContext2D) {

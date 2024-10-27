@@ -1,5 +1,6 @@
-import { Editor } from "./editor.js"
-import { override_canvas_context } from "./utils.js"
+import { Editor } from "./editor"
+import { override_canvas_context } from "./utils"
+import { Palette} from './palette'
 function click_for_a_second(id:string, callback:Function) {
     const elem = document.getElementById(id);
     if (elem) {
@@ -32,6 +33,7 @@ export class MainApp {
 };
     palette_canvas: HTMLCanvasElement;
     color_stack: any;
+    palette: Palette;
     constructor() {
         this.art_canvas = document.getElementById('art-canvas')! as HTMLCanvasElement;
         this.art_context = this.art_canvas.getContext('2d', {willReadFrequently:true}) as CanvasRenderingContext2D;
@@ -46,6 +48,7 @@ export class MainApp {
         this.tool_tmp_context = this.tool_tmp_canvas.getContext('2d', {willReadFrequently:true})! as CanvasRenderingContext2D;
         this.palette_canvas = document.getElementById('color-selector-canvas')!  as HTMLCanvasElement
         this.color_selector_element = this.palette_canvas;
+        this.palette = new Palette(this.color_selector_element, .5)
         this.color_selector_context = this.color_selector_element.getContext('2d', {willReadFrequently:true})! as CanvasRenderingContext2D;
         this.editor = new Editor(this);
         this.settings = {
@@ -214,9 +217,10 @@ export class MainApp {
         this.palette_canvas.height = this.palette_canvas.offsetHeight;
         const w = this.palette_canvas.width;
         const h = this.palette_canvas.height;
-        img.onload = () => {
-            this.color_selector_context.drawImage(img, 0, 0, w, h);
-        }
+        this.palette.plot()
+        // img.onload = () => {
+        //     this.color_selector_context.drawImage(img, 0, 0, w, h);
+        // }
         const _this = this
 
         this.palette_canvas.onpointerdown = (event:MouseEvent) => {

@@ -1,5 +1,5 @@
-import { ClickAndDragTool } from "./click_and_drag_tool.js"
-import { Editor } from "./editor.js";
+import { ClickAndDragTool } from "./click_and_drag_tool"
+import { Editor } from "./editor";
 export class EraserTool extends ClickAndDragTool{
     private _recorded_to: any;
     constructor(context:CanvasRenderingContext2D

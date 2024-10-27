@@ -1,6 +1,6 @@
-import { ClickAndDragTool } from "./click_and_drag_tool.js"
-import { override_canvas_context } from "./utils.js"
-import { Editor } from "./editor.js";
+import { ClickAndDragTool } from "./click_and_drag_tool"
+import { override_canvas_context } from "./utils"
+import { Editor } from "./editor";
 export class CursorSize  extends ClickAndDragTool {
     constructor(context:CanvasRenderingContext2D, editor:Editor,
         tmp_context:CanvasRenderingContext2D) {

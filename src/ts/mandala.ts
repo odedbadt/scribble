@@ -1,6 +1,6 @@
-import {ClickAndDragTool} from './click_and_drag_tool.js'
-import { Editor } from "./editor.js";
-import { parse_RGBA } from './utils.js';
+import {ClickAndDragTool} from './click_and_drag_tool'
+import { Editor } from "./editor";
+import { parse_RGBA } from './utils';
 
 function rotate(v:Vector2, w:number, h:number, a:number, mirror?:boolean) {
     const v2:Vector2 = {

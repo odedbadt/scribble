@@ -1,5 +1,5 @@
-import { Editor } from "./editor.js"
-import { MainApp } from "./main_app.js";
+import { Editor } from "./editor"
+import { MainApp } from "./main_app";
 
 export abstract class EditingTool {
     context: CanvasRenderingContext2D;

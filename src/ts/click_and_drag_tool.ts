@@ -1,7 +1,7 @@
-import {EditingTool} from "./editing_tool.js"
-import { Editor } from "./editor.js";
-import { MainApp } from "./main_app.js";
-import { override_canvas_context } from "./utils.js";
+import {EditingTool} from "./editing_tool"
+import { Editor } from "./editor";
+import { MainApp } from "./main_app";
+import { override_canvas_context } from "./utils";
 
 export abstract class ClickAndDragTool extends EditingTool {
     is_incremental: boolean;

@@ -1,5 +1,5 @@
-import { ClickTool } from  "./click_tool.js"
-import { Editor } from "./editor.js";
+import { ClickTool } from  "./click_tool"
+import { Editor } from "./editor";
 
 export class Dropper extends ClickTool{
     action(at: Vector2): boolean {

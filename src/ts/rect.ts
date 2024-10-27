@@ -1,5 +1,5 @@
-import { ClickAndDragTool } from "./click_and_drag_tool.js"
-import { Editor } from "./editor.js";
+import { ClickAndDragTool } from "./click_and_drag_tool"
+import { Editor } from "./editor";
 
 export class RectTool extends ClickAndDragTool {
     constructor(context:CanvasRenderingContext2D, editor:Editor) {
