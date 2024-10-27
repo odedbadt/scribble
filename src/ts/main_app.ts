@@ -1,5 +1,5 @@
 import { Editor } from "./editor"
-import { override_canvas_context } from "./utils"
+import { dist2_to_set, override_canvas_context } from "./utils"
 import { Palette} from './palette'
 function click_for_a_second(id:string, callback:Function) {
     const elem = document.getElementById(id);
@@ -29,7 +29,9 @@ export class MainApp {
     settings: {
         filled: boolean; fore_color: string; back_color: string; line_width: number; 
 };
-    color_stack: any;
+    color_stack: Array<number[]>;
+    color_stack_max_capacity:number;
+    stack_entry_threshold:number;
     palette: Palette;
     palette_hl_canvas: HTMLCanvasElement;
     palette_sat_canvas: HTMLCanvasElement;
@@ -62,7 +64,9 @@ export class MainApp {
         this.staging_context.globalCompositeOperation = 'source-over';
         this.tool_context.globalCompositeOperation = 'source-over';
         this.tool_context.imageSmoothingEnabled = false;
-        this.color_stack = new Array<string>(8);
+        this.color_stack = new Array<number[]>();
+        this.color_stack_max_capacity = 8;
+        this.stack_entry_threshold = 10000;
     }
     select_tool(tool_name:string) {
         const _this = this;
@@ -156,7 +160,7 @@ export class MainApp {
         // canvas
         const fore = document.getElementById('fore')!!!;
         const canvas_area = document.getElementById('view-canvas')!!;
-        ["pointerdown", "pointerup","pointerout", "pointerleave", "pointermove", "click", "keydown"].forEach((ename) =>
+        ["pointerup", "pointerup","pointerout", "pointerleave", "pointermove", "click", "keydown"].forEach((ename) =>
         {
             canvas_area.addEventListener(ename, (ev) => {
                 ev.preventDefault()
@@ -174,24 +178,6 @@ export class MainApp {
         document.body.addEventListener("keydown", (ev) =>
             this.editor.keydown(ev))
     }
-    select_color(color:string, is_fore:boolean, update_stack:boolean) {
-        if (is_fore) {
-        this.settings.fore_color = color;
-        } else {
-            this.settings.back_color = color;
-        }
-        document.getElementById(is_fore ?
-            'color-selector-div-fore' :
-            'color-selector-div-back')!.style.backgroundColor = color;
-        if (update_stack) {
-            if (this.color_stack.indexOf(color) == -1) {
-                this.color_stack.push(color);
-                this.refresh_color_stack()
-            }
-
-        }
- 
-    }
     refresh_color_stack() {
         const slots = document.getElementsByClassName('color_stack_item')
         const l = this.color_stack.length;
@@ -200,29 +186,38 @@ export class MainApp {
             const slot:HTMLElement = slots[j]! as HTMLElement
             if (j < l) {
                 const color = this.color_stack.at(l-1-j)
-                slot.style.backgroundColor = color;
+                if (color == undefined) {
+                    continue;
+                }
+                const color_string = `rgba(${color[0]},${color[1]},${color[2]},255)`;
+                slot.style.backgroundColor = color_string;
                 slot.addEventListener('click', (event) => {
                     _this.select_color(color, event.button ==  0, false)
                 })
             }
         }
     }
-    color_chosen(color:number[], is_fore:boolean) {
-        const sampled_color = `rgba(${color[0]},${color[1]},${color[2]},255)`;
-        this.color_stack.push(sampled_color);
-        if (this.color_stack.length > 8) {
-            this.color_stack.shift();
-        }
-        this.refresh_color_stack()
-        if (is_fore) {
-            this.settings.fore_color = sampled_color;
-            this.view_context.strokeStyle=sampled_color;
-            document.getElementById('color-selector-div-fore')!.style.backgroundColor = sampled_color
-        } else  {
-            this.settings.back_color = sampled_color;
-            document.getElementById('color-selector-div-back')!.style.backgroundColor = sampled_color
-        }
 
+    select_color(color:number[], is_fore:boolean, update_stack?:boolean) {
+        if (update_stack) {
+            const d = dist2_to_set(color, this.color_stack);
+            if (d == null || d > this.stack_entry_threshold) {
+                this.color_stack.push(color);
+                if (this.color_stack.length > this.color_stack_max_capacity) {
+                    this.color_stack.shift();
+                }
+            }
+            this.refresh_color_stack()
+        }
+        const color_string = `rgba(${color[0]},${color[1]},${color[2]},255)`;
+        if (is_fore) {
+            this.settings.fore_color = color_string;
+            this.view_context.strokeStyle = color_string;
+            document.getElementById('color-selector-div-fore')!.style.backgroundColor = color_string
+        } else  {
+            this.settings.back_color = color_string;
+            document.getElementById('color-selector-div-back')!.style.backgroundColor = color_string
+        }
     }
     init_color_selector() {
         let img = new Image();
@@ -242,10 +237,11 @@ export class MainApp {
             event.preventDefault()
             palette.hl_click(event.offsetX, event.offsetY);
             const rgb_color = palette.get_rgb_color();
-            _this.color_chosen(rgb_color, event.button == 0);
+            _this.select_color(rgb_color, !!(event.buttons & 1), true);
         }
-        this.palette_hl_canvas.onpointermove = hl_callback
-        this.palette_hl_canvas.onpointermove = hl_callback
+        this.palette_hl_canvas.addEventListener('pointermove', hl_callback)
+        this.palette_hl_canvas.addEventListener('pointerup', hl_callback)
+        this.palette_hl_canvas.addEventListener('click', hl_callback)
         const sat_callback = (event:MouseEvent) => {
             if (event.buttons == 0) {
                 return
@@ -253,11 +249,14 @@ export class MainApp {
             event.preventDefault()
             palette.sat_click(event.offsetX, event.offsetY);
             const rgb_color = palette.get_rgb_color();
-            _this.color_chosen(rgb_color, event.button == 0);
+            _this.select_color(rgb_color, !!(event.buttons & 1), true);
         }
+        this.palette_sat_canvas.addEventListener('pointermove', sat_callback)
+        this.palette_sat_canvas.addEventListener('pointerup', sat_callback)
+        this.palette_sat_canvas.addEventListener('click', sat_callback)
 
         this.palette_sat_canvas.onpointermove = sat_callback
-        this.palette_sat_canvas.onpointerdown = sat_callback
+        this.palette_sat_canvas.onpointerup = sat_callback
         this.palette_hl_canvas.addEventListener('contextmenu', (event:MouseEvent) => {
             event.preventDefault();
         });

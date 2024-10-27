@@ -18,12 +18,9 @@ export class Palette {
         this._hsl_color = initial_color_hsl;
         this._sat_w = sat_canvas.width;
         this._sat_h = sat_canvas.height;
-        (hl_canvas.getContext('2d')!).imageSmoothingEnabled = false;
-        (sat_canvas.getContext('2d')!).imageSmoothingEnabled = false;
-
     }
     _plot_hl() {
-        const hl_context:CanvasRenderingContext2D = this._hl_canvas.getContext('2d')!
+        const hl_context:CanvasRenderingContext2D = this._hl_canvas.getContext('2d', {willReadFrequently:true})!
         const hl_image_data = hl_context.getImageData(0,0,this._hl_w, this._hl_h)
         const hl_data = hl_image_data.data;
         for (let y = 0; y < this._hl_h; ++y) {
@@ -44,7 +41,7 @@ export class Palette {
 
     }
     _plot_sat() {
-        const sat_context:CanvasRenderingContext2D = this._sat_canvas.getContext('2d')!
+        const sat_context:CanvasRenderingContext2D = this._sat_canvas.getContext('2d', {willReadFrequently:true})!
         const sat_image_data = sat_context.getImageData(0,0,this._sat_w, this._sat_h)
         const sat_data = sat_image_data.data;
         for (let y = 0; y < this._sat_h; ++y) {
@@ -76,7 +73,7 @@ export class Palette {
         return this._rgb_color;
     }
     _hl_canvas_xy_to_hl(x:number, y:number):number[] {
-        const h = 1.5*(x / this._hl_w) % 1 + 0.5;
+        const h = 2*(x / this._hl_w-0.5);
         const l = Math.min(1.0, Math.max(0, 0.5 + (y / this._hl_h - 0.5) * 1.25));
         return [h,l]
     }

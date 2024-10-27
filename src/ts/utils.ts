@@ -79,5 +79,45 @@ export function hsl_to_rgb(hsl:number[]):number[] {
 
     return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
 }
+export function vec_diff(v1:number[], v2:number[]):number[] {
+    if (!v1) {
+        return v2;
+    }
+    if (!v2) {
+        return v1;
+    }
+    let res = []
+    for (let j = 0; j < v1.length; ++j) {
+        res.push(v1[j] - v2[j])
+    }
+    return res
+}
+export function norm2(v:number[]):number {
+    let res = 0
+    for (let j = 0; j < v.length; ++j) {
+        res = res+v[j]*v[j]
+    }
+    return res
+}
+
+export function dist2(v1:number[], v2:number[]) {
+    return norm2(vec_diff(v1,v2));
+}
+
+export function dist2_to_set(v:number[], set:number[][]):(number|null) {
+    let min_dist2 = null; //dist2(v, set[0]);
+    let min_j = 0;
+    for (let j = 1; j < set.length; ++j) {
+        if (set[j] == undefined) {
+            continue
+        }
+        const dist2_j = dist2(v, set[j])
+        if (min_dist2 == null || dist2_j < min_dist2 ) {
+            min_dist2 = dist2_j;
+            min_j = j
+        }
+    }
+    return min_dist2
+}
 
 
