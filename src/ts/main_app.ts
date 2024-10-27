@@ -26,14 +26,13 @@ export class MainApp {
     tool_tmp_canvas: HTMLCanvasElement;
     tool_tmp_context: CanvasRenderingContext2D;
     editor: Editor;
-    color_selector_element: HTMLCanvasElement;
-    color_selector_context: CanvasRenderingContext2D;
     settings: {
         filled: boolean; fore_color: string; back_color: string; line_width: number; 
 };
-    palette_canvas: HTMLCanvasElement;
     color_stack: any;
     palette: Palette;
+    palette_hl_canvas: HTMLCanvasElement;
+    palette_sat_canvas: HTMLCanvasElement;
     constructor() {
         this.art_canvas = document.getElementById('art-canvas')! as HTMLCanvasElement;
         this.art_context = this.art_canvas.getContext('2d', {willReadFrequently:true}) as CanvasRenderingContext2D;
@@ -46,10 +45,9 @@ export class MainApp {
         this.tool_context = this.tool_canvas.getContext('2d', {willReadFrequently:true})! as CanvasRenderingContext2D;
         this.tool_tmp_canvas = document.getElementById('tool-tmp-canvas')!  as HTMLCanvasElement;
         this.tool_tmp_context = this.tool_tmp_canvas.getContext('2d', {willReadFrequently:true})! as CanvasRenderingContext2D;
-        this.palette_canvas = document.getElementById('color-selector-canvas')!  as HTMLCanvasElement
-        this.color_selector_element = this.palette_canvas;
-        this.palette = new Palette(this.color_selector_element, .5)
-        this.color_selector_context = this.color_selector_element.getContext('2d', {willReadFrequently:true})! as CanvasRenderingContext2D;
+        this.palette_hl_canvas = document.getElementById('hl-selector-canvas')!  as HTMLCanvasElement
+        this.palette_sat_canvas = document.getElementById('sat-selector-canvas')!  as HTMLCanvasElement
+        this.palette = new Palette(this.palette_hl_canvas, this.palette_sat_canvas, [1,0.5,0.5])
         this.editor = new Editor(this);
         this.settings = {
             fore_color: 'rgba(0,0,0,255)',
@@ -64,7 +62,6 @@ export class MainApp {
         this.staging_context.globalCompositeOperation = 'source-over';
         this.tool_context.globalCompositeOperation = 'source-over';
         this.tool_context.imageSmoothingEnabled = false;
-        this.color_selector_context.imageSmoothingEnabled = false;
         this.color_stack = new Array<string>(8);
     }
     select_tool(tool_name:string) {
@@ -210,38 +207,61 @@ export class MainApp {
             }
         }
     }
+    color_chosen(color:number[], is_fore:boolean) {
+        const sampled_color = `rgba(${color[0]},${color[1]},${color[2]},255)`;
+        this.color_stack.push(sampled_color);
+        if (this.color_stack.length > 8) {
+            this.color_stack.shift();
+        }
+        this.refresh_color_stack()
+        if (is_fore) {
+            this.settings.fore_color = sampled_color;
+            this.view_context.strokeStyle=sampled_color;
+            document.getElementById('color-selector-div-fore')!.style.backgroundColor = sampled_color
+        } else  {
+            this.settings.back_color = sampled_color;
+            document.getElementById('color-selector-div-back')!.style.backgroundColor = sampled_color
+        }
+
+    }
     init_color_selector() {
         let img = new Image();
         img.src = "/static/palette.png";
-        this.palette_canvas.width = this.palette_canvas.offsetWidth;
-        this.palette_canvas.height = this.palette_canvas.offsetHeight;
-        const w = this.palette_canvas.width;
-        const h = this.palette_canvas.height;
+        this.palette_hl_canvas.width = this.palette_hl_canvas.offsetWidth;
+        this.palette_hl_canvas.height = this.palette_hl_canvas.offsetHeight;
+        this.palette_sat_canvas.width = this.palette_sat_canvas.offsetWidth;
+        this.palette_sat_canvas.height = this.palette_sat_canvas.offsetHeight;
         this.palette.plot()
-        // img.onload = () => {
-        //     this.color_selector_context.drawImage(img, 0, 0, w, h);
-        // }
-        const _this = this
-
-        this.palette_canvas.onpointerdown = (event:MouseEvent) => {
+ 
+        const _this = this;
+        const palette = this.palette;
+        const hl_callback = (event:MouseEvent) => {
+            if (event.buttons == 0) {
+                return
+            }
             event.preventDefault()
-            const color = this.color_selector_context.getImageData(event.offsetX, event.offsetY, 1, 1).data;
-            const sampled_color = `rgba(${color[0]},${color[1]},${color[2]},255)`;
-            this.color_stack.push(sampled_color);
-            if (this.color_stack.length > 8) {
-                this.color_stack.shift();
-            }
-            this.refresh_color_stack()
-            if (event.button == 0) {
-                _this.settings.fore_color = sampled_color;
-                _this.view_context.strokeStyle=sampled_color;
-                document.getElementById('color-selector-div-fore')!.style.backgroundColor = sampled_color
-            } else if (event.button == 2) {
-                _this.settings.back_color = sampled_color;
-                document.getElementById('color-selector-div-back')!.style.backgroundColor = sampled_color
-            }
+            palette.hl_click(event.offsetX, event.offsetY);
+            const rgb_color = palette.get_rgb_color();
+            _this.color_chosen(rgb_color, event.button == 0);
         }
-        this.palette_canvas.addEventListener('contextmenu', (event:MouseEvent) => {
+        this.palette_hl_canvas.onpointermove = hl_callback
+        this.palette_hl_canvas.onpointermove = hl_callback
+        const sat_callback = (event:MouseEvent) => {
+            if (event.buttons == 0) {
+                return
+            }
+            event.preventDefault()
+            palette.sat_click(event.offsetX, event.offsetY);
+            const rgb_color = palette.get_rgb_color();
+            _this.color_chosen(rgb_color, event.button == 0);
+        }
+
+        this.palette_sat_canvas.onpointermove = sat_callback
+        this.palette_sat_canvas.onpointerdown = sat_callback
+        this.palette_hl_canvas.addEventListener('contextmenu', (event:MouseEvent) => {
+            event.preventDefault();
+        });
+        this.palette_sat_canvas.addEventListener('contextmenu', (event:MouseEvent) => {
             event.preventDefault();
         });
         document.getElementById('colorswap')!!.addEventListener('click', () => {

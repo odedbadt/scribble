@@ -106,28 +106,24 @@ body {
     padding: 10px;
     background-color:rgba(0,0,0,255);
     z-index:1;
+    display: grid;
+    grid-template-columns: 50px 10px;
+    grid-template-rows: 180px;
+
 }
-#color-selector-canvas {
-    width: 60px;
+#hl-selector-canvas {
+    width: 50px;
     height: 160px;
     border: 1px solid black inset;
     background-color: rgba(0, 0, 0,255) ;
-    position: absolute;
     cursor: crosshair;
 }
-#color-selector-img-div {
-    position: absolute;
-    top: 0px; /* Leave space from the top */
-    left: 0px; /* Leave space from the left */
-    right: 0px; /* Leave space from the right */
-    bottom: 0px; /* Leave space from the bottom */
-    background-image: url("palette.png");
-    background-position: center;
-    background-size: calc(100% - 20px) calc(100% - 20px); /* Subtract 20px from each side */
-    background-repeat: no-repeat;
-
-    z-index:0;
-
+#sat-selector-canvas {
+    width: 10px;
+    height: 160px;
+    border: 1px solid black inset;
+    background-color: rgba(0, 0, 0,255) ;
+    cursor: crosshair;
 }
 #colorswap {
     font-family: monospace;
