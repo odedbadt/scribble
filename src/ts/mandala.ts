@@ -40,12 +40,21 @@ export class mandala extends ClickAndDragTool {
         this.tmp_context.fillStyle = this.app.settings.fore_color;
         const tmp_context = this.tmp_context!;
         const _this = this;
-        this._angles.forEach((angle) => {
-            const rotated = rotate(at, _this.w, _this.h, angle);
-            tmp_context.beginPath();
-            const r = this.app.settings.line_width / 2;
-            tmp_context.ellipse(rotated.x, rotated.y, r, r, 0, 0, Math.PI * 2);
-            tmp_context.fill();
+        Array.from([true, false]).forEach((mirror) => {
+                this._angles.forEach((angle) => {
+                tmp_context.save()
+                tmp_context.translate(_this.w/2, _this.h/2);
+                tmp_context.rotate(angle);
+                if (mirror) {
+                    tmp_context.scale(-1,1);
+                }
+                tmp_context.translate(-_this.w/2, -_this.h/2);
+                tmp_context.beginPath();
+                const r = this.app.settings.line_width / 2;
+                tmp_context.ellipse(at.x, at.y, r, r, 0, 0, Math.PI * 2);
+                tmp_context.fill();
+                tmp_context.restore();
+            })
         })
         return true;
     }
@@ -53,16 +62,22 @@ export class mandala extends ClickAndDragTool {
         if (this._recorded_to) {
             const _this = this;
             Array.from([true, false]).forEach((mirror) => {
-            this._angles.forEach((angle) => {
-                const rotated_recorded = rotate(this._recorded_to, _this.w, _this.h, angle, mirror);
-                const rotated_to = rotate(to, _this.w, _this.h, angle, mirror);
-                _this.context.moveTo(rotated_recorded.x, rotated_recorded.y);
-                _this.context.lineTo(rotated_to.x, rotated_to.y);
-            });
+                this._angles.forEach((angle) => {
+                    _this.context.save()
+                    _this.context.translate(_this.w/2, _this.h/2);
+                    _this.context.rotate(angle);
+                    if (mirror) {
+                        _this.context.scale(-1,1);
+                    }
+                    _this.context.translate(-_this.w/2, -_this.h/2);
+                    _this.context.moveTo(_this._recorded_to.x, _this._recorded_to.y);
+                    _this.context.lineTo(to.x, to.y);
+                    _this.context.stroke();
+                    _this.context.restore();
+                });
         })
         }
         this._recorded_to = to;
-        this.context.stroke();
         return true;
     }
     editing_stop(at:Vector2):boolean {

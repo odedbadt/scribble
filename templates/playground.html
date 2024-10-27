@@ -8,46 +8,19 @@ function go() {
     
     const main_canvas = document.getElementById('main_canvas');
     const main_context = main_canvas.getContext('2d');
-    const offscreen_context = offscreen_canvas.getContext('2d');
-    main_context.imageSmoothingEnabled = false;
-    main_context.webkitImageSmoothingEnabled = false;
-    main_context.mozImageSmoothingEnabled = false;
-    main_context.clearRect(0,0,600,600);
-    offscreen_context.clearRect(0,0,600,600);
-
-    offscreen_canvas.fillStyle = 'red';
-    offscreen_context.beginPath();
-    offscreen_context.ellipse(100,100, 50,50, 0, 0, Math.PI * 2)
-    offscreen_context.fill();
-    offscreen_context.globalCompositeOperation = 'darker';
-
-// Draw a black rectangle over the entire canvas
-    offscreen_context.fillStyle = 'black';
-    offscreen_context.fillRect(0, 0, 600,600);
-    offscreen_context.globalCompositeOperation = 'source-over';
-    var offscreen_data = offscreen_context.getImageData(0,0,600,600).data;
-    main_context.drawImage(
-        offscreen_canvas,
-        50,50,100,100,
-        200,200,300,300)
-    // const zoom=3;
-    // for (var x=50; x<150; ++x) {
-    //     for (var y=50; y<150; ++y) {
-    //         var i = (y*600 + x)*4;
-    //         var r = offscreen_data[i  ];
-    //         var g = offscreen_data[i+1];
-    //         var b = offscreen_data[i+2];
-    //         var a = offscreen_data[i+3];
-    //         main_context.fillStyle = "rgba("+r+","+g+","+b+","+(a/255)+")";
-    //         main_context.fillRect(x*zoom,y*zoom,zoom,zoom);
-    //     }
-    // }
-    
-    
-
-
+    main_context.strokeStyle = 'black'
+    for (let j = 0; j < 100; j+=10) {
+        main_context.save()
+        main_context.translate(100,100)
+        main_context.rotate((Math.PI)/100*j)
+        main_context.translate(-100,-100)
+        main_context.beginPath()
+        main_context.moveTo(0,0)
+        main_context.lineTo(100,100)
+        main_context.stroke()
+        main_context.restore()
+    }
 }
-
 
 </script>
 <style>
