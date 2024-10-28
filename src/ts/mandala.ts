@@ -1,6 +1,7 @@
 import {ClickAndDragTool} from './click_and_drag_tool'
 import { Editor } from "./editor";
-import { parse_RGBA } from './utils';
+import { Filter } from './filter';
+import { override_canvas_context } from './utils';
 
 function rotate(v:Vector2, w:number, h:number, a:number, mirror?:boolean) {
     const v2:Vector2 = {
@@ -17,7 +18,7 @@ function rotate(v:Vector2, w:number, h:number, a:number, mirror?:boolean) {
     }
     return v4;
 }
-export class mandala extends ClickAndDragTool {
+export class Mandala extends ClickAndDragTool {
     private _recorded_to: any;
     private _n: number;
     private _angles: Array<number>;
@@ -75,7 +76,7 @@ export class mandala extends ClickAndDragTool {
                     _this.context.stroke();
                     _this.context.restore();
                 });
-        })
+            })
         }
         this._recorded_to = to;
         return true;
@@ -85,3 +86,36 @@ export class mandala extends ClickAndDragTool {
         return true
     }
 }
+export class MandalaFilter extends Filter {
+    override_canvas_context(context_to: CanvasRenderingContext2D, canvas_from: HTMLCanvasElement, keep?: boolean | undefined, avoid_native?: boolean | undefined): void {
+        const w = canvas_from.width;
+        const h = canvas_from.height;
+        
+        Array.from([true, false]).forEach((mirror) => {
+            this._angles.forEach((angle) => {
+                context_to.save()
+                context_to.translate(w/2, h/2);
+                context_to.rotate(angle);
+                if (mirror) {
+                    context_to.scale(-1,1);
+                }
+                context_to.translate(-w/2, -h/2);
+                override_canvas_context(context_to, canvas_from, true, false)
+                context_to.restore();
+            });
+        })
+        throw new Error('Method not implemented.');
+    }
+    _n: number;
+    _angles: number[];
+    constructor() {
+        super()
+        this._n = 8;
+        const angles = []; 
+        for (let j = 0; j < this._n;++j) {
+            angles.push(Math.PI*2*(j/this._n));
+        }
+        this._angles = Array.from(angles);
+    }
+}
+

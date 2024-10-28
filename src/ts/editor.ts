@@ -12,7 +12,7 @@ import { RectTool } from "./rect";
 import { override_canvas_context } from "./utils";
 import { CursorSize } from './cursor_size'
 import { FillStyleToggler } from './styletogglers'
-import { mandala } from "./mandala";
+import { Mandala } from "./mandala";
 const v:new (...args:any[])=>EditingTool = ScribbleTool
  const tool_classes = new Map<string, new (...args:any[])=>EditingTool>
  ([
@@ -26,7 +26,7 @@ const v:new (...args:any[])=>EditingTool = ScribbleTool
     ,["clearall", ClearAllTool]
     ,["cursor_size", CursorSize]
     ,["fillstyle", FillStyleToggler]
-    ,["mandala", mandala]
+    ,["mandala", Mandala]
  ])
 export class Editor {
     app: any;

@@ -1,6 +1,7 @@
 import {EditingTool} from "./editing_tool"
 import { Editor } from "./editor";
 import { MainApp } from "./main_app";
+import { MandalaFilter } from "./mandala";
 import { override_canvas_context } from "./utils";
 
 export abstract class ClickAndDragTool extends EditingTool {
@@ -8,12 +9,14 @@ export abstract class ClickAndDragTool extends EditingTool {
     dirty: boolean;
     from: Vector2 | null;
     tmp_context: CanvasRenderingContext2D | undefined;
+    filter: MandalaFilter;
     constructor(context: CanvasRenderingContext2D, editor: Editor, incremental: boolean |  null, tmp_context?: CanvasRenderingContext2D) {
         super(context, editor, tmp_context);
         this.is_incremental = !!incremental;
         this.start = this.start.bind(this);
         this.action = this.action.bind(this);
         this.stop = this.stop.bind(this);
+        this.filter = new MandalaFilter();
         this.dirty = false;
         this.from = null;
     }
@@ -42,7 +45,7 @@ export abstract class ClickAndDragTool extends EditingTool {
             override_canvas_context(this.app.staging_context, this.app.art_canvas);
         }
         override_canvas_context(this.app.staging_context, this.app.art_canvas);
-        override_canvas_context(this.app.staging_context, this.app.tool_canvas, true, true);
+        this.filter.override_canvas_context(this.app.staging_context, this.app.tool_canvas, true, true);
         override_canvas_context(this.app.view_context, this.app.staging_canvas);
         override_canvas_context(this.app.view_context, this.app.tool_tmp_canvas, true, true);
         if (!this.is_incremental) {
