@@ -1,4 +1,4 @@
-import { hsl_to_rgb } from "./utils";
+import { hsl_to_rgb, vec_diff } from "./utils";
 
 export class Palette {
     _hl_canvas: HTMLCanvasElement;
@@ -23,13 +23,23 @@ export class Palette {
         const hl_context:CanvasRenderingContext2D = this._hl_canvas.getContext('2d', {willReadFrequently:true})!
         const hl_image_data = hl_context.getImageData(0,0,this._hl_w, this._hl_h)
         const hl_data = hl_image_data.data;
+        console.log(this._hsl_color);
         for (let y = 0; y < this._hl_h; ++y) {
             for (let x = 0; x < this._hl_w; ++x) {
                 const hl = this._hl_canvas_xy_to_hl(x, y)
                 const h = hl[0];
                 const l = hl[1];
                 const hsl_val =  [h, this._hsl_color[1], l];
+                
                 const rgb_val = hsl_to_rgb(hsl_val);
+                if ((Math.abs(h - this._hsl_color[0]) <= 1/this._hl_w) || 
+                    (Math.abs(l - this._hsl_color[2]) <= 1/this._hl_h)) {
+                    // negative color
+                        const negative = vec_diff([255,255,255], rgb_val);
+                        rgb_val[0] = negative[0];
+                        rgb_val[1] = negative[1];
+                        rgb_val[2] = negative[2];
+                    }
                 const offset = 4*(x + y * this._hl_w)
                 hl_data[offset] = rgb_val[0]
                 hl_data[offset + 1] = rgb_val[1]
@@ -38,6 +48,7 @@ export class Palette {
             }
         }
         hl_context.putImageData(hl_image_data, 0, 0);
+
 
     }
     _plot_sat() {
@@ -48,6 +59,11 @@ export class Palette {
             for (let x = 0; x < this._sat_w; ++x) {
                 const sat = this._sat_canvas_to_sat(x, y);
                 const rgb_val = hsl_to_rgb([this._hsl_color[0], sat, this._hsl_color[2]]);
+                if (Math.abs(sat - this._hsl_color[1]) <= 0.01) {
+                    rgb_val[0] = 0;
+                    rgb_val[1] = 0;
+                    rgb_val[2] = 0;
+                }
                 const offset = 4*(x + y * this._sat_w);
                 sat_data[offset] = rgb_val[0];
                 sat_data[offset + 1] = rgb_val[1];
@@ -73,7 +89,7 @@ export class Palette {
         return this._rgb_color;
     }
     _hl_canvas_xy_to_hl(x:number, y:number):number[] {
-        const h = 2*(x / this._hl_w-0.5);
+        const h = 2*((x / this._hl_w+2.5) % 1);
         const l = Math.min(1.0, Math.max(0, 0.5 + (y / this._hl_h - 0.5) * 1.25));
         return [h,l]
     }

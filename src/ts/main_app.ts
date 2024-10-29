@@ -62,7 +62,7 @@ export class MainApp {
         this.staging_context.globalCompositeOperation = 'source-over';
         this.tool_context.globalCompositeOperation = 'source-over';
         this.tool_context.imageSmoothingEnabled = false;
-        this.color_stack = new ColorStack(this, 8, 2000,
+        this.color_stack = new ColorStack(this, 8, 10000,
             document.getElementById('color-selector-div-fore')!,
             document.getElementById('color-selector-div-back')!,
             document.getElementsByClassName('color_stack_item')
@@ -201,6 +201,7 @@ export class MainApp {
         }
         this.palette_hl_canvas.addEventListener('pointermove', hl_callback)
         this.palette_hl_canvas.addEventListener('pointerup', hl_callback)
+        this.palette_hl_canvas.addEventListener('pointerdown', hl_callback)
         this.palette_hl_canvas.addEventListener('click', hl_callback)
         const sat_callback = (event:MouseEvent) => {
             if (event.buttons == 0) {
@@ -212,6 +213,7 @@ export class MainApp {
             _this.color_stack.select_color(rgb_color, !!(event.buttons & 1), true);
         }
         this.palette_sat_canvas.addEventListener('pointermove', sat_callback)
+        this.palette_sat_canvas.addEventListener('pointerdown', sat_callback)
         this.palette_sat_canvas.addEventListener('pointerup', sat_callback)
         this.palette_sat_canvas.addEventListener('click', sat_callback)
 
