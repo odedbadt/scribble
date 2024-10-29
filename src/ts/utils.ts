@@ -104,18 +104,21 @@ export function dist2(v1:number[], v2:number[]) {
     return norm2(vec_diff(v1,v2));
 }
 
-export function dist2_to_set(v:number[], set:number[][]):(number|null) {
-    let min_dist2 = null; //dist2(v, set[0]);
+export function dist2_to_set(v:number[], set:number[][]):number {
+    let min_dist2 = -1; //dist2(v, set[0]);
     let min_j = 0;
-    for (let j = 1; j < set.length; ++j) {
+    for (let j = 0; j < set.length; ++j) {
         if (set[j] == undefined) {
             continue
         }
         const dist2_j = dist2(v, set[j])
-        if (min_dist2 == null || dist2_j < min_dist2 ) {
+        if (min_dist2 == -1 || dist2_j < min_dist2 ) {
             min_dist2 = dist2_j;
             min_j = j
         }
+    }
+    if (min_dist2 == -1) {
+        debugger
     }
     return min_dist2
 }

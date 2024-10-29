@@ -34,7 +34,7 @@ body {
 }
 #right-toolbar {
     grid-template-columns: repeat(1, 50px);
-    grid-template-rows: repeat(3,50px) repeat(8,30px);
+    grid-template-rows: repeat(3,50px) repeat(8,30px) 200px 100px 50px;
     position: absolute;
     width: 50px;
     right: 0px;    
@@ -93,34 +93,34 @@ body {
 }
 #color-selector-div-back {
     position: relative;
-    width:80px;
-    height:180px;
+    width:28px;
+    height:28px;
     padding: 10px;
+    border: solid 1px #aaa;
     background-color:rgba(255,255,255,255);
-    grid-column: span 2;
+    /* justify-content: center;
+    display: flex;
+    align-items: center; */
+
 }
 #color-selector-div-fore {
     position: relative;
-    width:60px;
-    height:160px;
-    padding: 10px;
+    width:30px;
+    height:30px;
     background-color:rgba(0,0,0,255);
     z-index:1;
-    display: grid;
-    grid-template-columns: 50px 10px;
-    grid-template-rows: 180px;
 
 }
 #hl-selector-canvas {
     width: 50px;
-    height: 160px;
+    height: 200px;
     border: 1px solid black inset;
     background-color: rgba(0, 0, 0,255) ;
     cursor: crosshair;
 }
 #sat-selector-canvas {
-    width: 10px;
-    height: 160px;
+    width: 50px;
+    height: 100px;
     border: 1px solid black inset;
     background-color: rgba(0, 0, 0,255) ;
     cursor: crosshair;

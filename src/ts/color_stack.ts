@@ -1,5 +1,5 @@
 import { MainApp } from "./main_app";
-import { dist2_to_set } from "./utils";
+import { dist2, dist2_to_set } from "./utils";
 
 export class ColorStack {
     _depth: number
@@ -7,21 +7,25 @@ export class ColorStack {
     _color_stack_items: HTMLCollectionOf<Element>;
     _color_selector_div_fore: HTMLElement;
     _color_selector_div_back: HTMLElement;
-    _stack_entry_threshold: number;
+    _pairwise_threshold: number;
     color_depth: any;
     settings: any;
     view_context: any;
     private _app: MainApp;
+    private _adjacent_threshold: number;
     constructor(
         app:MainApp, 
         depth:number, 
-        stack_entry_threshold:number,
+        pairwise_threshold:number,
+        adjacent_threshold:number,
         color_selector_div_fore:HTMLElement,
         color_selector_div_back:HTMLElement,
         color_stack_items:HTMLCollectionOf<Element>) {
         this._app = app
         this._depth = depth
-        this._stack_entry_threshold = stack_entry_threshold
+        this._pairwise_threshold = pairwise_threshold
+        this._adjacent_threshold = adjacent_threshold
+        
         this._stack = new Array<number[]>()
         this._color_stack_items = color_stack_items;
         this._color_selector_div_fore = color_selector_div_fore
@@ -50,12 +54,16 @@ export class ColorStack {
 
     select_color(color:number[], is_fore:boolean, update_stack?:boolean) {
         if (update_stack) {
-            const d = dist2_to_set(color, this._stack);
-            if (d == null || d > this._stack_entry_threshold) {
+            if (this._stack.length == 0 ||
+                dist2_to_set(color, this._stack) >this._pairwise_threshold &&
+                dist2(color,this._stack[this._stack.length-1]) > this._adjacent_threshold) {
                 this._stack.push(color);
                 if (this._stack.length > this._depth) {
                     this._stack.shift();
                 }
+            } else if (this._stack.length > 0) {
+                console.log(color, this._stack[this._stack.length-1], dist2(color,this._stack[this._stack.length-1]),dist2_to_set(color, this._stack))
+
             }
             this.refresh_color_stack()
         }

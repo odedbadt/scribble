@@ -23,7 +23,6 @@ export class Palette {
         const hl_context:CanvasRenderingContext2D = this._hl_canvas.getContext('2d', {willReadFrequently:true})!
         const hl_image_data = hl_context.getImageData(0,0,this._hl_w, this._hl_h)
         const hl_data = hl_image_data.data;
-        console.log(this._hsl_color);
         for (let y = 0; y < this._hl_h; ++y) {
             for (let x = 0; x < this._hl_w; ++x) {
                 const hl = this._hl_canvas_xy_to_hl(x, y)

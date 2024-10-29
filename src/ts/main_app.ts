@@ -28,7 +28,10 @@ export class MainApp {
     tool_tmp_context: CanvasRenderingContext2D;
     editor: Editor;
     settings: {
-        filled: boolean; fore_color: string; back_color: string; line_width: number; 
+        filled: boolean; 
+        fore_color: string; 
+        back_color: string; 
+        line_width: number; 
 };
     color_stack: ColorStack;
     palette: Palette;
@@ -62,7 +65,7 @@ export class MainApp {
         this.staging_context.globalCompositeOperation = 'source-over';
         this.tool_context.globalCompositeOperation = 'source-over';
         this.tool_context.imageSmoothingEnabled = false;
-        this.color_stack = new ColorStack(this, 8, 10000,
+        this.color_stack = new ColorStack(this, 8, 100,10000,
             document.getElementById('color-selector-div-fore')!,
             document.getElementById('color-selector-div-back')!,
             document.getElementsByClassName('color_stack_item')
@@ -225,7 +228,7 @@ export class MainApp {
         this.palette_sat_canvas.addEventListener('contextmenu', (event:MouseEvent) => {
             event.preventDefault();
         });
-        document.getElementById('colorswap')!!.addEventListener('click', () => {
+        document.getElementById('color-selector-div-back')!!.addEventListener('click', () => {
             const tmp_back = _this.settings.back_color;
             _this.settings.back_color = _this.settings.fore_color;
             _this.settings.fore_color = tmp_back;
