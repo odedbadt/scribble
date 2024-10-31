@@ -253,7 +253,9 @@ export class MainApp {
                 view_canvas.height = entry.contentRect.height;
             })
         })
-        resizeObserver.observe(document.getElementById('canvas-area')!);
+        document.querySelectorAll('#canvas-area canvas')!.forEach((e:Element) => {
+        resizeObserver.observe(e);
+        }
 
     }
     init() {
