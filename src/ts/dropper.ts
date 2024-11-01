@@ -1,5 +1,6 @@
 import { ClickTool } from  "./click_tool"
 import { Editor } from "./editor";
+import { Vector2 } from "./types";
 
 export class Dropper extends ClickTool{
     action(at: Vector2): boolean {

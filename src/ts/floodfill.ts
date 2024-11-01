@@ -1,5 +1,6 @@
 import { ClickTool }from "./click_tool"
 import { Editor } from "./editor";
+import { Vector2 } from "./types";
 import { parse_RGBA } from "./utils";
 
 function _equal_colors(c1:Uint8ClampedArray,c2:Uint8ClampedArray):boolean {

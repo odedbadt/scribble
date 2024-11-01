@@ -1,5 +1,6 @@
 import {ClickAndDragTool} from './click_and_drag_tool'
 import { Editor } from "./editor";
+import { Vector2 } from './types';
 import { parse_RGBA } from './utils';
 
 function rotate(v:Vector2, w:number, h:number, a:number, mirror?:boolean) {

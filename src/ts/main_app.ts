@@ -2,6 +2,7 @@ import { Editor } from "./editor"
 import { dist2_to_set, override_canvas_context } from "./utils"
 import { Palette} from './palette'
 import { ColorStack } from "./color_stack";
+import { Rect, unit_rect } from "./types";
 function click_for_a_second(id:string, callback:Function) {
     const elem = document.getElementById(id);
     if (elem) {
@@ -32,7 +33,10 @@ export class MainApp {
         fore_color: string; 
         back_color: string; 
         line_width: number; 
-};
+    };
+    state: {
+        view_port: Rect;
+    }
     color_stack: ColorStack;
     palette: Palette;
     palette_hl_canvas: HTMLCanvasElement;
@@ -58,6 +62,14 @@ export class MainApp {
             back_color: 'rgba(255,255,255,255)',
             line_width: 10,
             filled: true,
+        }
+        this.state = {
+            view_port: {
+                x:0,
+                y:0, 
+                w:0.5, 
+                h:0.5
+            }
         }
         this.art_context.imageSmoothingEnabled = false;
         this.art_context.globalCompositeOperation = 'source-over';
@@ -111,6 +123,7 @@ export class MainApp {
                 && input.files[0].type === 'image/png') {
                 const file = input.files[0];
                 const reader = new FileReader();
+                const _this = this;
                 reader.onload = function(e) {
                     if (e.target) {
                         const img = new Image();
@@ -118,8 +131,8 @@ export class MainApp {
                             // Clear canvas and draw the image
                             art_context.clearRect(0, 0, art_canvas.width, art_canvas.height);
                             art_context.drawImage(img, 0, 0, art_canvas.width, art_canvas.height);
-                            override_canvas_context(view_context, art_canvas)
-                            override_canvas_context(staging_context, art_canvas)
+                            override_canvas_context(view_context, art_canvas, _this.state.view_port)
+                            override_canvas_context(staging_context, art_canvas, unit_rect)
                         };
                         img.src = e.target.result as string;
                     }
@@ -254,9 +267,8 @@ export class MainApp {
             })
         })
         document.querySelectorAll('#canvas-area canvas')!.forEach((e:Element) => {
-        resizeObserver.observe(e);
-        }
-
+            resizeObserver.observe(e);
+        })
     }
     init() {
         // clear

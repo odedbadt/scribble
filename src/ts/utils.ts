@@ -1,6 +1,9 @@
+import { Rect, Vector2 } from "./types";
+
 export function override_canvas_context(
     context_to:CanvasRenderingContext2D, 
-    canvas_from:HTMLCanvasElement, 
+    canvas_from:HTMLCanvasElement,
+    view_port_from: Rect,
     keep?:boolean,
     avoid_native?:boolean) {
     // context_to.putImage(context_to_image_data,0,0);
@@ -10,7 +13,7 @@ export function override_canvas_context(
         context_to.clearRect(0, 0, w, h);
     }
     if (!avoid_native) {
-        context_to.drawImage(canvas_from, 0, 0);
+        context_to.drawImage(canvas_from, view_port_from.x, view_port_from.y, view_port_from.w, view_port_from.h);
     } else {
         const context_from = canvas_from.getContext('2d')!
         const context_from_image_data = context_from.getImageData(0, 0, w, h)
@@ -123,4 +126,16 @@ export function dist2_to_set(v:number[], set:number[][]):number {
     return min_dist2
 }
 
+export function scale_rect(r:Rect, scale:Vector2) {
+    return {x:r.x*scale.x, 
+        y:r.y*scale.y,
+        w:r.w*scale.x,
+        h:r.h*scale.y}
+}
+export function translate_rect(r:Rect, shift:Vector2) {
+    return {x:r.x+shift.x, 
+        y:r.y+shift.y,
+        w:r.w,
+        h:r.h}
+}
 

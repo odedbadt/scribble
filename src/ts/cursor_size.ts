@@ -1,6 +1,7 @@
 import { ClickAndDragTool } from "./click_and_drag_tool"
 import { override_canvas_context } from "./utils"
 import { Editor } from "./editor";
+import { Vector2, unit_rect } from "./types";
 export class CursorSize  extends ClickAndDragTool {
     constructor(context:CanvasRenderingContext2D, editor:Editor,
         tmp_context:CanvasRenderingContext2D) {
@@ -29,8 +30,8 @@ export class CursorSize  extends ClickAndDragTool {
             return false;
         }
         this.app.tool_tmp_context.clearRect(0,0,this.w,this.h);
-        override_canvas_context(this.app.staging_context, this.app.art_canvas);
-        override_canvas_context(this.app.view_context, this.app.staging_canvas);
+        override_canvas_context(this.app.staging_context, this.app.art_canvas, unit_rect);
+        override_canvas_context(this.app.view_context, this.app.staging_canvas, this.app.state.view_port);
 
         const r = Math.sqrt((at.x - this.from.x)*(at.x - this.from.x)+
         (at.y - this.from.y)*(at.y - this.from.y))
@@ -39,7 +40,7 @@ export class CursorSize  extends ClickAndDragTool {
                 this.from.x,this.from.y,r,r,0,0,Math.PI*2);
         this.tmp_context.fill();
         this.app.settings.line_width = 2*r;
-        override_canvas_context(this.app.view_context, this.app.tool_tmp_canvas, true);
+        override_canvas_context(this.app.view_context, this.app.tool_tmp_canvas, this.app.state.view_port, true);
 
         return false;
     }

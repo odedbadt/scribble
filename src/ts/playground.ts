@@ -35,15 +35,15 @@ const drive = google.drive({
   auth: oauth2Client,
 });
 
-async function listFiles() {
-  const res = await drive.files.list({
-    pageSize: 10,
-    fields: 'files(id, name)',
-  });
-  console.log('Files:');
-  res.data.files.forEach((file) => {
-    console.log(`${file.name} (${file.id})`);
-  });
-}
+// async function listFiles() {
+//   const res = await drive.files.list({
+//     pageSize: 10,
+//     fields: 'files(id, name)',
+//   });
+//   console.log('Files:');
+//   res.data.files.forEach((file) => {
+//     console.log(`${file.name} (${file.id})`);
+//   });
+// }
 
-listFiles().catch(console.error);
+// listFiles().catch(console.error);

@@ -1,5 +1,6 @@
 import { Editor } from "./editor"
 import { MainApp } from "./main_app";
+import { Vector2 } from "./types";
 
 export abstract class EditingTool {
     context: CanvasRenderingContext2D;
@@ -8,7 +9,10 @@ export abstract class EditingTool {
     h: number;
     app: MainApp;
     tmp_context: CanvasRenderingContext2D | undefined;
-    constructor(context:CanvasRenderingContext2D, editor:Editor, tmp_context?:CanvasRenderingContext2D) {
+    constructor(context:CanvasRenderingContext2D, 
+        editor:Editor, 
+        tmp_context?:CanvasRenderingContext2D,
+        ) {
         this.context = context;
         this.editor = editor;
         this.w = context.canvas.clientWidth;

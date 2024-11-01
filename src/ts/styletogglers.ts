@@ -1,6 +1,7 @@
 import { OnSelectTool } from "./on_select_tool"
 import { Editor } from "./editor";
 import { parse_RGBA } from "./utils";
+import { Vector2 } from "./types";
 
 function _equal_colors(c1:Uint8ClampedArray,c2:Uint8ClampedArray):boolean {
     return c1[0] == c2[0] &&

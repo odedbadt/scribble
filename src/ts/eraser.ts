@@ -1,5 +1,6 @@
 import { ClickAndDragTool } from "./click_and_drag_tool"
 import { Editor } from "./editor";
+import { Vector2 } from "./types";
 export class EraserTool extends ClickAndDragTool{
     private _recorded_to: any;
     constructor(context:CanvasRenderingContext2D
