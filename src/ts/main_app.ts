@@ -1,5 +1,4 @@
 import { Editor } from "./editor"
-import { dist2_to_set, override_canvas_context } from "./utils"
 import { Palette} from './palette'
 import { ColorStack } from "./color_stack";
 import { Rect, unit_rect } from "./types";
@@ -131,8 +130,8 @@ export class MainApp {
                             // Clear canvas and draw the image
                             art_context.clearRect(0, 0, art_canvas.width, art_canvas.height);
                             art_context.drawImage(img, 0, 0, art_canvas.width, art_canvas.height);
-                            override_canvas_context(view_context, art_canvas, _this.state.view_port)
-                            override_canvas_context(staging_context, art_canvas, unit_rect)
+                            _this.editor.art_to_view()
+                            _this.editor.art_to_staging()
                         };
                         img.src = e.target.result as string;
                     }

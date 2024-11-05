@@ -35,16 +35,16 @@ export abstract class ClickAndDragTool extends EditingTool {
         return false;
     }
     action(at: Vector2):boolean {
-        override_canvas_context(this.editor.app.staging_context, this.editor.app.art_canvas, unit_rect);
+        this.editor.art_to_staging()
         this.editor.app.tool_context.beginPath();
         this.dirty = !!this.editing_action(at) || this.dirty;
         if (!this.is_incremental) {
-            override_canvas_context(this.app.staging_context, this.app.art_canvas, this.app.state.view_port);
+            this.editor.staging_to_rect()
         }
-        override_canvas_context(this.app.staging_context, this.app.art_canvas, unit_rect);
-        override_canvas_context(this.app.staging_context, this.app.tool_canvas, unit_rect, true, true);
-        override_canvas_context(this.app.view_context, this.app.staging_canvas, this.app.state.view_port);
-        override_canvas_context(this.app.view_context, this.app.tool_tmp_canvas, this.app.state.view_port, true, true);
+        this.editor.art_to_staging()
+        this.editor.tool_to_staging()
+        this.editor.staging_to_view()
+        this.editor.tmp_tool_to_view()
         if (!this.is_incremental) {
             this.context.clearRect(0, 0, this.w, this.h);
         }
@@ -57,6 +57,7 @@ export abstract class ClickAndDragTool extends EditingTool {
         this.tmp_context.clearRect(0, 0, this.w, this.h);
         const dirty = this.hover_action(at);
         if (dirty) {
+            this.editor.tool_to_view()
             override_canvas_context(this.app.view_context, this.app.tool_tmp_canvas, this.app.state.view_port, true);
             return true;
         }
@@ -72,12 +73,12 @@ export abstract class ClickAndDragTool extends EditingTool {
     stop(at:Vector2):boolean {
         this.dirty = !!this.editing_stop(at) || this.dirty;
         if (this.dirty) {
-            override_canvas_context(this.app.art_context, this.app.staging_canvas, unit_rect);
+            this.editor.staging_to_art()
             this.editor.undo_redo_buffer.push(this.app.art_context.getImageData(0, 0, this.w, this.h));
             this.from = null;
-            override_canvas_context(this.app.staging_context, this.app.art_canvas, unit_rect);
-            override_canvas_context(this.app.staging_context, this.app.tool_canvas, unit_rect, true);
-            override_canvas_context(this.app.view_context, this.app.staging_canvas, this.app.state.view_port);
+            this.editor.art_to_staging()
+            this.editor.tool_to_staging()
+            this.editor.staging_to_view()
             this.dirty = false;
             return true
         }

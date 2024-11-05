@@ -30,7 +30,6 @@ const v:new (...args:any[])=>EditingTool = ScribbleTool
     ,["mandala", mandala]
  ])
 export class Editor {
-
     app: any;
     undo_redo_buffer: UndoRedoBuffer<RenderingContext>;
     tool: any;
@@ -38,12 +37,10 @@ export class Editor {
     current_tool_name: any;
     from: any;
     private _last_hover_spot: Vector2 | null;
-
     private _view_canvas_bounding_rect: Rect;
     private _art_canvas_bounding_rect: Rect;
     constructor(app: MainApp) {
         this.app = app;
-
         this._view_canvas_bounding_rect = {
             x:0, y: 0, w: this.app.view_canvas.width, h: this.app.view_canvas.height
         }
@@ -56,39 +53,57 @@ export class Editor {
     }
     view_coords_to_art_coords(view_coords:Vector2):Vector2 {
         return {
-            x:this._art_canvas_bounding_rect.x + (view_coords.x - 
+            x: this._art_canvas_bounding_rect.x + (view_coords.x -
                 this._view_canvas_bounding_rect.x)
-                         /this._view_canvas_bounding_rect.w * this._art_canvas_bounding_rect.w,                         
-            y:this._art_canvas_bounding_rect.y + (view_coords.y - 
+                         / this._view_canvas_bounding_rect.w * this._art_canvas_bounding_rect.w,
+            y: this._art_canvas_bounding_rect.y + (view_coords.y -
                 this._view_canvas_bounding_rect.y)
-                        /this._view_canvas_bounding_rect.h * this._art_canvas_bounding_rect.h
+                        / this._view_canvas_bounding_rect.h * this._art_canvas_bounding_rect.h
                 }
-
     }
     staging_to_art() {
-        override_canvas_context(this.app.staging_context, this.app.art_canvas, 
+        override_canvas_context(this.app.staging_context, this.app.art_canvas,
             this._view_canvas_bounding_rect)
     }
-    view_port_px() {
+    view_port_px():Rect {
+        const top_left_px = this.view_coords_to_art_coords({
+            x:this._view_canvas_bounding_rect.x,
+            y:this._view_canvas_bounding_rect.y
+        })
         return {
-            x: this._view_canvas_bounding_rect.x
+            x: top_left_px.x,
+            y: top_left_px.y,
+            w: this.app.state.view_port.w * this._art_canvas_bounding_rect.w,
+            h: this.app.state.view_port.h * this._art_canvas_bounding_rect.h
         }
     }
     staging_to_view() {
-        override_canvas_context(this.app.view_context, this.app.staging_canvas, 
-            this._view_canvas_bounding_rect)
+        override_canvas_context(this.app.view_context, this.app.staging_canvas,
+            this.view_port_px(), true, true)
     }
     art_to_view() {
-        override_canvas_context(this.app.staging_context, this.app.art_canvas, 
-            this._view_canvas_bounding_rect)
-    }
-    tool_to_staging() {
-        override_canvas_context(this.app.tool_context, this.app.art_canvas, 
-            this._view_canvas_bounding_rect)
+        override_canvas_context(this.app.staging_context, this.app.art_canvas,
+            this.view_port_px(), true)
     }
     art_to_staging() {
-        override_canvas_context(this.app.staging_context, this.app.art_canvas, 
+        override_canvas_context(this.app.staging_context, this.app.art_canvas,
             this._art_canvas_bounding_rect)
+    }
+    tool_to_staging() {
+        override_canvas_context(this.app.staging_context, this.app.tool_canvas,
+            this._view_canvas_bounding_rect, false, true)
+    }
+    tool_to_view() {
+        override_canvas_context(this.app.view_context, this.app.tool_canvas,
+            this._view_canvas_bounding_rect)
+    }
+    tmp_tool_to_staging() {
+        override_canvas_context(this.app.staging_context, this.app.tmp_tool_canvas,
+            this._art_canvas_bounding_rect)
+    }
+    tmp_tool_to_view() {
+        override_canvas_context(this.app.view_context, this.app.tmp_tool_canvas,
+            this.view_port_px(), true)
     }
     select_tool(tool_name:string) {
         this.previous_tool_name = this.current_tool_name;
@@ -101,7 +116,7 @@ export class Editor {
         this.tool.select();
         if (this._last_hover_spot) {
             this.tool.hover(this.view_coords_to_art_coords(this._last_hover_spot));
-            override_canvas_context(this.app.view_context, this.app.tool_tmp_canvas, this.app.state.view_port, true);
+            this.tmp_tool_to_view();
         }
     }
     deselect_tool() {
@@ -109,7 +124,7 @@ export class Editor {
     }
     pointerdown(event:MouseEvent) {
         event.preventDefault();
-        override_canvas_context(this.app.staging_context, this.app.art_canvas, this.app.state.view_port);
+        this.art_to_staging();
         this.tool.start(this.view_coords_to_art_coords({ x: event.offsetX, y: event.offsetY }), event.buttons);
     }
     pointermove(event:MouseEvent) {
@@ -117,37 +132,37 @@ export class Editor {
         if (event.buttons) {
             this.tool.action(this.view_coords_to_art_coords({ x: event.offsetX, y: event.offsetY }));
             this.tool.hover(this.view_coords_to_art_coords({ x: event.offsetX, y: event.offsetY }));
-            override_canvas_context(this.app.view_context, this.app.tool_tmp_canvas, this.app.state.view_port, true);
+            this.tmp_tool_to_view();
         }
         else {
             this.tool.hover(this.view_coords_to_art_coords({ x: event.offsetX, y: event.offsetY }));
-            override_canvas_context(this.app.view_context, this.app.tool_tmp_canvas, this.app.state.view_port, true);
+            this.tmp_tool_to_view();
         }
         // Appply action
-        
-        override_canvas_context(this.app.view_context, this.app.staging_canvas, this.app.state.view_port);
-        override_canvas_context(this.app.view_context, this.app.tool_tmp_canvas, this.app.state.view_port, true);
+       
+        this.staging_to_view()
+        this.tmp_tool_to_view();
     }
     undo() {
-        override_canvas_context(this.app.staging_context, this.app.art_canvas, unit_rect);
-        this.app.tool_context.clearRect(0, 0, this._aw, this._ah);
+        this.art_to_staging();
+        this.app.tool_context.clearRect(0, 0, this._art_canvas_bounding_rect.w, this._art_canvas_bounding_rect.h);
         const undone_image_data = this.undo_redo_buffer.undo();
         this.app.clear_art_canvas();
         if (undone_image_data) {
             this.app.art_context.putImageData(undone_image_data, 0, 0);
         }
-        override_canvas_context(this.app.view_context, this.app.art_canvas, this.app.state.view_port);
-        override_canvas_context(this.app.staging_context, this.app.art_canvas, unit_rect);
+        this.art_to_view();
+        this.art_to_staging();
     }
     redo() {
         const redone_image_data = this.undo_redo_buffer.redo();
         if (redone_image_data) {
-            this.app.staging_context.clearRect(0, 0, this._aw, this._ah);
-            this.app.tool_context.clearRect(0, 0, this._aw, this._ah);
+            this.app.staging_context.clearRect(0, 0, this._art_canvas_bounding_rect.w, this._art_canvas_bounding_rect.h);
+            this.app.tool_context.clearRect(0, 0, this._art_canvas_bounding_rect.w, this._art_canvas_bounding_rect.h);
             this.app.clear_art_canvas();
             this.app.art_context.putImageData(redone_image_data, 0, 0);
-            override_canvas_context(this.app.view_context, this.app.art_canvas, this.app.state.view_port);
-            override_canvas_context(this.app.staging_context, this.app.art_canvas,unit_rect);
+            this.art_to_view();
+            this.art_to_staging();
         }
     }
     keydown(event:KeyboardEvent) {
@@ -168,11 +183,10 @@ export class Editor {
         //this.pointerup(event);
     }
     pointerleave(event:MouseEvent) {
-        this.app.tool_tmp_context.clearRect(0, 0, this._aw, this._ah);
-        override_canvas_context(this.app.staging_context, this.app.art_canvas, unit_rect);
-        override_canvas_context(this.app.staging_context, this.app.tool_canvas, unit_rect, true);
-        override_canvas_context(this.app.view_context, this.app.staging_canvas, this.app.state.view_port);
-        //override_canvas_context(this.app.staging_context, this.app.tool_canvas, true)
+        this.app.tool_tmp_context.clearRect(0, 0, this._art_canvas_bounding_rect.w, this._art_canvas_bounding_rect.h);
+        this.art_to_staging();
+        this.tool_to_staging();
+        this.staging_to_view();
         this._last_hover_spot = null
     }
 }

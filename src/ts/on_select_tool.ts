@@ -1,7 +1,5 @@
 import {EditingTool } from "./editing_tool"
 import { Editor } from "./editor";
-import { unit_rect } from "./types";
-import { override_canvas_context } from "./utils";
 
 export abstract class OnSelectTool extends EditingTool{
     constructor(context:CanvasRenderingContext2D, editor:Editor, tmp_context?:CanvasRenderingContext2D) {
@@ -10,17 +8,15 @@ export abstract class OnSelectTool extends EditingTool{
         }
     select() {
         this.context.clearRect(0,0,this.w,this.h);
-        override_canvas_context(this.editor.app.staging_context,
-                                this.editor.app.art_canvas,
-                                this.app.state.view_port)
+        this.editor.art_to_staging()
         this.select_action();
-        override_canvas_context(this.app.staging_context, this.app.tool_canvas, unit_rect, true)
-        override_canvas_context(this.app.view_context, this.app.staging_canvas, this.app.state.view_port)
-        override_canvas_context(this.app.art_context, this.app.staging_canvas, unit_rect)
+        this.editor.tool_to_staging()
+        this.editor.staging_to_view()
+        this.editor.staging_to_art()
         this.editor.undo_redo_buffer.push(this.app.art_context.getImageData(0,0,this.w,this.h))
-        override_canvas_context(this.app.staging_context, this.app.art_canvas, unit_rect)
-        override_canvas_context(this.app.staging_context, this.app.tool_canvas, unit_rect, true)
-        override_canvas_context(this.app.view_context, this.app.staging_canvas, this.app.state.view_port)
+        this.editor.art_to_staging()
+        this.editor.tool_to_staging()
+        this.editor.staging_to_view()
         if (this.editor.previous_tool_name) {
             this.app.select_tool(this.editor.previous_tool_name)
         }
