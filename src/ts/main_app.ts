@@ -196,7 +196,7 @@ export class MainApp {
 
     init_color_selector() {
         let img = new Image();
-        img.src = "/static/palette.png";
+        img.src = "/palette.png";
         this.palette_hl_canvas.width = this.palette_hl_canvas.offsetWidth;
         this.palette_hl_canvas.height = this.palette_hl_canvas.offsetHeight;
         this.palette_sat_canvas.width = this.palette_sat_canvas.offsetWidth;

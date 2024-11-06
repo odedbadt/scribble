@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="/style.css">
+    <script src="/ts/bundle.js"></script>
+
+    <% if (dbg) { %>
+      <style>
+        #canvas-area {
+          display: grid;
+          grid-template-columns: repeat(6, 250px);
+          grid-gap: 20px;
+        }
+        #canvas-area #view-canvas {
+          width: 200px;
+          height: 200px;
+        }
+        #canvas-area canvas {
+          width: 100px;
+          height: 100px;
+        }
+      </style>
+    <% } %>
+  </head>
+  <body>
+    <div id="toolbar">
+      <div id="save_button" class="save button">Save</div>
+      <div id="load_button" class="load button">Load</div>
+      <div id="undo_button" class="undo button"></div>
+      <div id="redo_button" class="redo button"></div>
+      <div class="scribble button"></div>
+      <div class="rect button filled fillable"></div>
+      <div class="line button"></div>
+      <div class="circle button filled fillable"></div>
+
+      <div class="dropper button"></div>
+      <!-- 3 -->
+      <div class="floodfill button"></div>
+
+      <div class="eraser button"></div>
+      <!-- 4 -->
+      <div class="clearall button"></div>
+
+      <div class="cursor_size button"></div>
+      <!-- 5 -->
+      <div class="mandala button"></div>
+
+      <div class="button"></div>
+      <!-- 6 -->
+      <div class="button"></div>
+
+      <div class="button"></div>
+      <!-- 7 -->
+      <div class="button"></div>
+
+
+
+      <div id="colorswap" class="button">Swap colors</div>
+  </div>
+  <div id="canvas-area">
+      <canvas id="view-canvas" width="700" height="700"></canvas>
+      <canvas id="staging-canvas" width="700" height="700"></canvas>
+      <canvas id="tool-canvas" width="700" height="700"></canvas>
+      <canvas id="tool-tmp-canvas" width="700" height="700"></canvas>
+      <canvas id="art-canvas" width="700" height="700"></canvas>
+  </div>
+  <div id="right-toolbar">
+      <!-- 1 -->
+      <div class="fillstyle filled button"></div>
+
+      <!-- 2 -->
+      <div class="button"></div>
+
+      <!-- 3 -->
+      <div class="button"></div>
+
+
+      <!-- 4 -->
+      <div class="color_stack_item button"></div>
+
+      <!-- 5 -->
+      <div class="color_stack_item button"></div>
+
+      <!-- 6 -->
+      <div class="color_stack_item button"></div>
+
+      <!-- 7 -->
+      <div class="color_stack_item button"></div>            
+      <!-- 8 -->
+      <div class="color_stack_item button"></div>
+
+      <!-- 9 -->
+      <div class="color_stack_item button"></div>
+
+      <!-- 10 -->
+      <div class="color_stack_item button"></div>
+      <div class="color_stack_item button"></div>
+      <canvas id="hl-selector-canvas" width="50" height="200"></canvas>
+      <canvas id="sat-selector-canvas" width="50" height="100"></canvas>
+      <div id="color-selector-div-back">
+          <div id="color-selector-div-fore"></div>
+      </div>
+
+  </div>        
+  <input type="file" id="file_input" accept="image/png"/>
+</body>
+</html>
+

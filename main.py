@@ -5,38 +5,29 @@ from flask import request
 
 app = Flask(__name__)
 
-@app.route("/list_models")
-def list_models():
-    client = Client()
-    bucket = client.get_bucket('polyhedra-museum.appspot.com')
-    blob_names = [bl.name.split('/')[-1].replace('.json', '') for bl in bucket.list_blobs()]
-    return blob_names
-
-@app.route("/model")
-def load_model():
-    model_name = request.args.get('model_name')
-    client = Client()
-    bucket = client.get_bucket('polyhedra-museum.appspot.com')
-    blob = bucket.get_blob(f'models/{model_name}.json')
-    if blob is None:
-        return 'Shape not found', 404
-    data = blob.download_as_string()
-    return data
-
-
-
 @app.route("/")
 def root():
     # For the sake of example, use static information to inflate the template.
     # This will be replaced with real information in later steps.
-    return render_template("main_screen.html")
+    return render_template("main_screen.html", dbg=False)
 
 @app.route("/dbg")
 def dbg():
     # For the sake of example, use static information to inflate the template.
     # This will be replaced with real information in later steps.
-    return render_template("main_screen_dbg.html")
+    return render_template("main_screen.html", dbg=True)
 
+@app.route("/p")
+def dp():
+    # For the sake of example, use static information to inflate the template.
+    # This will be replaced with real information in later steps.
+    return render_template("p")
+
+@app.route("/v")
+def dpv():
+    # For the sake of example, use static information to inflate the template.
+    # This will be replaced with real information in later steps.
+    return render_template("p")
 if __name__ == "__main__":
     # This is used when running locally only. When deploying to Google App
     # Engine, a webserver process such as Gunicorn will serve the app. This

@@ -39,7 +39,7 @@ export abstract class ClickAndDragTool extends EditingTool {
         this.editor.app.tool_context.beginPath();
         this.dirty = !!this.editing_action(at) || this.dirty;
         if (!this.is_incremental) {
-            this.editor.staging_to_rect()
+            this.editor.staging_to_art()
         }
         this.editor.art_to_staging()
         this.editor.tool_to_staging()

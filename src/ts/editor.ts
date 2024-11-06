@@ -102,7 +102,7 @@ export class Editor {
             this._art_canvas_bounding_rect)
     }
     tmp_tool_to_view() {
-        override_canvas_context(this.app.view_context, this.app.tmp_tool_canvas,
+        override_canvas_context(this.app.view_context, this.app.tool_tmp_canvas,
             this.view_port_px(), true)
     }
     select_tool(tool_name:string) {
