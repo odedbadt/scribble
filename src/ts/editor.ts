@@ -92,7 +92,7 @@ export class Editor {
     }
     tool_to_staging() {
         override_canvas_context(this.app.staging_context, this.app.tool_canvas,
-            this._view_canvas_bounding_rect, false, true)
+            this._view_canvas_bounding_rect, true, true)
     }
     tool_to_view() {
         override_canvas_context(this.app.view_context, this.app.tool_canvas,

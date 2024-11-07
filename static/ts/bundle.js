@@ -541,7 +541,7 @@ class Editor {
         (0,_utils__WEBPACK_IMPORTED_MODULE_10__.override_canvas_context)(this.app.staging_context, this.app.art_canvas, this._art_canvas_bounding_rect);
     }
     tool_to_staging() {
-        (0,_utils__WEBPACK_IMPORTED_MODULE_10__.override_canvas_context)(this.app.staging_context, this.app.tool_canvas, this._view_canvas_bounding_rect, false, true);
+        (0,_utils__WEBPACK_IMPORTED_MODULE_10__.override_canvas_context)(this.app.staging_context, this.app.tool_canvas, this._view_canvas_bounding_rect, true, true);
     }
     tool_to_view() {
         (0,_utils__WEBPACK_IMPORTED_MODULE_10__.override_canvas_context)(this.app.view_context, this.app.tool_canvas, this._view_canvas_bounding_rect);
