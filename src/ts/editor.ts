@@ -30,7 +30,7 @@ const v:new (...args:any[])=>EditingTool = ScribbleTool
     ,["mandala", mandala]
  ])
 export class Editor {
-    app: any;
+    app: MainApp;
     undo_redo_buffer: UndoRedoBuffer<RenderingContext>;
     tool: any;
     previous_tool_name: any;
@@ -53,18 +53,13 @@ export class Editor {
     }
     view_coords_to_art_coords(view_coords:Vector2):Vector2 {
         return {
-            x: this._art_canvas_bounding_rect.x + (view_coords.x -
-                this._view_canvas_bounding_rect.x)
-                         / this._view_canvas_bounding_rect.w * this._art_canvas_bounding_rect.w,
-            y: this._art_canvas_bounding_rect.y + (view_coords.y -
-                this._view_canvas_bounding_rect.y)
-                        / this._view_canvas_bounding_rect.h * this._art_canvas_bounding_rect.h
+            x: this.app.state.view_port.x +
+            view_coords.x  / 
+            this._view_canvas_bounding_rect.w * this.app.state.view_port.w,
+            y: this.app.state.view_port.y +
+            view_coords.y  / 
+            this._view_canvas_bounding_rect.h * this.app.state.view_port.h
                 }
-    }
-    staging_to_art() {
-        console.log('staging_to_art')
-        override_canvas_context(this.app.art_context, this.app.staging_canvas,
-            this._art_canvas_bounding_rect)
     }
     view_port_px():Rect {
         const top_left_px = this.view_coords_to_art_coords({
@@ -74,37 +69,41 @@ export class Editor {
         return {
             x: top_left_px.x,
             y: top_left_px.y,
-            w: this.app.state.view_port.w * this._art_canvas_bounding_rect.w,
-            h: this.app.state.view_port.h * this._art_canvas_bounding_rect.h
+            w: this.app.state.view_port.w,
+            h: this.app.state.view_port.h
         }
+    }
+    staging_to_art() {
+        override_canvas_context(this.app.art_context, this.app.staging_canvas,
+            this._art_canvas_bounding_rect, false, false, true)
     }
     staging_to_view() {
         override_canvas_context(this.app.view_context, this.app.staging_canvas,
-            this.view_port_px(), true, true)
+            this.app.state.view_port, false, false, false)
     }
     art_to_view() {
         override_canvas_context(this.app.staging_context, this.app.art_canvas,
-            this.view_port_px(), true)
+            this.app.state.view_port, false, false, false)
     }
     art_to_staging() {
         override_canvas_context(this.app.staging_context, this.app.art_canvas,
-            this._art_canvas_bounding_rect)
+            this._art_canvas_bounding_rect, false, false, true)
     }
     tool_to_staging() {
         override_canvas_context(this.app.staging_context, this.app.tool_canvas,
-            this._view_canvas_bounding_rect, true, true)
+            this._view_canvas_bounding_rect, true, true, true)
     }
     tool_to_view() {
         override_canvas_context(this.app.view_context, this.app.tool_canvas,
-            this._view_canvas_bounding_rect)
+            this.app.state.view_port, false, false, false)
     }
     tmp_tool_to_staging() {
-        override_canvas_context(this.app.staging_context, this.app.tmp_tool_canvas,
-            this._art_canvas_bounding_rect)
+        override_canvas_context(this.app.staging_context, this.app.tool_tmp_canvas,
+            this._art_canvas_bounding_rect, true, true, true)
     }
     tmp_tool_to_view() {
         override_canvas_context(this.app.view_context, this.app.tool_tmp_canvas,
-            this.view_port_px(), true)
+            this.app.state.view_port, true, false, false)
     }
     select_tool(tool_name:string) {
         this.previous_tool_name = this.current_tool_name;

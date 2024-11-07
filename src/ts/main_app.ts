@@ -64,10 +64,10 @@ export class MainApp {
         }
         this.state = {
             view_port: {
-                x:0,
-                y:0, 
-                w:0.5, 
-                h:0.5
+                x: 0,
+                y: 0, 
+                w: 0.5 * this.art_canvas.clientWidth, 
+                h: 0.5 * this.art_canvas.clientHeight
             }
         }
         this.art_context.imageSmoothingEnabled = false;

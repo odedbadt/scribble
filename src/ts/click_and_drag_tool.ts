@@ -58,7 +58,6 @@ export abstract class ClickAndDragTool extends EditingTool {
         const dirty = this.hover_action(at);
         if (dirty) {
             this.editor.tool_to_view()
-            override_canvas_context(this.app.view_context, this.app.tool_tmp_canvas, this.app.state.view_port, true);
             return true;
         }
         return false;

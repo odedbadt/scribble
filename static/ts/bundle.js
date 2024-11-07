@@ -91,8 +91,6 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   ClickAndDragTool: () => (/* binding */ ClickAndDragTool)
 /* harmony export */ });
 /* harmony import */ var _editing_tool__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./editing_tool */ "./src/ts/editing_tool.ts");
-/* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./utils */ "./src/ts/utils.ts");
-
 
 class ClickAndDragTool extends _editing_tool__WEBPACK_IMPORTED_MODULE_0__.EditingTool {
     constructor(context, editor, incremental, tmp_context) {
@@ -144,7 +142,6 @@ class ClickAndDragTool extends _editing_tool__WEBPACK_IMPORTED_MODULE_0__.Editin
         const dirty = this.hover_action(at);
         if (dirty) {
             this.editor.tool_to_view();
-            (0,_utils__WEBPACK_IMPORTED_MODULE_1__.override_canvas_context)(this.app.view_context, this.app.tool_tmp_canvas, this.app.state.view_port, true);
             return true;
         }
         return false;
@@ -507,17 +504,13 @@ class Editor {
     }
     view_coords_to_art_coords(view_coords) {
         return {
-            x: this._art_canvas_bounding_rect.x + (view_coords.x -
-                this._view_canvas_bounding_rect.x)
-                / this._view_canvas_bounding_rect.w * this._art_canvas_bounding_rect.w,
-            y: this._art_canvas_bounding_rect.y + (view_coords.y -
-                this._view_canvas_bounding_rect.y)
-                / this._view_canvas_bounding_rect.h * this._art_canvas_bounding_rect.h
+            x: this.app.state.view_port.x +
+                view_coords.x /
+                    this._view_canvas_bounding_rect.w * this.app.state.view_port.w,
+            y: this.app.state.view_port.y +
+                view_coords.y /
+                    this._view_canvas_bounding_rect.h * this.app.state.view_port.h
         };
-    }
-    staging_to_art() {
-        console.log('staging_to_art');
-        (0,_utils__WEBPACK_IMPORTED_MODULE_10__.override_canvas_context)(this.app.art_context, this.app.staging_canvas, this._art_canvas_bounding_rect);
     }
     view_port_px() {
         const top_left_px = this.view_coords_to_art_coords({
@@ -527,30 +520,33 @@ class Editor {
         return {
             x: top_left_px.x,
             y: top_left_px.y,
-            w: this.app.state.view_port.w * this._art_canvas_bounding_rect.w,
-            h: this.app.state.view_port.h * this._art_canvas_bounding_rect.h
+            w: this.app.state.view_port.w,
+            h: this.app.state.view_port.h
         };
     }
+    staging_to_art() {
+        (0,_utils__WEBPACK_IMPORTED_MODULE_10__.override_canvas_context)(this.app.art_context, this.app.staging_canvas, this._art_canvas_bounding_rect, false, false, true);
+    }
     staging_to_view() {
-        (0,_utils__WEBPACK_IMPORTED_MODULE_10__.override_canvas_context)(this.app.view_context, this.app.staging_canvas, this.view_port_px(), true, true);
+        (0,_utils__WEBPACK_IMPORTED_MODULE_10__.override_canvas_context)(this.app.view_context, this.app.staging_canvas, this.app.state.view_port, false, false, false);
     }
     art_to_view() {
-        (0,_utils__WEBPACK_IMPORTED_MODULE_10__.override_canvas_context)(this.app.staging_context, this.app.art_canvas, this.view_port_px(), true);
+        (0,_utils__WEBPACK_IMPORTED_MODULE_10__.override_canvas_context)(this.app.staging_context, this.app.art_canvas, this.app.state.view_port, false, false, false);
     }
     art_to_staging() {
-        (0,_utils__WEBPACK_IMPORTED_MODULE_10__.override_canvas_context)(this.app.staging_context, this.app.art_canvas, this._art_canvas_bounding_rect);
+        (0,_utils__WEBPACK_IMPORTED_MODULE_10__.override_canvas_context)(this.app.staging_context, this.app.art_canvas, this._art_canvas_bounding_rect, false, false, true);
     }
     tool_to_staging() {
-        (0,_utils__WEBPACK_IMPORTED_MODULE_10__.override_canvas_context)(this.app.staging_context, this.app.tool_canvas, this._view_canvas_bounding_rect, true, true);
+        (0,_utils__WEBPACK_IMPORTED_MODULE_10__.override_canvas_context)(this.app.staging_context, this.app.tool_canvas, this._view_canvas_bounding_rect, true, true, true);
     }
     tool_to_view() {
-        (0,_utils__WEBPACK_IMPORTED_MODULE_10__.override_canvas_context)(this.app.view_context, this.app.tool_canvas, this._view_canvas_bounding_rect);
+        (0,_utils__WEBPACK_IMPORTED_MODULE_10__.override_canvas_context)(this.app.view_context, this.app.tool_canvas, this.app.state.view_port, false, false, false);
     }
     tmp_tool_to_staging() {
-        (0,_utils__WEBPACK_IMPORTED_MODULE_10__.override_canvas_context)(this.app.staging_context, this.app.tmp_tool_canvas, this._art_canvas_bounding_rect);
+        (0,_utils__WEBPACK_IMPORTED_MODULE_10__.override_canvas_context)(this.app.staging_context, this.app.tool_tmp_canvas, this._art_canvas_bounding_rect, true, true, true);
     }
     tmp_tool_to_view() {
-        (0,_utils__WEBPACK_IMPORTED_MODULE_10__.override_canvas_context)(this.app.view_context, this.app.tool_tmp_canvas, this.view_port_px(), true);
+        (0,_utils__WEBPACK_IMPORTED_MODULE_10__.override_canvas_context)(this.app.view_context, this.app.tool_tmp_canvas, this.app.state.view_port, true, false, false);
     }
     select_tool(tool_name) {
         this.previous_tool_name = this.current_tool_name;
@@ -1334,22 +1330,27 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   translate_rect: () => (/* binding */ translate_rect),
 /* harmony export */   vec_diff: () => (/* binding */ vec_diff)
 /* harmony export */ });
-function override_canvas_context(context_to, canvas_from, view_port_from, keep, avoid_native) {
+function override_canvas_context(context_to, canvas_from, view_port_from, keep, avoid_native, force_same_view_port) {
     // context_to.putImage(context_to_image_data,0,0);
-    const w = canvas_from.width;
-    const h = canvas_from.height;
     if (!keep) {
-        context_to.clearRect(0, 0, w, h);
+        context_to.clearRect(0, 0, context_to.canvas.clientWidth, context_to.canvas.clientHeight);
     }
     if (!avoid_native) {
-        context_to.drawImage(canvas_from, view_port_from.x, view_port_from.y, view_port_from.w, view_port_from.h);
+        if (force_same_view_port) {
+            context_to.drawImage(canvas_from, 0, 0);
+        }
+        else {
+            context_to.drawImage(canvas_from, view_port_from.x, view_port_from.y, view_port_from.w, view_port_from.h, 0, 0, context_to.canvas.clientWidth, context_to.canvas.clientHeight);
+        }
     }
     else {
         const context_from = canvas_from.getContext('2d');
-        const context_from_image_data = context_from.getImageData(0, 0, w, h);
+        const context_from_image_data = context_from.getImageData(0, 0, canvas_from.clientWidth, canvas_from.clientHeight);
         const context_from_data = context_from_image_data.data;
-        const context_to_image_data = context_to.getImageData(0, 0, w, h);
+        const context_to_image_data = context_to.getImageData(0, 0, canvas_from.clientWidth, canvas_from.clientHeight);
         const context_to_data = context_to_image_data.data;
+        const w = context_to.canvas.clientWidth;
+        const h = context_to.canvas.offsetHeight;
         for (let y = 0; y < h; ++y) {
             for (let x = 0; x < w; ++x) {
                 const offset = (w * y + x) * 4;
@@ -1582,8 +1583,8 @@ class MainApp {
             view_port: {
                 x: 0,
                 y: 0,
-                w: 0.5,
-                h: 0.5
+                w: 0.5 * this.art_canvas.clientWidth,
+                h: 0.5 * this.art_canvas.clientHeight
             }
         };
         this.art_context.imageSmoothingEnabled = false;

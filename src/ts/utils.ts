@@ -4,24 +4,43 @@ export function override_canvas_context(
     context_to:CanvasRenderingContext2D, 
     canvas_from:HTMLCanvasElement,
     view_port_from: Rect,
-    keep?:boolean,
-    avoid_native?:boolean) {
+    keep?:boolean | undefined,
+    avoid_native?:boolean | undefined,
+    force_same_view_port?:boolean | undefined) {
     // context_to.putImage(context_to_image_data,0,0);
-    const w = canvas_from.width;
-    const h = canvas_from.height;
     if (!keep) {
-        context_to.clearRect(0, 0, w, h);
+        context_to.clearRect(0, 0, 
+            context_to.canvas.clientWidth, 
+            context_to.canvas.clientHeight);
     }
     if (!avoid_native) {
-        context_to.drawImage(canvas_from, view_port_from.x, view_port_from.y, view_port_from.w, view_port_from.h);
+        if (force_same_view_port) {
+            context_to.drawImage(canvas_from,0,0)
+        } else {
+            context_to.drawImage(
+                canvas_from, 
+                view_port_from.x, 
+                view_port_from.y, 
+                view_port_from.w, 
+                view_port_from.h,
+                0,
+                0,
+                context_to.canvas.clientWidth,
+                context_to.canvas.clientHeight
+            );
+        }
     } else {
         const context_from = canvas_from.getContext('2d')!
-        const context_from_image_data = context_from.getImageData(0, 0, w, h)
+        const context_from_image_data = context_from.getImageData(0, 0, 
+            canvas_from.clientWidth, canvas_from.clientHeight)
         const context_from_data =  context_from_image_data.data;
-        const context_to_image_data = context_to.getImageData(0, 0, w, h)
+        const context_to_image_data = context_to.getImageData(0, 0, 
+            canvas_from.clientWidth, canvas_from.clientHeight)
         const context_to_data =  context_to_image_data.data;
 
-        for (let y = 0; y < h; ++y) {
+            const w = context_to.canvas.clientWidth;
+            const h = context_to.canvas.offsetHeight;
+            for (let y = 0; y < h; ++y) {
             for (let x = 0; x < w; ++x) {
                 const offset = (w*y+x)*4;
                 if (context_from_data[offset + 3] > 0) {
