@@ -42,10 +42,10 @@ export class Editor {
     constructor(app: MainApp) {
         this.app = app;
         this._view_canvas_bounding_rect = {
-            x:0, y: 0, w: this.app.view_canvas.width, h: this.app.view_canvas.height
+            x:0, y: 0, w: this.app.view_canvas.offsetWidth, h: this.app.view_canvas.offsetHeight
         }
         this._art_canvas_bounding_rect = {
-            x:0, y: 0, w: this.app.art_canvas.width, h: this.app.art_canvas.height
+            x:0, y: 0, w: this.app.art_canvas.offsetWidth, h: this.app.art_canvas.offsetHeight
         }
         this.undo_redo_buffer = new UndoRedoBuffer(100);
         this.tool = new NopTool(app.tool_context, this, app.tool_tmp_context);
@@ -62,8 +62,9 @@ export class Editor {
                 }
     }
     staging_to_art() {
-        override_canvas_context(this.app.staging_context, this.app.art_canvas,
-            this._view_canvas_bounding_rect)
+        console.log('staging_to_art')
+        override_canvas_context(this.app.art_context, this.app.staging_canvas,
+            this._art_canvas_bounding_rect)
     }
     view_port_px():Rect {
         const top_left_px = this.view_coords_to_art_coords({

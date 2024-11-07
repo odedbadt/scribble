@@ -8,7 +8,8 @@
       <style>
         #canvas-area {
           display: grid;
-          grid-template-columns: repeat(6, 250px);
+          grid-template-columns: 50px 200px 50px 200px;
+          grid-template-rows: repeat(3, 200px);
           grid-gap: 20px;
         }
         #canvas-area #view-canvas {
@@ -18,6 +19,8 @@
         #canvas-area canvas {
           width: 100px;
           height: 100px;
+          visibility: visible;
+          border: 1px solid grey;
         }
       </style>
     <% } %>
@@ -58,11 +61,16 @@
       <div id="colorswap" class="button">Swap colors</div>
   </div>
   <div id="canvas-area">
-      <canvas id="view-canvas" width="700" height="700"></canvas>
-      <canvas id="staging-canvas" width="700" height="700"></canvas>
-      <canvas id="tool-canvas" width="700" height="700"></canvas>
-      <canvas id="tool-tmp-canvas" width="700" height="700"></canvas>
-      <canvas id="art-canvas" width="700" height="700"></canvas>
+    <% if (dbg) { %><span>view</span><% } %>
+      <canvas id="view-canvas"></canvas>
+      <% if (dbg) { %><span>staging</span><% } %>
+      <canvas id="staging-canvas"></canvas>
+      <% if (dbg) { %><span>tool</span><% } %>
+      <canvas id="tool-canvas"></canvas>
+      <% if (dbg) { %><span>tool-tmp</span><% } %>
+      <canvas id="tool-tmp-canvas"></canvas>
+      <% if (dbg) { %><span>art</span><% } %>
+      <canvas id="art-canvas"></canvas>
   </div>
   <div id="right-toolbar">
       <!-- 1 -->
