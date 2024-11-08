@@ -79,7 +79,7 @@ export class Editor {
     }
     staging_to_view() {
         override_canvas_context(this.app.view_context, this.app.staging_canvas,
-            this.app.state.view_port, false, false, false)
+            this.app.state.view_port, false, true, false)
     }
     art_to_view() {
         override_canvas_context(this.app.staging_context, this.app.art_canvas,
@@ -89,7 +89,7 @@ export class Editor {
         override_canvas_context(this.app.staging_context, this.app.art_canvas,
             this._art_canvas_bounding_rect, false, false, true)
     }
-    tool_to_staging() {
+    tool_to_staging() {        
         override_canvas_context(this.app.staging_context, this.app.tool_canvas,
             this._view_canvas_bounding_rect, true, true, true)
     }
@@ -99,7 +99,7 @@ export class Editor {
     }
     tmp_tool_to_staging() {
         override_canvas_context(this.app.staging_context, this.app.tool_tmp_canvas,
-            this._art_canvas_bounding_rect, true, true, true)
+            this._art_canvas_bounding_rect, true, false, true)
     }
     tmp_tool_to_view() {
         override_canvas_context(this.app.view_context, this.app.tool_tmp_canvas,

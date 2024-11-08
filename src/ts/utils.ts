@@ -8,6 +8,10 @@ export function override_canvas_context(
     avoid_native?:boolean | undefined,
     force_same_view_port?:boolean | undefined) {
     // context_to.putImage(context_to_image_data,0,0);
+    const to_w = context_to.canvas.clientWidth;
+    const to_h = context_to.canvas.offsetHeight;    
+    const from_w = canvas_from.clientWidth;
+    const from_h = canvas_from.offsetHeight;    
     if (!keep) {
         context_to.clearRect(0, 0, 
             context_to.canvas.clientWidth, 
@@ -35,18 +39,26 @@ export function override_canvas_context(
             canvas_from.clientWidth, canvas_from.clientHeight)
         const context_from_data =  context_from_image_data.data;
         const context_to_image_data = context_to.getImageData(0, 0, 
-            canvas_from.clientWidth, canvas_from.clientHeight)
+            context_to.canvas.clientWidth, context_to.canvas.clientHeight)
         const context_to_data =  context_to_image_data.data;
 
-            const w = context_to.canvas.clientWidth;
-            const h = context_to.canvas.offsetHeight;
-            for (let y = 0; y < h; ++y) {
-            for (let x = 0; x < w; ++x) {
-                const offset = (w*y+x)*4;
-                if (context_from_data[offset + 3] > 0) {
-                    context_to_data[offset + 0] = context_from_data[offset + 0];
-                    context_to_data[offset + 1] = context_from_data[offset + 1];
-                    context_to_data[offset + 2] = context_from_data[offset + 2];
+        console.log(to_w, to_h);
+        for (let y = 0; y < to_h; ++y) {
+            for (let x = 0; x < to_w; ++x) {
+                const offset = (to_w*y+x)*4;
+                const from_x = Math.round(x/to_w*view_port_from.w)
+                const from_y = Math.round(y/to_h*view_port_from.h)
+                const from_offset = force_same_view_port ? offset :
+                    (from_w*from_y+from_x)*4;
+
+                // context_to_data[offset + 0] = 255;
+                // context_to_data[offset + 1] = 0;
+                // context_to_data[offset + 2] = 0;
+                // context_to_data[offset + 3] = 255;
+                if (context_from_data[from_offset + 3] > 0) {
+                    context_to_data[offset + 0] = context_from_data[from_offset + 0];
+                    context_to_data[offset + 1] = context_from_data[from_offset + 1];
+                    context_to_data[offset + 2] = context_from_data[from_offset + 2];
                     context_to_data[offset + 3] = 255;
                 }
             }

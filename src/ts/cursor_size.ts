@@ -17,7 +17,7 @@ export class CursorSize  extends ClickAndDragTool {
         return false;
     }
     start(at:Vector2, buttons:number):boolean {
-        this.app.settings.line_width = 1;
+        this.app.settings.line_width = 0.5;
         super.start(at, buttons)
         return false
     }
