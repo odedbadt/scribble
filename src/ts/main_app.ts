@@ -266,8 +266,9 @@ export class MainApp {
             })
         })
         document.querySelectorAll('#canvas-area canvas')!.forEach((e:Element) => {
-            resizeObserver.observe(e);
+        resizeObserver.observe(e);
         })
+
     }
     init() {
         // clear
