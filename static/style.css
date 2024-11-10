@@ -23,7 +23,7 @@ body {
     margin: 0;
     display: grid;
     grid-template-columns: repeat(2, 50px);
-    grid-template-rows: 25px repeat(8,50px)  200px 1em;
+    grid-template-rows: 25px 25px repeat(8,50px)  200px 1em;
     grid-gap: 0;
     box-sizing: border-box;
 }
@@ -206,6 +206,12 @@ body {
     font-family: monospace;
     text-align: center;
     font-size: 16px;
+}
+.gdrive {
+    grid-column: span 2;
+    height: 25px;
+    width: 100px;
+    background-color: #ee9;
 }
 .undo {
     background-image: url(/undoredo.png);

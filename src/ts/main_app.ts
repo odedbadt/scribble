@@ -1,7 +1,8 @@
 import { Editor } from "./editor"
 import { Palette} from './palette'
 import { ColorStack } from "./color_stack";
-import { Rect, unit_rect } from "./types";
+import { Rect } from "./types";
+import { GoogleDrive } from "./gdrive"
 function click_for_a_second(id:string, callback:Function) {
     const elem = document.getElementById(id);
     if (elem) {
@@ -27,6 +28,7 @@ export class MainApp {
     tool_tmp_canvas: HTMLCanvasElement;
     tool_tmp_context: CanvasRenderingContext2D;
     editor: Editor;
+    google_drive:GoogleDrive; 
     settings: {
         filled: boolean; 
         fore_color: string; 
@@ -66,8 +68,8 @@ export class MainApp {
             view_port: {
                 x: 0,
                 y: 0, 
-                w: 0.5 * this.art_canvas.clientWidth, 
-                h: 0.5 * this.art_canvas.clientHeight
+                w: this.art_canvas.clientWidth, 
+                h: this.art_canvas.clientHeight
             }
         }
         this.art_context.imageSmoothingEnabled = false;
@@ -81,6 +83,7 @@ export class MainApp {
             document.getElementById('color-selector-div-back')!,
             document.getElementsByClassName('color_stack_item')
             )
+        this.google_drive = new GoogleDrive(document.location.hash)
     }
     select_tool(tool_name:string) {
         const _this = this;
@@ -144,6 +147,9 @@ export class MainApp {
         });
         document.getElementById('load_button')!.addEventListener('click',() => {
             file_input.click()
+        });
+        document.getElementById('gdrive_button')!.addEventListener('click',() => {
+            this.google_drive.open_picker(console.log);
         });
     }
     init_undo_redo_buttons() {

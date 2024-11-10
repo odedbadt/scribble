@@ -2,23 +2,26 @@
 <html>
   <head>
     <link rel="stylesheet" type="text/css" href="/style.css">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://apis.google.com/js/api.js"></script>
+    
     <script src="/ts/bundle.js"></script>
 
     <% if (dbg) { %>
       <style>
         #canvas-area {
           display: grid;
-          grid-template-columns: 50px 200px 50px 200px;
-          grid-template-rows: repeat(3, 200px);
+          grid-template-columns: 50px 300px 50px 300px;
+          grid-template-rows: repeat(3, 300px);
           grid-gap: 20px;
         }
         #canvas-area #view-canvas {
-          width: 200px;
-          height: 200px;
-        }
-        #canvas-area canvas {
           width: 100px;
           height: 100px;
+        }
+        #canvas-area canvas {
+          width: 200px;
+          height: 200px;
           visibility: visible;
           border: 1px solid grey;
         }
@@ -27,7 +30,8 @@
   </head>
   <body>
     <div id="toolbar">
-      <div id="save_button" class="save button">Save</div>
+    <div id="gdrive_button" class="gdrive buttonsize"></div>
+    <div id="save_button" class="save button">Save</div>
       <div id="load_button" class="load button">Load</div>
       <div id="undo_button" class="undo button"></div>
       <div id="redo_button" class="redo button"></div>
