@@ -22,36 +22,36 @@ export class GoogleDrive {
     //     });
     //     return params        
     // } 
-initiate_open_tab(callback:(token:string)=>void) {
-        const popup = window.open("/", "formPopup", "width=600,height=400")!;
+initiate_open_tab(token_callback:(token:string)=>void) {
+        const popup = window.open("/login", "formPopup", "width=600,height=400")!;
         // HACK: "setTimeout" loop until the popup aquired the access_token
-        function loop_until_popup_redirected() {
+        function redirected_poller() {
             console.log('loop')
             const mtch = popup.location.hash.match('access_token=([^&]+)(&|$)')
             
             if (mtch != null) {
                 console.log(mtch[1])
-                callback(mtch[1])
+                token_callback(mtch[1])
             } else {
-                setTimeout(loop_until_popup_redirected, 1000)
+                setTimeout(redirected_poller, 500)
             }
         };
-        loop_until_popup_redirected();
+        redirected_poller();
     }
-    assert_oauth(next_state:string) {
-        if (this.params.get('access_token') == undefined) {
-            this.oauth_sign_in(next_state)
-            return
-        }
-        this.access_token = this.params.get('access_token');
-    }
+    // assert_oauth(next_state:string) {
+    //     if (this.params.get('access_token') == undefined) {
+    //         this.oauth_sign_in(next_state)
+    //         return
+    //     }
+    //     this.access_token = this.params.get('access_token');
+    // }
     open_picker(img_selected_callack:(url:string) => void) {
-        if (this.access_token == null) {
-            this.assert_oauth('open-picker')
-            if (this.access_token == null) {
-                return
-            }
-        }
+        // if (this.access_token == null) {
+        //     this.assert_oauth('open-picker')
+        //     if (this.access_token == null) {
+        //         return
+        //     }
+        // }
         const api_key = GoogleDrive.api_key;
         function picker_callback(data:google.picker.PickerResponse) {
             if (data.action === google.picker.Action.PICKED) {
@@ -85,7 +85,7 @@ initiate_open_tab(callback:(token:string)=>void) {
     }
 
     oauth_sign_in(next_state:string) {
-        if (this.access_token != null) {
+        if (document.location.hash != '') {
             return;
         }
     
@@ -94,7 +94,7 @@ initiate_open_tab(callback:(token:string)=>void) {
       // Create <form> element to submit parameters to OAuth 2.0 endpoint.
       const form:HTMLFormElement = document.createElement('form');
       form.setAttribute('method', 'GET'); // Send as a GET request.
-      form.setAttribute('action', GoogleDrive.oauth2Endpoint);
+      form.setAttribute('action', 'https://accounts.google.com/o/oauth2/v2/auth');
     
       // Parameters to pass to OAuth 2.0 endpoint.
       const params:Map<string,string> = new Map(
