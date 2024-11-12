@@ -14,11 +14,15 @@ app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "templates"));
 // Set up route for the main page
 app.get("/", (req, res) => {
-  res.render("main_screen.ejs", {"dbg": false});
+  res.render("login.ejs", {"client_id": '983437923698-shfpf6udie0o0akgoa3caj7bdvonkhvo.apps.googleusercontent.com'});
 });
-app.get("/dbg", (req, res) => {
-    res.render("main_screen.ejs", {"dbg": true});
-  });
+
+// app.get("/main", (req, res) => {
+//   res.render("main_screen.ejs", {"dbg": false});
+// });
+// app.get("/main_dbg", (req, res) => {
+//     res.render("main_screen.ejs", {"dbg": true});
+//   });
 // Start the server
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);

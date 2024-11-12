@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://apis.google.com/js/api.js"></script>
+    
+  </head>
+  <body>
+    <form id="auth_form">
+      <input type="hidden" name="client_id" value="{{ client_id }}">
+      <input type="hidden" name="redirect_uri" value="http://localhost:8080">
+      <input type="hidden" name="response_type" value="token">
+      <input type="hidden" name="scope" value="https://www.googleapis.com/auth/drive.metadata.readonly">
+      <input type="hidden" name="include_granted_scopes" value="true">
+      <input type="hidden" name="state" value="{{ next_state }}">
+    </form>
+    <script>
+      if (document.location.hash =='' && document.location.search =='') {
+        document.getElementById('auth_form').submit()
+      }
+    </script>
+  </body>
+</html>
+

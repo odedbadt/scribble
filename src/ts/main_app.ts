@@ -149,7 +149,7 @@ export class MainApp {
             file_input.click()
         });
         document.getElementById('gdrive_button')!.addEventListener('click',() => {
-            this.google_drive.open_picker(console.log);
+            this.google_drive.open_picker((s:string) => {console.log(s)});
         });
     }
     init_undo_redo_buttons() {
@@ -298,5 +298,9 @@ export function app_ignite() {
     (window as any).app.init();
 }
 
-
-window.addEventListener('load', () => {app_ignite()});
+(window as any).entry_points = {
+    "app_ignite": app_ignite,
+    "login": () => {
+    const google_drive = new GoogleDrive(document.location.hash)
+    google_drive.assert_oauth('oded');
+}};
