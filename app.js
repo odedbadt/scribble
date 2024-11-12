@@ -16,7 +16,8 @@ app.set("views", path.join(__dirname, "templates"));
 app.get("/login", (req, res) => {
   res.render("login.ejs", {
     "client_id": '983437923698-shfpf6udie0o0akgoa3caj7bdvonkhvo.apps.googleusercontent.com',
-    "next_state": 'redirected'});
+    "next_state": 'redirected',
+    "scopes": "https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.meet.readonly https://www.googleapis.com/auth/drive.metadata https://www.googleapis.com/auth/drive.metadata.readonly https://www.googleapis.com/auth/drive.photos.readonly https://www.googleapis.com/auth/drive.readonly"});
 });
 
 app.get("/main", (req, res) => {

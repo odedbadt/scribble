@@ -95,6 +95,20 @@ export class MainApp {
         button.classList.add('pressed')
         _this.editor.select_tool(tool_name)
     }
+    load_image(url:string) {
+        const img = new Image();
+        const _this = this
+        img.addEventListener('load', () =>  {
+            // Clear canvas and draw the image
+            _this.art_context.clearRect(0, 0, _this.art_canvas.width, _this.art_canvas.height);
+            _this.art_context.drawImage(img, 0, 0, _this.art_canvas.width, _this.art_canvas.height);
+            _this.editor.art_to_view()
+            _this.editor.art_to_staging()
+        });
+        img.src = url;
+        document.body.appendChild(img);
+        console.log(img);
+    }
     init_load_save() {
         const art_canvas = this.art_canvas;
         const art_context = this.art_context
@@ -128,15 +142,7 @@ export class MainApp {
                 const _this = this;
                 reader.onload = function(e) {
                     if (e.target) {
-                        const img = new Image();
-                        img.onload = function() {
-                            // Clear canvas and draw the image
-                            art_context.clearRect(0, 0, art_canvas.width, art_canvas.height);
-                            art_context.drawImage(img, 0, 0, art_canvas.width, art_canvas.height);
-                            _this.editor.art_to_view()
-                            _this.editor.art_to_staging()
-                        };
-                        img.src = e.target.result as string;
+                        _this.load_image(e.target.result as string)                        
                     }
                 };
                 reader.readAsDataURL(file);
@@ -149,7 +155,7 @@ export class MainApp {
             file_input.click()
         });
         document.getElementById('gdrive_button')!.addEventListener('click',() => {
-            this.google_drive.open_picker((s:string) => {console.log(s)});
+            this.google_drive.open_picker(this.load_image.bind(this));//(s:string) => {console.log(s)});
         });
     }
     init_undo_redo_buttons() {
