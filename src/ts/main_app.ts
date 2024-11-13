@@ -100,14 +100,16 @@ export class MainApp {
         const _this = this
         img.addEventListener('load', () =>  {
             // Clear canvas and draw the image
+            _this.art_canvas.width = img.naturalWidth;
+            _this.art_canvas.height = img.naturalHeight;
+            _this.state.view_port.w = img.naturalWidth;
+            _this.state.view_port.h = img.naturalHeight;
             _this.art_context.clearRect(0, 0, _this.art_canvas.width, _this.art_canvas.height);
             _this.art_context.drawImage(img, 0, 0, _this.art_canvas.width, _this.art_canvas.height);
             _this.editor.art_to_view()
             _this.editor.art_to_staging()
         });
         img.src = url;
-        document.body.appendChild(img);
-        console.log(img);
     }
     init_load_save() {
         const art_canvas = this.art_canvas;
