@@ -102,8 +102,11 @@ export class MainApp {
             // Clear canvas and draw the image
             _this.art_canvas.width = img.naturalWidth;
             _this.art_canvas.height = img.naturalHeight;
-            _this.state.view_port.w = img.naturalWidth;
-            _this.state.view_port.h = img.naturalHeight;
+            // a = w / h
+            const view_canvas_aspect = _this.view_canvas.clientWidth/_this.view_canvas.clientHeight;
+            const view_port_w = Math.min(img.naturalWidth,img.naturalHeight*view_canvas_aspect)/2
+            _this.state.view_port = {'x':0, 'y':0, 'w':view_port_w,
+            'h':  view_port_w / view_canvas_aspect};
             _this.art_context.clearRect(0, 0, _this.art_canvas.width, _this.art_canvas.height);
             _this.art_context.drawImage(img, 0, 0, _this.art_canvas.width, _this.art_canvas.height);
             _this.editor.art_to_view()
@@ -284,6 +287,36 @@ export class MainApp {
         })
 
     }
+    init_scroll() {
+        this.view_canvas.addEventListener('wheel', (event) => {
+            // Get the modifiers pressed
+            const ctrlKey = event.ctrlKey;
+            const shiftKey = event.shiftKey;
+            const altKey = event.altKey;
+            const metaKey = event.metaKey; // For Mac command key
+          
+            // Access scroll properties
+            const deltaX = event.deltaX; // Horizontal scroll
+            const deltaY = event.deltaY; // Vertical scroll
+          
+            // Log the information
+            // console.log(`Scrolling with modifiers:`);
+            // console.log(`  Ctrl: ${ctrlKey}`);
+            // console.log(`  Shift: ${shiftKey}`);
+            // console.log(`  Alt: ${altKey}`);
+            // console.log(`  Meta: ${metaKey}`);
+            // console.log(`  Horizontal scroll: ${deltaX}`);
+            // console.log(`  Vertical scroll: ${deltaY}`);
+          
+            // Perform actions based on modifiers and scroll direction
+            this.state.view_port.y = Math.max(0, this.state.view_port.y+deltaY)
+            this.state.view_port.x = Math.max(0, this.state.view_port.x+deltaX)
+            console.log(`view_port.y: ${this.state.view_port.y}`)
+            this.editor.art_to_view()
+            this.editor.art_to_staging()
+            
+        });
+    }
     init() {
         // clear
         this.view_context.fillStyle = "rgba(255,255,255,0)"
@@ -299,6 +332,7 @@ export class MainApp {
         this.forward_events_to_editor();
         this.select_tool('scribble');
         this.init_view_canvas_size();
+        this.init_scroll();
     }
 }
 export function app_ignite() {
@@ -307,3 +341,4 @@ export function app_ignite() {
 }
 
 window.addEventListener('load', app_ignite);
+

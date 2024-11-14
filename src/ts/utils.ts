@@ -7,6 +7,8 @@ export function override_canvas_context(
     keep?:boolean | undefined,
     avoid_native?:boolean | undefined,
     force_same_view_port?:boolean | undefined) {
+        const before_f_t = performance.now();
+        console.log('override_canvas_context', avoid_native, force_same_view_port)
     // context_to.putImage(context_to_image_data,0,0);
     const to_w = context_to.canvas.clientWidth;
     const to_h = context_to.canvas.offsetHeight;    
@@ -21,6 +23,8 @@ export function override_canvas_context(
         if (force_same_view_port) {
             context_to.drawImage(canvas_from,0,0)
         } else {
+            const before_t = performance.now();
+            console.log('starting drawImage')
             context_to.drawImage(
                 canvas_from, 
                 view_port_from.x, 
@@ -32,6 +36,8 @@ export function override_canvas_context(
                 context_to.canvas.clientWidth,
                 context_to.canvas.clientHeight
             );
+            const after_t = performance.now();
+            console.log(`ended drawImage, took ${(after_t - before_t)}`)
         }
     } else {
         const context_from = canvas_from.getContext('2d')!
@@ -45,8 +51,8 @@ export function override_canvas_context(
         for (let y = 0; y < to_h; ++y) {
             for (let x = 0; x < to_w; ++x) {
                 const offset = (to_w*y+x)*4;
-                const from_x = Math.round(x/to_w*view_port_from.w)
-                const from_y = Math.round(y/to_h*view_port_from.h)
+                const from_x = Math.round(x/to_w*view_port_from.w+view_port_from.x)
+                const from_y = Math.round(y/to_h*view_port_from.h+view_port_from.y)
                 const from_offset = force_same_view_port ? offset :
                     (from_w*from_y+from_x)*4;
 
@@ -61,7 +67,10 @@ export function override_canvas_context(
         }
         context_to.putImageData(context_to_image_data,0,0);
     }
- }
+    const after_f_t = performance.now();
+    console.trace();
+    console.log(`ended f, took ${(after_f_t - before_f_t)}`)
+}
 export function parse_RGBA(color:string | Uint8ClampedArray):Uint8ClampedArray
 {
     if (color instanceof Uint8ClampedArray) {

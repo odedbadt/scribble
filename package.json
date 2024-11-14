@@ -14,6 +14,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/gapi.client.drive-v3": "^0.0.5",
     "ejs": "^3.1.10",
     "express": "^4.21.1",
     "firebase": "^11.0.1",
