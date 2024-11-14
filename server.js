@@ -12,12 +12,16 @@ app.use(express.static(path.join(__dirname, "static")));
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "templates"));
+app.set('trust proxy', true);
+
 // Set up route for the main page
 app.get("/login", (req, res) => {
+  const base_url = req.protocol + '://' + req.get('host');
   res.render("login.ejs", {
     "client_id": '983437923698-shfpf6udie0o0akgoa3caj7bdvonkhvo.apps.googleusercontent.com',
     "next_state": 'redirected',
-    "scopes": "https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.meet.readonly https://www.googleapis.com/auth/drive.metadata https://www.googleapis.com/auth/drive.metadata.readonly https://www.googleapis.com/auth/drive.photos.readonly https://www.googleapis.com/auth/drive.readonly"});
+    "scopes": "https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.meet.readonly https://www.googleapis.com/auth/drive.metadata https://www.googleapis.com/auth/drive.metadata.readonly https://www.googleapis.com/auth/drive.photos.readonly https://www.googleapis.com/auth/drive.readonly",
+  "base_url":base_url});
 });
 
 app.get("/main", (req, res) => {
