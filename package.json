@@ -22,6 +22,9 @@
     "rxjs": "^7.8.1",
     "ts-loader": "^9.5.1"
   },
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "devDependencies": {
     "@types/gapi": "^0.0.47",
     "@types/gapi.auth2": "^0.0.61",

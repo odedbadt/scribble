@@ -20,6 +20,9 @@
     <script>
       if (document.location.hash =='' && document.location.search =='') {
         document.getElementById('auth_form').submit()
+      } else {
+        const bc = new BroadcastChannel("token");
+        bc.postMessage(document.location.hash);
       }
     </script>
   </body>
