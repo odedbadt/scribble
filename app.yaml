@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 runtime: nodejs20  # Adjust this to the desired Node.js version
-env: flex
+env: standard
 manual_scaling:
   instances: 1
 
