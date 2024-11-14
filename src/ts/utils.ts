@@ -1,11 +1,10 @@
 import { Rect, Vector2 } from "./types";
-
 export function override_canvas_context(
     context_to:CanvasRenderingContext2D, 
     canvas_from:HTMLCanvasElement,
     view_port_from: Rect,
     keep?:boolean | undefined,
-    avoid_native?:boolean | undefined,
+    avoid_native?:boolean,
     force_same_view_port?:boolean | undefined) {
         const before_f_t = performance.now();
         console.log('override_canvas_context', avoid_native, force_same_view_port)
@@ -14,40 +13,14 @@ export function override_canvas_context(
     const to_h = context_to.canvas.offsetHeight;    
     const from_w = canvas_from.clientWidth;
     const from_h = canvas_from.offsetHeight;    
-    if (!keep) {
-        context_to.clearRect(0, 0, 
-            context_to.canvas.clientWidth, 
-            context_to.canvas.clientHeight);
-    }
-    if (!avoid_native) {
-        if (force_same_view_port) {
-            context_to.drawImage(canvas_from,0,0)
-        } else {
-            const before_t = performance.now();
-            console.log('starting drawImage')
-            context_to.drawImage(
-                canvas_from, 
-                view_port_from.x, 
-                view_port_from.y, 
-                view_port_from.w, 
-                view_port_from.h,
-                0,
-                0,
-                context_to.canvas.clientWidth,
-                context_to.canvas.clientHeight
-            );
-            const after_t = performance.now();
-            console.log(`ended drawImage, took ${(after_t - before_t)}`)
-        }
-    } else {
-        const context_from = canvas_from.getContext('2d')!
-        const context_from_image_data = context_from.getImageData(0, 0, 
-            canvas_from.clientWidth, canvas_from.clientHeight)
-        const context_from_data =  context_from_image_data.data;
-        const context_to_image_data = context_to.getImageData(0, 0, 
-            context_to.canvas.clientWidth, context_to.canvas.clientHeight)
-        const context_to_data =  context_to_image_data.data;
-
+    const context_from = canvas_from.getContext('2d')!
+    const context_from_image_data = context_from.getImageData(0, 0, 
+        canvas_from.clientWidth, canvas_from.clientHeight)
+    const context_from_data =  context_from_image_data.data;
+    const context_to_image_data = context_to.getImageData(0, 0, 
+        context_to.canvas.clientWidth, context_to.canvas.clientHeight)
+    const context_to_data =  context_to_image_data.data;
+    function render_non_native() {
         for (let y = 0; y < to_h; ++y) {
             for (let x = 0; x < to_w; ++x) {
                 const offset = (to_w*y+x)*4;
@@ -55,8 +28,6 @@ export function override_canvas_context(
                 const from_y = Math.round(y/to_h*view_port_from.h+view_port_from.y)
                 const from_offset = force_same_view_port ? offset :
                     (from_w*from_y+from_x)*4;
-
-
                 if (context_from_data[from_offset + 3] > 0) {
                     context_to_data[offset + 0] = context_from_data[from_offset + 0];
                     context_to_data[offset + 1] = context_from_data[from_offset + 1];
@@ -67,9 +38,32 @@ export function override_canvas_context(
         }
         context_to.putImageData(context_to_image_data,0,0);
     }
-    const after_f_t = performance.now();
-    console.trace();
-    console.log(`ended f, took ${(after_f_t - before_f_t)}`)
+    function render_native() {
+        context_to.drawImage(
+            canvas_from, 
+            view_port_from.x, 
+            view_port_from.y, 
+            view_port_from.w, 
+            view_port_from.h,
+            0,
+            0,
+            context_to.canvas.clientWidth,
+            context_to.canvas.clientHeight
+        );
+
+    }
+    if (!keep) {
+        context_to.clearRect(0, 0, 
+            context_to.canvas.clientWidth, 
+            context_to.canvas.clientHeight);
+    }
+    if (force_same_view_port) {
+        context_to.drawImage(canvas_from,0,0)
+    } else if (avoid_native) {
+        render_non_native()
+    } else {
+        render_native();
+    }
 }
 export function parse_RGBA(color:string | Uint8ClampedArray):Uint8ClampedArray
 {

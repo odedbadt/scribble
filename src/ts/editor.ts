@@ -81,9 +81,9 @@ export class Editor {
         override_canvas_context(this.app.view_context, this.app.staging_canvas,
             this.app.state.view_port, false, false, false)
     }
-    art_to_view() {
+    art_to_view(avoid_native?:boolean) {
         override_canvas_context(this.app.view_context, this.app.art_canvas,
-            this.app.state.view_port, false, false, false)
+            this.app.state.view_port, false, !!avoid_native, false)
     }
     art_to_staging() {
         override_canvas_context(this.app.staging_context, this.app.art_canvas,
