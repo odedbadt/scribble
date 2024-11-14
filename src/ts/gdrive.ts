@@ -27,20 +27,18 @@ export class GoogleDrive {
             token_callback(this.access_token);
             return
         }
+        const bc = new BroadcastChannel("token");
+        const _this = this;
+        bc.onmessage = (event) => {
+            console.log(event);
+            const mtch = event.data.match('access_token=([^&]+)(&|$)')
+            if (mtch != null) {
+                _this.access_token = mtch[1]!;
+                token_callback(mtch[1]);            
+            }
+          };
         const popup = window.open("/login", "formPopup", "width=10,height=10")!;
         // HACK: "setTimeout" loop until the popup aquired the access_token
-        const _this = this
-        function redirected_poller() {
-            const mtch = popup.location.hash.match('access_token=([^&]+)(&|$)')
-
-            if (mtch != null) {
-                _this.access_token = mtch[1]
-                token_callback(_this.access_token)
-            } else {
-                setTimeout(redirected_poller, 500)
-            }
-        };
-        redirected_poller();
     }
     open_picker(img_selected_callack: (url: string) => void) {
         const _this = this
