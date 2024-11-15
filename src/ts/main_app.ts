@@ -291,32 +291,21 @@ export class MainApp {
         this.view_canvas.addEventListener('wheel', (event) => {
             event.preventDefault()
             // Get the modifiers pressed
-            const ctrlKey = event.ctrlKey;
-            const shiftKey = event.shiftKey;
-            const altKey = event.altKey;
-            const metaKey = event.metaKey; // For Mac command key
+            const ctrl_key = event.ctrlKey;
           
             // Access scroll properties
             const deltaX = event.deltaX; // Horizontal scroll
             const deltaY = event.deltaY; // Vertical scroll
           
-            // Log the information
-            // console.log(`Scrolling with modifiers:`);
-            // console.log(`  Ctrl: ${ctrlKey}`);
-            // console.log(`  Shift: ${shiftKey}`);
-            // console.log(`  Alt: ${altKey}`);
-            // console.log(`  Meta: ${metaKey}`);
-            // console.log(`  Horizontal scroll: ${deltaX}`);
-            // console.log(`  Vertical scroll: ${deltaY}`);
           
             // Perform actions based on modifiers and scroll direction
-            if (ctrlKey) {
+            if (ctrl_key) {
                 // Zoom:
                 // view_port.h, w changes
                 // cursor in before and in after change has to be contant
                 const art_x_before_zoom = this.state.view_port.x + event.offsetX  / 
                 this.view_canvas.clientWidth * this.state.view_port.w;
-                // equations:
+                /* equations:
                 // view_port_x_before + cursor_x*view_port_w_before / view_canvas_w = 
                 // view_port_x_after + cursor_x*view_port_w_after  / view_canvas_w
                 // view_port_y_before + cursor_x*view_port_h_before / view_canvas_h = 
@@ -326,12 +315,14 @@ export class MainApp {
                 // view_port_x_after = view_port_x_before + cursor_x*(view_port_w_before-view_port_w_after) / view_canvas_w
                 // view_port_y_after = view_port_y_before + cursor_y*deltaY/ view_canvas_h
                 // view_port_x_after = view_port_y_after*aspect;
-                // what are new view_port.x, y
-                // cx (in art coordinates)= cxv (cursor x in view coords) + vpw
+                */
+
                 const aspect = this.state.view_port.w / this.state.view_port.h;
-                this.state.view_port.y = this.state.view_port.y - event.offsetY * deltaY/ this.view_canvas.clientHeight;
-                this.state.view_port.x = this.state.view_port.x - event.offsetX * deltaY*aspect/ this.view_canvas.clientWidth;
-                this.state.view_port.h = Math.max(1, this.state.view_port.h+deltaY)
+                const ratio_h = Math.exp(deltaY/1000);
+                const delta_h = this.state.view_port.h*(ratio_h-1)
+                this.state.view_port.y = this.state.view_port.y - event.offsetY * delta_h/ this.view_canvas.clientHeight;
+                this.state.view_port.x = this.state.view_port.x - event.offsetX * delta_h*aspect/ this.view_canvas.clientWidth;
+                this.state.view_port.h = Math.max(1, this.state.view_port.h*ratio_h)
                 this.state.view_port.w = this.state.view_port.h*aspect;
             } else {
                 this.state.view_port.y = Math.max(0, this.state.view_port.y+deltaY/ this.view_canvas.clientHeight*100)
