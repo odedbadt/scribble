@@ -289,6 +289,7 @@ export class MainApp {
     }
     init_scroll() {
         this.view_canvas.addEventListener('wheel', (event) => {
+            event.preventDefault()
             // Get the modifiers pressed
             const ctrlKey = event.ctrlKey;
             const shiftKey = event.shiftKey;
@@ -336,10 +337,8 @@ export class MainApp {
                 this.state.view_port.y = Math.max(0, this.state.view_port.y+deltaY/ this.view_canvas.clientHeight*100)
                 this.state.view_port.x = Math.max(0, this.state.view_port.x+deltaX/ this.view_canvas.clientWidth*100)
             }
-            console.log(`view_port.y: ${this.state.view_port.y}`)
-            this.editor.art_to_view(false);
+            this.editor.art_to_view();
             const _this = this;
-            setTimeout(() =>{_this.editor.art_to_view(true)}    , 5000)
             this.editor.art_to_staging()
 
 

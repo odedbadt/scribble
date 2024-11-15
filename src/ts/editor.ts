@@ -39,6 +39,8 @@ export class Editor {
     private _last_hover_spot: Vector2 | null;
     private _view_canvas_bounding_rect: Rect;
     private _art_canvas_bounding_rect: Rect;
+    private _non_native_view_render_countdown = 10 
+    private _view_rendering_countdown_interval?: NodeJS.Timeout|undefined = undefined;
     constructor(app: MainApp) {
         this.app = app;
         this._view_canvas_bounding_rect = {
@@ -74,16 +76,45 @@ export class Editor {
         }
     }
     staging_to_art() {
+        
         override_canvas_context(this.app.art_context, this.app.staging_canvas,
             this._art_canvas_bounding_rect, false, false, true)
     }
     staging_to_view() {
+        this._non_native_view_render_countdown = 10;
         override_canvas_context(this.app.view_context, this.app.staging_canvas,
             this.app.state.view_port, false, false, false)
-    }
-    art_to_view(avoid_native?:boolean) {
+            if (this._view_rendering_countdown_interval==undefined) {
+                const _this = this;
+                this._view_rendering_countdown_interval = setInterval(() => {
+                    _this._non_native_view_render_countdown--;
+                    if (_this._non_native_view_render_countdown <=0) {
+                        _this._non_native_view_render_countdown = 10
+                        override_canvas_context(this.app.view_context, this.app.staging_canvas,
+                            this.app.state.view_port, false, true, false)
+                        window.clearInterval(this._view_rendering_countdown_interval)
+                        this._view_rendering_countdown_interval=undefined;
+                    }
+                }, 100)
+        }  
+    } 
+    art_to_view() {
+        this._non_native_view_render_countdown = 10;
         override_canvas_context(this.app.view_context, this.app.art_canvas,
-            this.app.state.view_port, false, !!avoid_native, false)
+            this.app.state.view_port, false, false, false)        
+        if (this._view_rendering_countdown_interval==undefined) {
+            const _this = this;
+            this._view_rendering_countdown_interval = setInterval(() => {
+                _this._non_native_view_render_countdown--;
+                if (_this._non_native_view_render_countdown <=0) {
+                    _this._non_native_view_render_countdown = 10
+                    override_canvas_context(this.app.view_context, this.app.art_canvas,
+                        this.app.state.view_port, false, true, false)
+                        window.clearInterval(this._view_rendering_countdown_interval)
+                        this._view_rendering_countdown_interval=undefined;
+                }
+            }, 100)
+        }
     }
     art_to_staging() {
         override_canvas_context(this.app.staging_context, this.app.art_canvas,

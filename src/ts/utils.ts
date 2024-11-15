@@ -7,7 +7,6 @@ export function override_canvas_context(
     avoid_native?:boolean,
     force_same_view_port?:boolean | undefined) {
         const before_f_t = performance.now();
-        console.log('override_canvas_context', avoid_native, force_same_view_port)
     // context_to.putImage(context_to_image_data,0,0);
     const to_w = context_to.canvas.clientWidth;
     const to_h = context_to.canvas.offsetHeight;    
