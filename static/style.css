@@ -134,65 +134,61 @@ body {
     color: #444;
 }
 .scribble {
-    background-image: url("/icons.png");
+    background-image: url("icons.png");
     background-size: 200px 200px;
     background-position: -5px -5px;
     background-repeat: no-repeat;
 
 }
 .rect {
-    background-image: url(/rect.png);
-    background-repeat: no-repeat;
-}
-.mandala {
-    background-image: url(/manda.png);
+    background-image: url("rect.png");
     background-repeat: no-repeat;
 }
 .rect.filled{
-    background-image: url(/rect.filled.png);
+    background-image: url("rect.filled.png");
     background-repeat: no-repeat;
 }
 
 .line {
-    background-image: url("/icons.png");
+    background-image: url("icons.png");
     background-size: 200px 200px;
     background-position: -97px -54px;
     background-repeat: no-repeat;
 }
 .circle {
-    background-image: url(/circle.png);
+    background-image: url(circle.png);
     background-repeat: no-repeat;
 }
 .circle.filled {
-    background-image: url(/circle.filled.png);
+    background-image: url(circle.filled.png);
     background-repeat: no-repeat;
 }
 
 .dropper {
-    background-image: url(/dropper.png);
+    background-image: url(dropper.png);
     background-size: 50px 50px;
 }
 .cursor_size {
-    background-image: url(/linewidth.png);
+    background-image: url(linewidth.png);
 }
 .mandala {
-    background-image: url(/mandala.png);
+    background-image: url(mandala.png);
     background-size: 40px 40px;
 
 }
 .floodfill {
-    background-image: url("/icons.png");
+    background-image: url("icons.png");
     background-size: 200px 200px;
     background-position: -5px -54px;
     background-repeat: no-repeat;
 }
 .eraser {
-    background-image: url(/icons3.png);
+    background-image: url(icons3.png);
     background-size: 100px 100px;
     background-position: -9px -4px;
 }
 .clearall {
-    background-image: url(/icons2.png);
+    background-image: url(icons2.png);
     background-size: 200px 200px;
     background-position: 0px -104px;
 
@@ -215,22 +211,22 @@ body {
     background-color: #ee9;
 }
 .undo {
-    background-image: url(/undoredo.png);
+    background-image: url("undoredo.png");
     background-size: 100px 100px;
     background-position: -4px -22px;
 }
 .redo {
-    background-image: url("/undoredo.png");
+    background-image: url("undoredo.png");
     background-size: 100px 100px;
     background-position: -50px -22px;
 }
 .fillstyle {
-    background-image: url("/fillstyle_outline.png");
+    background-image: url("fillstyle_outline.png");
     
 }
 
 .fillstyle.filled {
-    background-image: url("/fillstyle.png");
+    background-image: url("fillstyle.png");
     
 }
 #file_input {
