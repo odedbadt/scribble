@@ -1,7 +1,7 @@
 export class GoogleDrive {
-    static client_id: string = '983437923698-shfpf6udie0o0akgoa3caj7bdvonkhvo.apps.googleusercontent.com'
-    static client_secret: string = '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'
-    static api_key: string = 'AIzaSyB3EOx24XRRrxQ9N60WS2ljDAX6Q86MkVc'
+    static client_id: string = ''
+    static client_secret: string = ''
+    static api_key: string = ''
     static oauth2Endpoint: string = 'https://accounts.google.com/o/oauth2/v2/auth'
     access_token: string | undefined;
     // params:Map<string,string>;
