@@ -300,7 +300,7 @@ export class MainApp {
           
             // Perform actions based on modifiers and scroll direction
             if (ctrl_key) {
-                // Zoom:
+                // Zoom:;
                 // view_port.h, w changes
                 // cursor in before and in after change has to be contant
                 const art_x_before_zoom = this.state.view_port.x + event.offsetX  / 

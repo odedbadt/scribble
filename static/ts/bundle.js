@@ -491,6 +491,8 @@ const tool_classes = new Map([
 ]);
 class Editor {
     constructor(app) {
+        this._non_native_view_render_countdown = 10;
+        this._view_rendering_countdown_interval = undefined;
         this.app = app;
         this._view_canvas_bounding_rect = {
             x: 0, y: 0, w: this.app.view_canvas.offsetWidth, h: this.app.view_canvas.offsetHeight
@@ -528,10 +530,36 @@ class Editor {
         (0,_utils__WEBPACK_IMPORTED_MODULE_10__.override_canvas_context)(this.app.art_context, this.app.staging_canvas, this._art_canvas_bounding_rect, false, false, true);
     }
     staging_to_view() {
-        (0,_utils__WEBPACK_IMPORTED_MODULE_10__.override_canvas_context)(this.app.view_context, this.app.staging_canvas, this.app.state.view_port, false, true, false);
+        this._non_native_view_render_countdown = 10;
+        (0,_utils__WEBPACK_IMPORTED_MODULE_10__.override_canvas_context)(this.app.view_context, this.app.staging_canvas, this.app.state.view_port, false, false, false);
+        if (this._view_rendering_countdown_interval == undefined) {
+            const _this = this;
+            this._view_rendering_countdown_interval = setInterval(() => {
+                _this._non_native_view_render_countdown--;
+                if (_this._non_native_view_render_countdown <= 0) {
+                    _this._non_native_view_render_countdown = 10;
+                    (0,_utils__WEBPACK_IMPORTED_MODULE_10__.override_canvas_context)(this.app.view_context, this.app.staging_canvas, this.app.state.view_port, false, true, false);
+                    window.clearInterval(this._view_rendering_countdown_interval);
+                    this._view_rendering_countdown_interval = undefined;
+                }
+            }, 100);
+        }
     }
     art_to_view() {
-        (0,_utils__WEBPACK_IMPORTED_MODULE_10__.override_canvas_context)(this.app.staging_context, this.app.art_canvas, this.app.state.view_port, false, false, false);
+        this._non_native_view_render_countdown = 10;
+        (0,_utils__WEBPACK_IMPORTED_MODULE_10__.override_canvas_context)(this.app.view_context, this.app.art_canvas, this.app.state.view_port, false, false, false);
+        if (this._view_rendering_countdown_interval == undefined) {
+            const _this = this;
+            this._view_rendering_countdown_interval = setInterval(() => {
+                _this._non_native_view_render_countdown--;
+                if (_this._non_native_view_render_countdown <= 0) {
+                    _this._non_native_view_render_countdown = 10;
+                    (0,_utils__WEBPACK_IMPORTED_MODULE_10__.override_canvas_context)(this.app.view_context, this.app.art_canvas, this.app.state.view_port, false, true, false);
+                    window.clearInterval(this._view_rendering_countdown_interval);
+                    this._view_rendering_countdown_interval = undefined;
+                }
+            }, 100);
+        }
     }
     art_to_staging() {
         (0,_utils__WEBPACK_IMPORTED_MODULE_10__.override_canvas_context)(this.app.staging_context, this.app.art_canvas, this._art_canvas_bounding_rect, false, false, true);
@@ -767,6 +795,107 @@ class Floodfill extends _click_tool__WEBPACK_IMPORTED_MODULE_0__.ClickTool {
         return false;
     }
 }
+
+
+/***/ }),
+
+/***/ "./src/ts/gdrive.ts":
+/*!**************************!*\
+  !*** ./src/ts/gdrive.ts ***!
+  \**************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   GoogleDrive: () => (/* binding */ GoogleDrive)
+/* harmony export */ });
+class GoogleDrive {
+    // params:Map<string,string>;
+    constructor(hash_on_page_load) {
+        // this.params = this.parse_hash(hash_on_page_load);
+        // if (this.params.get('state') == 'open-picker') {
+        //     this.open_picker(console.log);
+        // }
+    }
+    // parse_hash(hash:string):Map<string,string> {
+    //     const fragments = hash.replace('#', '').split('&');
+    //     let params = new Map<string,string>();
+    //     fragments.forEach(function(fragment:string, index:number) {
+    //         const kv = fragment.split('=');
+    //         const k = kv[0]
+    //         const v = decodeURIComponent(kv[1]);
+    //         params.set(k, v);
+    //     });
+    //     return params        
+    // } 
+    initiate_open_tab(token_callback) {
+        if (this.access_token != undefined) {
+            token_callback(this.access_token);
+            return;
+        }
+        const bc = new BroadcastChannel("token");
+        const _this = this;
+        bc.onmessage = (event) => {
+            console.log(event);
+            const mtch = event.data.match('access_token=([^&]+)(&|$)');
+            if (mtch != null) {
+                _this.access_token = mtch[1];
+                token_callback(mtch[1]);
+            }
+        };
+        const popup = window.open("/login", "formPopup", "width=10,height=10");
+        // HACK: "setTimeout" loop until the popup aquired the access_token
+    }
+    open_picker(img_selected_callack) {
+        const _this = this;
+        function picker_callback(access_token, data) {
+            if (data.action === google.picker.Action.PICKED) {
+                const selectedFile = data.docs.find(file => file.mimeType === 'image/png');
+                if (selectedFile) {
+                    const url = `https://www.googleapis.com/drive/v3/files/${selectedFile.id}?alt=media`;
+                    console.log('Fetching image');
+                    fetch(url, {
+                        headers: {
+                            Authorization: `Bearer ${access_token}` // Access token from Google Drive API
+                        }
+                    }).then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! Status: ${response.status}`);
+                        }
+                        return response.blob();
+                    })
+                        .then(blob => {
+                        img_selected_callack(URL.createObjectURL(blob));
+                        // const image_element:HTMLImageElement = new Image();
+                        // image_element.src = imageUrl;
+                        // document.body.append(image_element);
+                    });
+                }
+            }
+        }
+        this.initiate_open_tab((access_token) => {
+            function create_picker() {
+                const picker_builder = new google.picker.PickerBuilder();
+                const picker = picker_builder.addView(google.picker.ViewId.DOCS)
+                    .setOAuthToken(access_token)
+                    .setDeveloperKey(GoogleDrive.api_key)
+                    .setCallback((data) => picker_callback(access_token, data))
+                    .build();
+                picker.setVisible(true);
+            }
+            if (google.picker != undefined) {
+                create_picker();
+            }
+            else {
+                gapi.load('picker', { 'callback': create_picker });
+            }
+        });
+    }
+}
+GoogleDrive.client_id = '983437923698-shfpf6udie0o0akgoa3caj7bdvonkhvo.apps.googleusercontent.com';
+GoogleDrive.client_secret = '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';
+GoogleDrive.api_key = 'AIzaSyB3EOx24XRRrxQ9N60WS2ljDAX6Q86MkVc';
+GoogleDrive.oauth2Endpoint = 'https://accounts.google.com/o/oauth2/v2/auth';
 
 
 /***/ }),
@@ -1331,40 +1460,25 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   vec_diff: () => (/* binding */ vec_diff)
 /* harmony export */ });
 function override_canvas_context(context_to, canvas_from, view_port_from, keep, avoid_native, force_same_view_port) {
+    const before_f_t = performance.now();
     // context_to.putImage(context_to_image_data,0,0);
     const to_w = context_to.canvas.clientWidth;
     const to_h = context_to.canvas.offsetHeight;
     const from_w = canvas_from.clientWidth;
     const from_h = canvas_from.offsetHeight;
-    if (!keep) {
-        context_to.clearRect(0, 0, context_to.canvas.clientWidth, context_to.canvas.clientHeight);
-    }
-    if (!avoid_native) {
-        if (force_same_view_port) {
-            context_to.drawImage(canvas_from, 0, 0);
-        }
-        else {
-            context_to.drawImage(canvas_from, view_port_from.x, view_port_from.y, view_port_from.w, view_port_from.h, 0, 0, context_to.canvas.clientWidth, context_to.canvas.clientHeight);
-        }
-    }
-    else {
-        const context_from = canvas_from.getContext('2d');
-        const context_from_image_data = context_from.getImageData(0, 0, canvas_from.clientWidth, canvas_from.clientHeight);
-        const context_from_data = context_from_image_data.data;
-        const context_to_image_data = context_to.getImageData(0, 0, context_to.canvas.clientWidth, context_to.canvas.clientHeight);
-        const context_to_data = context_to_image_data.data;
-        console.log(to_w, to_h);
+    const context_from = canvas_from.getContext('2d');
+    const context_from_image_data = context_from.getImageData(0, 0, canvas_from.clientWidth, canvas_from.clientHeight);
+    const context_from_data = context_from_image_data.data;
+    const context_to_image_data = context_to.getImageData(0, 0, context_to.canvas.clientWidth, context_to.canvas.clientHeight);
+    const context_to_data = context_to_image_data.data;
+    function render_non_native() {
         for (let y = 0; y < to_h; ++y) {
             for (let x = 0; x < to_w; ++x) {
                 const offset = (to_w * y + x) * 4;
-                const from_x = Math.round(x / to_w * view_port_from.w);
-                const from_y = Math.round(y / to_h * view_port_from.h);
+                const from_x = Math.round(x / to_w * view_port_from.w + view_port_from.x);
+                const from_y = Math.round(y / to_h * view_port_from.h + view_port_from.y);
                 const from_offset = force_same_view_port ? offset :
                     (from_w * from_y + from_x) * 4;
-                // context_to_data[offset + 0] = 255;
-                // context_to_data[offset + 1] = 0;
-                // context_to_data[offset + 2] = 0;
-                // context_to_data[offset + 3] = 255;
                 if (context_from_data[from_offset + 3] > 0) {
                     context_to_data[offset + 0] = context_from_data[from_offset + 0];
                     context_to_data[offset + 1] = context_from_data[from_offset + 1];
@@ -1374,6 +1488,21 @@ function override_canvas_context(context_to, canvas_from, view_port_from, keep, 
             }
         }
         context_to.putImageData(context_to_image_data, 0, 0);
+    }
+    function render_native() {
+        context_to.drawImage(canvas_from, view_port_from.x, view_port_from.y, view_port_from.w, view_port_from.h, 0, 0, context_to.canvas.clientWidth, context_to.canvas.clientHeight);
+    }
+    if (!keep) {
+        context_to.clearRect(0, 0, context_to.canvas.clientWidth, context_to.canvas.clientHeight);
+    }
+    if (force_same_view_port) {
+        context_to.drawImage(canvas_from, 0, 0);
+    }
+    else if (avoid_native) {
+        render_non_native();
+    }
+    else {
+        render_native();
     }
 }
 function parse_RGBA(color) {
@@ -1553,6 +1682,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _editor__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./editor */ "./src/ts/editor.ts");
 /* harmony import */ var _palette__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./palette */ "./src/ts/palette.ts");
 /* harmony import */ var _color_stack__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./color_stack */ "./src/ts/color_stack.ts");
+/* harmony import */ var _gdrive__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./gdrive */ "./src/ts/gdrive.ts");
+
 
 
 
@@ -1594,8 +1725,8 @@ class MainApp {
             view_port: {
                 x: 0,
                 y: 0,
-                w: 0.5 * this.art_canvas.clientWidth,
-                h: 0.5 * this.art_canvas.clientHeight
+                w: this.art_canvas.clientWidth,
+                h: this.art_canvas.clientHeight
             }
         };
         this.art_context.imageSmoothingEnabled = false;
@@ -1605,6 +1736,7 @@ class MainApp {
         this.tool_context.globalCompositeOperation = 'source-over';
         this.tool_context.imageSmoothingEnabled = false;
         this.color_stack = new _color_stack__WEBPACK_IMPORTED_MODULE_2__.ColorStack(this, 8, 100, 10000, document.getElementById('color-selector-div-fore'), document.getElementById('color-selector-div-back'), document.getElementsByClassName('color_stack_item'));
+        this.google_drive = new _gdrive__WEBPACK_IMPORTED_MODULE_3__.GoogleDrive(document.location.hash);
     }
     select_tool(tool_name) {
         const _this = this;
@@ -1615,6 +1747,25 @@ class MainApp {
         });
         button.classList.add('pressed');
         _this.editor.select_tool(tool_name);
+    }
+    load_image(url) {
+        const img = new Image();
+        const _this = this;
+        img.addEventListener('load', () => {
+            // Clear canvas and draw the image
+            _this.art_canvas.width = img.naturalWidth;
+            _this.art_canvas.height = img.naturalHeight;
+            // a = w / h
+            const view_canvas_aspect = _this.view_canvas.clientWidth / _this.view_canvas.clientHeight;
+            const view_port_w = Math.min(img.naturalWidth, img.naturalHeight * view_canvas_aspect) / 2;
+            _this.state.view_port = { 'x': 0, 'y': 0, 'w': view_port_w,
+                'h': view_port_w / view_canvas_aspect };
+            _this.art_context.clearRect(0, 0, _this.art_canvas.width, _this.art_canvas.height);
+            _this.art_context.drawImage(img, 0, 0, _this.art_canvas.width, _this.art_canvas.height);
+            _this.editor.art_to_view();
+            _this.editor.art_to_staging();
+        });
+        img.src = url;
     }
     init_load_save() {
         const art_canvas = this.art_canvas;
@@ -1647,15 +1798,7 @@ class MainApp {
                 const _this = this;
                 reader.onload = function (e) {
                     if (e.target) {
-                        const img = new Image();
-                        img.onload = function () {
-                            // Clear canvas and draw the image
-                            art_context.clearRect(0, 0, art_canvas.width, art_canvas.height);
-                            art_context.drawImage(img, 0, 0, art_canvas.width, art_canvas.height);
-                            _this.editor.art_to_view();
-                            _this.editor.art_to_staging();
-                        };
-                        img.src = e.target.result;
+                        _this.load_image(e.target.result);
                     }
                 };
                 reader.readAsDataURL(file);
@@ -1667,6 +1810,9 @@ class MainApp {
         });
         document.getElementById('load_button').addEventListener('click', () => {
             file_input.click();
+        });
+        document.getElementById('gdrive_button').addEventListener('click', () => {
+            this.google_drive.open_picker(this.load_image.bind(this)); //(s:string) => {console.log(s)});
         });
     }
     init_undo_redo_buttons() {
@@ -1783,6 +1929,49 @@ class MainApp {
             resizeObserver.observe(e);
         });
     }
+    init_scroll() {
+        this.view_canvas.addEventListener('wheel', (event) => {
+            event.preventDefault();
+            // Get the modifiers pressed
+            const ctrl_key = event.ctrlKey;
+            // Access scroll properties
+            const deltaX = event.deltaX; // Horizontal scroll
+            const deltaY = event.deltaY; // Vertical scroll
+            // Perform actions based on modifiers and scroll direction
+            if (ctrl_key) {
+                // Zoom:;
+                // view_port.h, w changes
+                // cursor in before and in after change has to be contant
+                const art_x_before_zoom = this.state.view_port.x + event.offsetX /
+                    this.view_canvas.clientWidth * this.state.view_port.w;
+                /* equations:
+                // view_port_x_before + cursor_x*view_port_w_before / view_canvas_w =
+                // view_port_x_after + cursor_x*view_port_w_after  / view_canvas_w
+                // view_port_y_before + cursor_x*view_port_h_before / view_canvas_h =
+                // view_port_y_after + cursor_x*view_port_h_after  / view_canvas_h
+                // thus:
+                // view_port_y_after = view_port_y_before + cursor_y*(view_port_h_before-view_port_h_after) / view_canvas_h
+                // view_port_x_after = view_port_x_before + cursor_x*(view_port_w_before-view_port_w_after) / view_canvas_w
+                // view_port_y_after = view_port_y_before + cursor_y*deltaY/ view_canvas_h
+                // view_port_x_after = view_port_y_after*aspect;
+                */
+                const aspect = this.state.view_port.w / this.state.view_port.h;
+                const ratio_h = Math.exp(deltaY / 1000);
+                const delta_h = this.state.view_port.h * (ratio_h - 1);
+                this.state.view_port.y = this.state.view_port.y - event.offsetY * delta_h / this.view_canvas.clientHeight;
+                this.state.view_port.x = this.state.view_port.x - event.offsetX * delta_h * aspect / this.view_canvas.clientWidth;
+                this.state.view_port.h = Math.max(1, this.state.view_port.h * ratio_h);
+                this.state.view_port.w = this.state.view_port.h * aspect;
+            }
+            else {
+                this.state.view_port.y = Math.max(0, this.state.view_port.y + deltaY / this.view_canvas.clientHeight * 100);
+                this.state.view_port.x = Math.max(0, this.state.view_port.x + deltaX / this.view_canvas.clientWidth * 100);
+            }
+            this.editor.art_to_view();
+            const _this = this;
+            this.editor.art_to_staging();
+        });
+    }
     init() {
         // clear
         this.view_context.fillStyle = "rgba(255,255,255,0)";
@@ -1798,13 +1987,14 @@ class MainApp {
         this.forward_events_to_editor();
         this.select_tool('scribble');
         this.init_view_canvas_size();
+        this.init_scroll();
     }
 }
 function app_ignite() {
     window.app = new MainApp();
     window.app.init();
 }
-window.addEventListener('load', () => { app_ignite(); });
+window.addEventListener('load', app_ignite);
 
 })();
 

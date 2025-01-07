@@ -117,24 +117,22 @@ export class Editor {
         }
     }
     art_to_staging() {
-        override_canvas_context(this.app.staging_context, this.app.art_canvas,
-            this._art_canvas_bounding_rect, false, false, true)
+        override_canvas_context(this.app.staging_context, this.app.art_canvas, this._art_canvas_bounding_rect, false, true, true)
     }
     tool_to_staging() {        
-        override_canvas_context(this.app.staging_context, this.app.tool_canvas,
-            this._view_canvas_bounding_rect, true, true, true)
+        override_canvas_context(this.app.staging_context, this.app.tool_canvas, this._view_canvas_bounding_rect, true, true, true)
     }
     tool_to_view() {
         override_canvas_context(this.app.view_context, this.app.tool_canvas,
-            this.app.state.view_port, false, false, false)
+            this.app.state.view_port, false, true, false)
     }
     tmp_tool_to_staging() {
         override_canvas_context(this.app.staging_context, this.app.tool_tmp_canvas,
-            this._art_canvas_bounding_rect, true, false, true)
+            this._art_canvas_bounding_rect, true, true, true)
     }
     tmp_tool_to_view() {
         override_canvas_context(this.app.view_context, this.app.tool_tmp_canvas,
-            this.app.state.view_port, true, false, false)
+            this.app.state.view_port, true, true, false)
     }
     select_tool(tool_name:string) {
         this.previous_tool_name = this.current_tool_name;
