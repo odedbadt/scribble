@@ -17,7 +17,6 @@
   ],
   "exclude": [
     "node_modules",                   // Exclude node_modules
-    "src/**/three_demo.js",
     "src/**/scribble.ts"
   ]
 }

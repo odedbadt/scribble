@@ -86,6 +86,6 @@ function createScene() {
 
   animate();
 }
-window.addEventListener('load', createScene);;
+window.addEventListener('load', createScene);
 
 

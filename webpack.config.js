@@ -1,9 +1,12 @@
 import path from 'path';
 
 export default {
-  entry: './src/ts/main_app.ts',
+  entry: {
+    bundle: './src/ts/main_app.ts',
+    three_demo: './src/ts/three_demo.ts'
+  },
   output: {
-    filename: 'bundle.js',
+    filename: '[name].bundle.js',
     path: path.resolve('static/ts'),
   },
   resolve: {
@@ -21,11 +24,14 @@ export default {
             },
           },
         ],
-        exclude: [/node_modules/,/three_demo/, /scribble/],
+        exclude: [/node_modules/, /scribble/],
         
       },
     ],
   },
   mode: 'development',
   devtool: "source-map"
-};
+}
+
+
+;
