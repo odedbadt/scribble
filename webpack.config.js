@@ -13,8 +13,16 @@ export default {
     rules: [
       {
         test: /\.tsx?$/,
-        use: 'ts-loader',
-        exclude: /node_modules/,
+        use: [
+          {
+            loader: 'ts-loader',
+            options: {
+              configFile: 'tsconfig.json',  // Correctly placed under 'options'
+            },
+          },
+        ],
+        exclude: [/node_modules/,/three_demo/, /scribble/],
+        
       },
     ],
   },

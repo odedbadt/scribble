@@ -2,8 +2,8 @@ import { Editor } from "./editor"
 import { ClickAndDragTool } from "./click_and_drag_tool"
 import { Vector2 } from "./types";
 export class CircleTool  extends ClickAndDragTool {
-    constructor(context:CanvasRenderingContext2D, editor:Editor) {
-        super(context, editor, false);
+    constructor(editor:Editor) {
+        super(editor);
     }
     editing_action(at:Vector2) {
         if (this.from == null) {

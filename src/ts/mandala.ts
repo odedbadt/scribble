@@ -22,10 +22,9 @@ export class mandala extends ClickAndDragTool {
     private _recorded_to: any;
     private _n: number;
     private _angles: Array<number>;
-    constructor(context: CanvasRenderingContext2D,
-                editor: Editor,
-                tmp_context: CanvasRenderingContext2D) {
-        super(context, editor, true, tmp_context);
+    constructor(editor: Editor,
+                ) {
+        super(editor);
         this._n = 8;
         const angles = []; 
         for (let j = 0; j < this._n;++j) {

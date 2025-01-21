@@ -2,84 +2,6 @@
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
-/***/ "./src/ts/circle.ts":
-/*!**************************!*\
-  !*** ./src/ts/circle.ts ***!
-  \**************************/
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   CircleTool: () => (/* binding */ CircleTool)
-/* harmony export */ });
-/* harmony import */ var _click_and_drag_tool__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./click_and_drag_tool */ "./src/ts/click_and_drag_tool.ts");
-
-class CircleTool extends _click_and_drag_tool__WEBPACK_IMPORTED_MODULE_0__.ClickAndDragTool {
-    constructor(context, editor) {
-        super(context, editor, false);
-    }
-    editing_action(at) {
-        if (this.from == null) {
-            return false;
-        }
-        const r = Math.sqrt((at.x - this.from.x) * (at.x - this.from.x) +
-            (at.y - this.from.y) * (at.y - this.from.y));
-        this.context.ellipse(this.from.x, this.from.y, r, r, 0, 0, Math.PI * 2);
-        if (this.app.settings.filled) {
-            this.context.fill();
-        }
-        else {
-            this.context.stroke();
-        }
-        return true;
-    }
-}
-
-
-/***/ }),
-
-/***/ "./src/ts/clearall.ts":
-/*!****************************!*\
-  !*** ./src/ts/clearall.ts ***!
-  \****************************/
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   ClearAllTool: () => (/* binding */ ClearAllTool)
-/* harmony export */ });
-/* harmony import */ var _on_select_tool__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./on_select_tool */ "./src/ts/on_select_tool.ts");
-
-class ClearAllTool extends _on_select_tool__WEBPACK_IMPORTED_MODULE_0__.OnSelectTool {
-    start(at, buttons) {
-        throw new Error("Method not implemented.");
-    }
-    action(at) {
-        throw new Error("Method not implemented.");
-    }
-    stop(at) {
-        throw new Error("Method not implemented.");
-    }
-    constructor(context, editor) {
-        super(context, editor);
-        this.context = context;
-        this.editor = editor;
-        this.app = editor.app;
-    }
-    select_action() {
-        const w = this.context.canvas.clientWidth;
-        const h = this.context.canvas.clientHeight;
-        this.context.fillStyle = this.app.settings.back_color;
-        this.context.fillRect(0, 0, w, h);
-    }
-    hover() {
-        return false;
-    }
-}
-
-
-/***/ }),
-
 /***/ "./src/ts/click_and_drag_tool.ts":
 /*!***************************************!*\
   !*** ./src/ts/click_and_drag_tool.ts ***!
@@ -93,9 +15,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _editing_tool__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./editing_tool */ "./src/ts/editing_tool.ts");
 
 class ClickAndDragTool extends _editing_tool__WEBPACK_IMPORTED_MODULE_0__.EditingTool {
-    constructor(context, editor, incremental, tmp_context) {
-        super(context, editor, tmp_context);
-        this.is_incremental = !!incremental;
+    constructor(editor) {
+        super(editor);
+        this.is_incremental = false;
         this.start = this.start.bind(this);
         this.action = this.action.bind(this);
         this.stop = this.stop.bind(this);
@@ -176,43 +98,6 @@ class ClickAndDragTool extends _editing_tool__WEBPACK_IMPORTED_MODULE_0__.Editin
 
 /***/ }),
 
-/***/ "./src/ts/click_tool.ts":
-/*!******************************!*\
-  !*** ./src/ts/click_tool.ts ***!
-  \******************************/
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   ClickTool: () => (/* binding */ ClickTool)
-/* harmony export */ });
-/* harmony import */ var _editing_tool__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./editing_tool */ "./src/ts/editing_tool.ts");
-
-class ClickTool extends _editing_tool__WEBPACK_IMPORTED_MODULE_0__.EditingTool {
-    constructor(context, editor) {
-        super(context, editor);
-        this.start = this.start.bind(this);
-    }
-    select() {
-    }
-    start(at, buttons) {
-        this.context.clearRect(0, 0, this.w, this.h);
-        this.editor.art_to_staging();
-        this.editing_start(at, buttons);
-        this.editor.tool_to_staging();
-        this.editor.staging_to_view();
-        this.editor.staging_to_art();
-        this.editor.undo_redo_buffer.push(this.app.art_context.getImageData(0, 0, this.w, this.h));
-        this.editor.art_to_staging();
-        this.editor.tool_to_staging();
-        this.editor.staging_to_view();
-        return true;
-    }
-}
-
-
-/***/ }),
-
 /***/ "./src/ts/color_stack.ts":
 /*!*******************************!*\
   !*** ./src/ts/color_stack.ts ***!
@@ -286,109 +171,6 @@ class ColorStack {
 
 /***/ }),
 
-/***/ "./src/ts/cursor_size.ts":
-/*!*******************************!*\
-  !*** ./src/ts/cursor_size.ts ***!
-  \*******************************/
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   CursorSize: () => (/* binding */ CursorSize)
-/* harmony export */ });
-/* harmony import */ var _click_and_drag_tool__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./click_and_drag_tool */ "./src/ts/click_and_drag_tool.ts");
-
-class CursorSize extends _click_and_drag_tool__WEBPACK_IMPORTED_MODULE_0__.ClickAndDragTool {
-    constructor(context, editor, tmp_context) {
-        super(context, editor, false, tmp_context);
-    }
-    editing_start() {
-        if (!this.tmp_context) {
-            return false;
-        }
-        this.tmp_context.fillStyle = this.app.settings.fore_color;
-        this.tmp_context.strokeStyle = this.app.settings.fore_color;
-        this.tmp_context.lineWidth = this.app.settings.line_width;
-        this.tmp_context.lineCap = 'round';
-        return false;
-    }
-    start(at, buttons) {
-        this.app.settings.line_width = 0.5;
-        super.start(at, buttons);
-        return false;
-    }
-    editing_action(at) {
-        if (this.from == null) {
-            return false;
-        }
-        if (!this.tmp_context) {
-            return false;
-        }
-        this.app.tool_tmp_context.clearRect(0, 0, this.w, this.h);
-        this.editor.art_to_staging();
-        this.editor.staging_to_view();
-        const r = Math.sqrt((at.x - this.from.x) * (at.x - this.from.x) +
-            (at.y - this.from.y) * (at.y - this.from.y));
-        this.tmp_context.beginPath();
-        this.tmp_context.ellipse(this.from.x, this.from.y, r, r, 0, 0, Math.PI * 2);
-        this.tmp_context.fill();
-        this.app.settings.line_width = 2 * r;
-        this.editor.tmp_tool_to_view();
-        return false;
-    }
-    hover(at) {
-        return false;
-    }
-    editing_stop(at) {
-        if (this.editor.previous_tool_name) {
-            this.app.select_tool(this.editor.previous_tool_name);
-        }
-        return false;
-    }
-}
-
-
-/***/ }),
-
-/***/ "./src/ts/dropper.ts":
-/*!***************************!*\
-  !*** ./src/ts/dropper.ts ***!
-  \***************************/
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   Dropper: () => (/* binding */ Dropper)
-/* harmony export */ });
-/* harmony import */ var _click_tool__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./click_tool */ "./src/ts/click_tool.ts");
-
-class Dropper extends _click_tool__WEBPACK_IMPORTED_MODULE_0__.ClickTool {
-    action(at) {
-        throw new Error("Method not implemented.");
-    }
-    stop(at) {
-        throw new Error("Method not implemented.");
-    }
-    constructor(context, editor) {
-        super(context, editor);
-    }
-    editing_start(at, buttons) {
-        const color = this.app.art_context.getImageData(at.x, at.y, 1, 1).data;
-        const sampled_color = `rgba(${color[0]},${color[1]},${color[2]},255)`;
-        this.app.color_stack.select_color(color, !!(buttons & 1), true);
-        if (this.editor.previous_tool_name) {
-            this.app.select_tool(this.editor.previous_tool_name);
-        }
-        return false;
-    }
-    hover(at) {
-        return false;
-    }
-}
-
-
-/***/ }),
-
 /***/ "./src/ts/editing_tool.ts":
 /*!********************************!*\
   !*** ./src/ts/editing_tool.ts ***!
@@ -401,21 +183,27 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   NopTool: () => (/* binding */ NopTool)
 /* harmony export */ });
 class EditingTool {
-    constructor(context, editor, tmp_context) {
-        this.context = context;
+    constructor(editor) {
+        this.h = 100;
+        this.w = 100;
         this.editor = editor;
-        this.w = context.canvas.clientWidth;
-        this.h = context.canvas.clientHeight;
         this.app = editor.app;
-        this.tmp_context = tmp_context;
+        this.canvas = new HTMLCanvasElement;
+        this.context = this.canvas.getContext('2d');
+        this.canvas.width = 100;
+        this.canvas.height = 100;
+        this.tmp_canvas = new HTMLCanvasElement;
+        this.tmp_context = this.tmp_canvas.getContext('2d');
+        this.tmp_canvas.width = 100;
+        this.tmp_canvas.height = 100;
     }
     select() {
-        this.context.clearRect(0, 0, this.w, this.h);
+        this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
     }
 }
 class NopTool extends EditingTool {
-    constructor(context, editor, tmp_context) {
-        super(context, editor, tmp_context);
+    constructor(editor) {
+        super(editor);
     }
     select() {
         super.select();
@@ -449,45 +237,25 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _undo_redo_buffer__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./undo_redo_buffer */ "./src/ts/undo_redo_buffer.ts");
 /* harmony import */ var _editing_tool__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./editing_tool */ "./src/ts/editing_tool.ts");
-/* harmony import */ var _scribble__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./scribble */ "./src/ts/scribble.ts");
-/* harmony import */ var _circle__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./circle */ "./src/ts/circle.ts");
-/* harmony import */ var _clearall__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./clearall */ "./src/ts/clearall.ts");
-/* harmony import */ var _dropper__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./dropper */ "./src/ts/dropper.ts");
-/* harmony import */ var _eraser__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./eraser */ "./src/ts/eraser.ts");
-/* harmony import */ var _floodfill__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./floodfill */ "./src/ts/floodfill.ts");
-/* harmony import */ var _line__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./line */ "./src/ts/line.ts");
-/* harmony import */ var _rect__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./rect */ "./src/ts/rect.ts");
-/* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./utils */ "./src/ts/utils.ts");
-/* harmony import */ var _cursor_size__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./cursor_size */ "./src/ts/cursor_size.ts");
-/* harmony import */ var _styletogglers__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ./styletogglers */ "./src/ts/styletogglers.ts");
-/* harmony import */ var _mandala__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ./mandala */ "./src/ts/mandala.ts");
+/* harmony import */ var _rect__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./rect */ "./src/ts/rect.ts");
+/* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./utils */ "./src/ts/utils.ts");
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-const v = _scribble__WEBPACK_IMPORTED_MODULE_2__.ScribbleTool;
+const v = _rect__WEBPACK_IMPORTED_MODULE_2__.RectTool;
 const tool_classes = new Map([
-    ["scribble", _scribble__WEBPACK_IMPORTED_MODULE_2__.ScribbleTool],
-    ["rect", _rect__WEBPACK_IMPORTED_MODULE_9__.RectTool],
-    ["line", _line__WEBPACK_IMPORTED_MODULE_8__.LineTool],
-    ["circle", _circle__WEBPACK_IMPORTED_MODULE_3__.CircleTool],
-    ["dropper", _dropper__WEBPACK_IMPORTED_MODULE_5__.Dropper],
-    ["floodfill", _floodfill__WEBPACK_IMPORTED_MODULE_7__.Floodfill],
-    ["eraser", _eraser__WEBPACK_IMPORTED_MODULE_6__.EraserTool],
-    ["clearall", _clearall__WEBPACK_IMPORTED_MODULE_4__.ClearAllTool],
-    ["cursor_size", _cursor_size__WEBPACK_IMPORTED_MODULE_11__.CursorSize],
-    ["fillstyle", _styletogglers__WEBPACK_IMPORTED_MODULE_12__.FillStyleToggler],
-    ["mandala", _mandala__WEBPACK_IMPORTED_MODULE_13__.mandala]
+    //  ["scribble", ScribbleTool]
+    ["rect", _rect__WEBPACK_IMPORTED_MODULE_2__.RectTool]
+    // ,["line",  LineTool]
+    // ,["circle",  CircleTool]
+    // ,["dropper",  Dropper]
+    // ,["floodfill",  Floodfill]
+    // ,["eraser",  EraserTool]
+    // ,["clearall", ClearAllTool]
+    // ,["cursor_size", CursorSize]
+    // ,["fillstyle", FillStyleToggler]
+    // ,["mandala", mandala]
 ]);
 class Editor {
     constructor(app) {
@@ -501,7 +269,7 @@ class Editor {
             x: 0, y: 0, w: this.app.art_canvas.offsetWidth, h: this.app.art_canvas.offsetHeight
         };
         this.undo_redo_buffer = new _undo_redo_buffer__WEBPACK_IMPORTED_MODULE_0__.UndoRedoBuffer(100);
-        this.tool = new _editing_tool__WEBPACK_IMPORTED_MODULE_1__.NopTool(app.tool_context, this, app.tool_tmp_context);
+        this.tool = new _editing_tool__WEBPACK_IMPORTED_MODULE_1__.NopTool(this);
         this._last_hover_spot = null;
     }
     view_coords_to_art_coords(view_coords) {
@@ -527,18 +295,18 @@ class Editor {
         };
     }
     staging_to_art() {
-        (0,_utils__WEBPACK_IMPORTED_MODULE_10__.override_canvas_context)(this.app.art_context, this.app.staging_canvas, this._art_canvas_bounding_rect, false, false, true);
+        (0,_utils__WEBPACK_IMPORTED_MODULE_3__.override_canvas_context)(this.app.art_context, this.app.staging_canvas, this._art_canvas_bounding_rect, false, false, true);
     }
     staging_to_view() {
         this._non_native_view_render_countdown = 10;
-        (0,_utils__WEBPACK_IMPORTED_MODULE_10__.override_canvas_context)(this.app.view_context, this.app.staging_canvas, this.app.state.view_port, false, false, false);
+        (0,_utils__WEBPACK_IMPORTED_MODULE_3__.override_canvas_context)(this.app.view_context, this.app.staging_canvas, this.app.state.view_port, false, false, false);
         if (this._view_rendering_countdown_interval == undefined) {
             const _this = this;
             this._view_rendering_countdown_interval = setInterval(() => {
                 _this._non_native_view_render_countdown--;
                 if (_this._non_native_view_render_countdown <= 0) {
                     _this._non_native_view_render_countdown = 10;
-                    (0,_utils__WEBPACK_IMPORTED_MODULE_10__.override_canvas_context)(this.app.view_context, this.app.staging_canvas, this.app.state.view_port, false, true, false);
+                    (0,_utils__WEBPACK_IMPORTED_MODULE_3__.override_canvas_context)(this.app.view_context, this.app.staging_canvas, this.app.state.view_port, false, true, false);
                     window.clearInterval(this._view_rendering_countdown_interval);
                     this._view_rendering_countdown_interval = undefined;
                 }
@@ -547,14 +315,14 @@ class Editor {
     }
     art_to_view() {
         this._non_native_view_render_countdown = 10;
-        (0,_utils__WEBPACK_IMPORTED_MODULE_10__.override_canvas_context)(this.app.view_context, this.app.art_canvas, this.app.state.view_port, false, false, false);
+        (0,_utils__WEBPACK_IMPORTED_MODULE_3__.override_canvas_context)(this.app.view_context, this.app.art_canvas, this.app.state.view_port, false, false, false);
         if (this._view_rendering_countdown_interval == undefined) {
             const _this = this;
             this._view_rendering_countdown_interval = setInterval(() => {
                 _this._non_native_view_render_countdown--;
                 if (_this._non_native_view_render_countdown <= 0) {
                     _this._non_native_view_render_countdown = 10;
-                    (0,_utils__WEBPACK_IMPORTED_MODULE_10__.override_canvas_context)(this.app.view_context, this.app.art_canvas, this.app.state.view_port, false, true, false);
+                    (0,_utils__WEBPACK_IMPORTED_MODULE_3__.override_canvas_context)(this.app.view_context, this.app.art_canvas, this.app.state.view_port, false, true, false);
                     window.clearInterval(this._view_rendering_countdown_interval);
                     this._view_rendering_countdown_interval = undefined;
                 }
@@ -562,19 +330,19 @@ class Editor {
         }
     }
     art_to_staging() {
-        (0,_utils__WEBPACK_IMPORTED_MODULE_10__.override_canvas_context)(this.app.staging_context, this.app.art_canvas, this._art_canvas_bounding_rect, false, false, true);
+        (0,_utils__WEBPACK_IMPORTED_MODULE_3__.override_canvas_context)(this.app.staging_context, this.app.art_canvas, this._art_canvas_bounding_rect, false, false, true);
     }
     tool_to_staging() {
-        (0,_utils__WEBPACK_IMPORTED_MODULE_10__.override_canvas_context)(this.app.staging_context, this.app.tool_canvas, this._view_canvas_bounding_rect, true, true, true);
+        (0,_utils__WEBPACK_IMPORTED_MODULE_3__.override_canvas_context)(this.app.staging_context, this.app.tool_canvas, this._view_canvas_bounding_rect, true, false, true);
     }
     tool_to_view() {
-        (0,_utils__WEBPACK_IMPORTED_MODULE_10__.override_canvas_context)(this.app.view_context, this.app.tool_canvas, this.app.state.view_port, false, false, false);
+        (0,_utils__WEBPACK_IMPORTED_MODULE_3__.override_canvas_context)(this.app.view_context, this.app.tool_canvas, this.app.state.view_port, false, false, false);
     }
     tmp_tool_to_staging() {
-        (0,_utils__WEBPACK_IMPORTED_MODULE_10__.override_canvas_context)(this.app.staging_context, this.app.tool_tmp_canvas, this._art_canvas_bounding_rect, true, false, true);
+        (0,_utils__WEBPACK_IMPORTED_MODULE_3__.override_canvas_context)(this.app.staging_context, this.app.tool_tmp_canvas, this._art_canvas_bounding_rect, true, false, true);
     }
     tmp_tool_to_view() {
-        (0,_utils__WEBPACK_IMPORTED_MODULE_10__.override_canvas_context)(this.app.view_context, this.app.tool_tmp_canvas, this.app.state.view_port, true, false, false);
+        (0,_utils__WEBPACK_IMPORTED_MODULE_3__.override_canvas_context)(this.app.view_context, this.app.tool_tmp_canvas, this.app.state.view_port, true, false, false);
     }
     select_tool(tool_name) {
         this.previous_tool_name = this.current_tool_name;
@@ -583,7 +351,7 @@ class Editor {
         if (!tool_class) {
             return;
         }
-        this.tool = new tool_class(this.app.tool_context, this, this.app.tool_tmp_context);
+        this.tool = new tool_class(this);
         this.tool.select();
         if (this._last_hover_spot) {
             this.tool.hover(this.view_coords_to_art_coords(this._last_hover_spot));
@@ -658,141 +426,6 @@ class Editor {
         this.tool_to_staging();
         this.staging_to_view();
         this._last_hover_spot = null;
-    }
-}
-
-
-/***/ }),
-
-/***/ "./src/ts/eraser.ts":
-/*!**************************!*\
-  !*** ./src/ts/eraser.ts ***!
-  \**************************/
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   EraserTool: () => (/* binding */ EraserTool)
-/* harmony export */ });
-/* harmony import */ var _click_and_drag_tool__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./click_and_drag_tool */ "./src/ts/click_and_drag_tool.ts");
-
-class EraserTool extends _click_and_drag_tool__WEBPACK_IMPORTED_MODULE_0__.ClickAndDragTool {
-    constructor(context, editor, tmp_context) {
-        super(context, editor, true, tmp_context);
-    }
-    hover_action(at) {
-        if (!this.tmp_context) {
-            return false;
-        }
-        this.tmp_context.fillStyle = this.app.settings.back_color;
-        this.tmp_context.strokeStyle = this.app.settings.fore_color;
-        this.tmp_context.lineWidth = 1;
-        this.tmp_context.beginPath();
-        const r = this.app.settings.line_width;
-        this.tmp_context.ellipse(at.x, at.y, r, r, 0, 0, Math.PI * 2);
-        this.tmp_context.fill();
-        this.tmp_context.stroke();
-        return true;
-    }
-    editing_action(to) {
-        if (this._recorded_to) {
-            this.context.strokeStyle = this.app.settings.back_color;
-            this.context.lineWidth = this.app.settings.line_width * 2;
-            this.context.moveTo(this._recorded_to.x, this._recorded_to.y);
-            this.context.lineTo(to.x, to.y);
-        }
-        this._recorded_to = to;
-        this.context.stroke();
-        return true;
-    }
-    editing_start() {
-        return false;
-    }
-    editing_stop() {
-        this._recorded_to = null;
-        return false;
-    }
-}
-
-
-/***/ }),
-
-/***/ "./src/ts/floodfill.ts":
-/*!*****************************!*\
-  !*** ./src/ts/floodfill.ts ***!
-  \*****************************/
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   Floodfill: () => (/* binding */ Floodfill)
-/* harmony export */ });
-/* harmony import */ var _click_tool__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./click_tool */ "./src/ts/click_tool.ts");
-/* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./utils */ "./src/ts/utils.ts");
-
-
-function _equal_colors(c1, c2) {
-    return c1[0] == c2[0] &&
-        c1[1] == c2[1] &&
-        c1[2] == c2[2];
-}
-function _floodfill(read_context, write_context, replaced_color, tool_color, x, y, w, h) {
-    const context_image_data = read_context.getImageData(0, 0, w, h);
-    const context_data = context_image_data.data;
-    let safety = w * h * 4;
-    let stack = [{ x: Math.floor(x), y: Math.floor(y) }];
-    while (stack.length > 0 && safety-- > 0) {
-        const dot = stack.pop();
-        if (!dot) {
-            break;
-        }
-        const x = dot.x;
-        const y = dot.y;
-        if (x < 0 ||
-            y < 0 ||
-            x > w ||
-            y >= h) {
-            continue;
-        }
-        const offset = (w * y + x) * 4;
-        const color_at_xy = context_data.slice(offset, offset + 4);
-        if (!_equal_colors(replaced_color, color_at_xy)) {
-            continue;
-        }
-        context_data[offset + 0] = tool_color[0];
-        context_data[offset + 1] = tool_color[1];
-        context_data[offset + 2] = tool_color[2];
-        context_data[offset + 3] = 255;
-        stack.push({ x: x + 1, y: y });
-        stack.push({ x: x - 1, y: y });
-        stack.push({ x: x, y: y - 1 });
-        stack.push({ x: x, y: y + 1 });
-    }
-    write_context.putImageData(context_image_data, 0, 0);
-}
-class Floodfill extends _click_tool__WEBPACK_IMPORTED_MODULE_0__.ClickTool {
-    action(at) {
-        return false;
-        throw new Error("Method not implemented.");
-    }
-    stop(at) {
-        return false;
-        throw new Error("Method not implemented.");
-    }
-    constructor(context, editor) {
-        super(context, editor);
-        this.context = context;
-        this.editor = editor;
-        this.app = editor.app;
-    }
-    editing_start(at) {
-        const replaced_color = this.app.art_context.getImageData(at.x, at.y, 1, 1).data;
-        const parsed_fore_color = (0,_utils__WEBPACK_IMPORTED_MODULE_1__.parse_RGBA)(this.app.settings.fore_color);
-        _floodfill(this.app.art_context, this.context, replaced_color, parsed_fore_color, at.x, at.y, this.w, this.h);
-        return true;
-    }
-    hover(at) {
-        return false;
     }
 }
 
@@ -892,158 +525,10 @@ class GoogleDrive {
         });
     }
 }
-GoogleDrive.client_id = '983437923698-shfpf6udie0o0akgoa3caj7bdvonkhvo.apps.googleusercontent.com';
-GoogleDrive.client_secret = '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';
-GoogleDrive.api_key = 'AIzaSyB3EOx24XRRrxQ9N60WS2ljDAX6Q86MkVc';
+GoogleDrive.client_id = '';
+GoogleDrive.client_secret = '';
+GoogleDrive.api_key = '';
 GoogleDrive.oauth2Endpoint = 'https://accounts.google.com/o/oauth2/v2/auth';
-
-
-/***/ }),
-
-/***/ "./src/ts/line.ts":
-/*!************************!*\
-  !*** ./src/ts/line.ts ***!
-  \************************/
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   LineTool: () => (/* binding */ LineTool)
-/* harmony export */ });
-/* harmony import */ var _click_and_drag_tool__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./click_and_drag_tool */ "./src/ts/click_and_drag_tool.ts");
-
-class LineTool extends _click_and_drag_tool__WEBPACK_IMPORTED_MODULE_0__.ClickAndDragTool {
-    constructor(context, editor) {
-        super(context, editor, false);
-    }
-    editing_action(at) {
-        if (!this.from) {
-            return false;
-        }
-        this.context.moveTo(this.from.x, this.from.y);
-        this.context.lineTo(at.x, at.y);
-        this.context.stroke();
-        return true;
-    }
-}
-
-
-/***/ }),
-
-/***/ "./src/ts/mandala.ts":
-/*!***************************!*\
-  !*** ./src/ts/mandala.ts ***!
-  \***************************/
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   mandala: () => (/* binding */ mandala)
-/* harmony export */ });
-/* harmony import */ var _click_and_drag_tool__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./click_and_drag_tool */ "./src/ts/click_and_drag_tool.ts");
-
-function rotate(v, w, h, a, mirror) {
-    const v2 = {
-        'x': (mirror ? -1 : 1) * (v.x - (w / 2)),
-        'y': v.y - (h / 2)
-    };
-    const v3 = {
-        'x': v2.x * Math.cos(a) - v2.y * Math.sin(a),
-        'y': v2.x * Math.sin(a) + v2.y * Math.cos(a)
-    };
-    const v4 = {
-        'x': v3.x + (w / 2),
-        'y': v3.y + (h / 2)
-    };
-    return v4;
-}
-class mandala extends _click_and_drag_tool__WEBPACK_IMPORTED_MODULE_0__.ClickAndDragTool {
-    constructor(context, editor, tmp_context) {
-        super(context, editor, true, tmp_context);
-        this._n = 8;
-        const angles = [];
-        for (let j = 0; j < this._n; ++j) {
-            angles.push(Math.PI * 2 * (j / this._n));
-        }
-        this._angles = Array.from(angles);
-    }
-    hover_action(at) {
-        if (!this.tmp_context) {
-            return false;
-        }
-        this.tmp_context.fillStyle = this.app.settings.fore_color;
-        const tmp_context = this.tmp_context;
-        const _this = this;
-        this._angles.forEach((angle) => {
-            const rotated = rotate(at, _this.w, _this.h, angle);
-            tmp_context.beginPath();
-            const r = this.app.settings.line_width / 2;
-            tmp_context.ellipse(rotated.x, rotated.y, r, r, 0, 0, Math.PI * 2);
-            tmp_context.fill();
-        });
-        return true;
-    }
-    editing_action(to) {
-        if (this._recorded_to) {
-            const _this = this;
-            Array.from([true, false]).forEach((mirror) => {
-                this._angles.forEach((angle) => {
-                    const rotated_recorded = rotate(this._recorded_to, _this.w, _this.h, angle, mirror);
-                    const rotated_to = rotate(to, _this.w, _this.h, angle, mirror);
-                    _this.context.moveTo(rotated_recorded.x, rotated_recorded.y);
-                    _this.context.lineTo(rotated_to.x, rotated_to.y);
-                });
-            });
-        }
-        this._recorded_to = to;
-        this.context.stroke();
-        return true;
-    }
-    editing_stop(at) {
-        this._recorded_to = null;
-        return true;
-    }
-}
-
-
-/***/ }),
-
-/***/ "./src/ts/on_select_tool.ts":
-/*!**********************************!*\
-  !*** ./src/ts/on_select_tool.ts ***!
-  \**********************************/
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   OnSelectTool: () => (/* binding */ OnSelectTool)
-/* harmony export */ });
-/* harmony import */ var _editing_tool__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./editing_tool */ "./src/ts/editing_tool.ts");
-
-class OnSelectTool extends _editing_tool__WEBPACK_IMPORTED_MODULE_0__.EditingTool {
-    constructor(context, editor, tmp_context) {
-        super(context, editor, tmp_context);
-        this.select = this.select.bind(this);
-    }
-    select() {
-        this.context.clearRect(0, 0, this.w, this.h);
-        this.editor.art_to_staging();
-        this.select_action();
-        this.editor.tool_to_staging();
-        this.editor.staging_to_view();
-        this.editor.staging_to_art();
-        this.editor.undo_redo_buffer.push(this.app.art_context.getImageData(0, 0, this.w, this.h));
-        this.editor.art_to_staging();
-        this.editor.tool_to_staging();
-        this.editor.staging_to_view();
-        if (this.editor.previous_tool_name) {
-            this.app.select_tool(this.editor.previous_tool_name);
-        }
-    }
-    hover() {
-        return false;
-    }
-}
 
 
 /***/ }),
@@ -1170,8 +655,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _click_and_drag_tool__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./click_and_drag_tool */ "./src/ts/click_and_drag_tool.ts");
 
 class RectTool extends _click_and_drag_tool__WEBPACK_IMPORTED_MODULE_0__.ClickAndDragTool {
-    constructor(context, editor) {
-        super(context, editor, false);
+    constructor(editor) {
+        super(editor);
     }
     editing_action(to) {
         if (!this.from) {
@@ -1185,96 +670,6 @@ class RectTool extends _click_and_drag_tool__WEBPACK_IMPORTED_MODULE_0__.ClickAn
             this.context.stroke();
         }
         return true;
-    }
-}
-
-
-/***/ }),
-
-/***/ "./src/ts/scribble.ts":
-/*!****************************!*\
-  !*** ./src/ts/scribble.ts ***!
-  \****************************/
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   ScribbleTool: () => (/* binding */ ScribbleTool)
-/* harmony export */ });
-/* harmony import */ var _click_and_drag_tool__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./click_and_drag_tool */ "./src/ts/click_and_drag_tool.ts");
-
-class ScribbleTool extends _click_and_drag_tool__WEBPACK_IMPORTED_MODULE_0__.ClickAndDragTool {
-    constructor(context, editor, tmp_context) {
-        super(context, editor, true, tmp_context);
-    }
-    hover_action(at) {
-        if (!this.tmp_context) {
-            return false;
-        }
-        this.tmp_context.fillStyle = this.app.settings.fore_color;
-        this.tmp_context.beginPath();
-        const r = this.app.settings.line_width / 2;
-        this.tmp_context.ellipse(at.x, at.y, r, r, 0, 0, Math.PI * 2);
-        this.tmp_context.fill();
-        return true;
-    }
-    editing_action(to) {
-        if (this._recorded_to) {
-            this.context.moveTo(this._recorded_to.x, this._recorded_to.y);
-            this.context.lineTo(to.x, to.y);
-        }
-        this._recorded_to = to;
-        this.context.stroke();
-        return true;
-    }
-    editing_stop(at) {
-        this._recorded_to = null;
-        return true;
-    }
-}
-
-
-/***/ }),
-
-/***/ "./src/ts/styletogglers.ts":
-/*!*********************************!*\
-  !*** ./src/ts/styletogglers.ts ***!
-  \*********************************/
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   FillStyleToggler: () => (/* binding */ FillStyleToggler)
-/* harmony export */ });
-/* harmony import */ var _on_select_tool__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./on_select_tool */ "./src/ts/on_select_tool.ts");
-
-function _equal_colors(c1, c2) {
-    return c1[0] == c2[0] &&
-        c1[1] == c2[1] &&
-        c1[2] == c2[2];
-}
-class FillStyleToggler extends _on_select_tool__WEBPACK_IMPORTED_MODULE_0__.OnSelectTool {
-    start(at, buttons) {
-        throw new Error("Method not implemented.");
-    }
-    action(at) {
-        throw new Error("Method not implemented.");
-    }
-    stop(at) {
-        throw new Error("Method not implemented.");
-    }
-    constructor(context, editor) {
-        super(context, editor);
-        this.context = context;
-        this.editor = editor;
-        this.app = editor.app;
-    }
-    select_action() {
-        this.app.settings.filled = !this.app.settings.filled;
-        const styled_buttons = document.getElementsByClassName('fillable');
-        for (let j = 0; j < styled_buttons.length; ++j) {
-            styled_buttons[j].classList.toggle('filled');
-        }
     }
 }
 

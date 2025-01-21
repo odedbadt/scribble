@@ -2,9 +2,8 @@ import { ClickAndDragTool } from "./click_and_drag_tool"
 import { Editor } from "./editor";
 import { Vector2, unit_rect } from "./types";
 export class CursorSize  extends ClickAndDragTool {
-    constructor(context:CanvasRenderingContext2D, editor:Editor,
-        tmp_context:CanvasRenderingContext2D) {
-        super(context, editor, false, tmp_context);
+    constructor(editor:Editor) {
+        super(editor);
     }
     editing_start():boolean {
         if (!this.tmp_context) {

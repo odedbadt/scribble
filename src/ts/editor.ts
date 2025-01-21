@@ -1,7 +1,7 @@
 import { UndoRedoBuffer } from "./undo_redo_buffer"
 import { EditingTool, NopTool } from './editing_tool'
 import { MainApp } from "./main_app";
-import { ScribbleTool } from "./scribble";
+// import { ScribbleTool } from "./scribble";
 import { CircleTool } from "./circle";
 import { ClearAllTool } from "./clearall";
 import { Dropper } from "./dropper";
@@ -14,20 +14,20 @@ import { CursorSize } from './cursor_size'
 import { FillStyleToggler } from './styletogglers'
 import { mandala } from "./mandala";
 import { unit_rect, Vector2, Rect } from "./types"
-const v:new (...args:any[])=>EditingTool = ScribbleTool
+const v:new (...args:any[])=>EditingTool = RectTool
  const tool_classes = new Map<string, new (...args:any[])=>EditingTool>
  ([
-     ["scribble", ScribbleTool]
-    ,["rect",  RectTool]
-    ,["line",  LineTool]
-    ,["circle",  CircleTool]
-    ,["dropper",  Dropper]
-    ,["floodfill",  Floodfill]
-    ,["eraser",  EraserTool]
-    ,["clearall", ClearAllTool]
-    ,["cursor_size", CursorSize]
-    ,["fillstyle", FillStyleToggler]
-    ,["mandala", mandala]
+    //  ["scribble", ScribbleTool]
+    ["rect",  RectTool]
+    // ,["line",  LineTool]
+    // ,["circle",  CircleTool]
+    // ,["dropper",  Dropper]
+    // ,["floodfill",  Floodfill]
+    // ,["eraser",  EraserTool]
+    // ,["clearall", ClearAllTool]
+    // ,["cursor_size", CursorSize]
+    // ,["fillstyle", FillStyleToggler]
+    // ,["mandala", mandala]
  ])
 export class Editor {
     app: MainApp;
@@ -50,7 +50,7 @@ export class Editor {
             x:0, y: 0, w: this.app.art_canvas.offsetWidth, h: this.app.art_canvas.offsetHeight
         }
         this.undo_redo_buffer = new UndoRedoBuffer(100);
-        this.tool = new NopTool(app.tool_context, this, app.tool_tmp_context);
+        this.tool = new NopTool(this);
         this._last_hover_spot = null;
     }
     view_coords_to_art_coords(view_coords:Vector2):Vector2 {
@@ -141,7 +141,7 @@ export class Editor {
         if (!tool_class) {
             return;
         }
-        this.tool = new tool_class(this.app.tool_context, this, this.app.tool_tmp_context);
+        this.tool = new tool_class(this);
         this.tool.select();
         if (this._last_hover_spot) {
             this.tool.hover(this.view_coords_to_art_coords(this._last_hover_spot));

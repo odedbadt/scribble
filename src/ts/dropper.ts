@@ -9,8 +9,8 @@ export class Dropper extends ClickTool{
     stop(at: Vector2): boolean {
         throw new Error("Method not implemented.");
     }
-    constructor(context:CanvasRenderingContext2D, editor:Editor) {
-        super(context, editor);
+    constructor(editor:Editor) {
+        super(editor);
         }
     editing_start(at:Vector2, buttons:number):boolean {
 

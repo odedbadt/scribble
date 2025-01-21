@@ -3,9 +3,8 @@ import { Editor } from "./editor";
 import { Vector2 } from "./types";
 export class EraserTool extends ClickAndDragTool{
     private _recorded_to: any;
-    constructor(context:CanvasRenderingContext2D
-        , editor:Editor, tmp_context:CanvasRenderingContext2D) {
-        super(context, editor, true, tmp_context);
+    constructor(editor:Editor) {
+        super(editor);
         }
     hover_action(at:Vector2):boolean {
         if (!this.tmp_context) {

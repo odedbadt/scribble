@@ -3,8 +3,8 @@ import { Editor } from "./editor";
 import { Vector2, unit_rect } from "./types";
 
 export abstract class ClickTool extends EditingTool {
-    constructor(context:CanvasRenderingContext2D, editor:Editor) {
-            super(context, editor);
+    constructor(editor:Editor) {
+            super(editor);
             this.start = this.start.bind(this);
         }
     select() {

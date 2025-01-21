@@ -9,9 +9,9 @@ export abstract class ClickAndDragTool extends EditingTool {
     dirty: boolean;
     from: Vector2 | null;
     tmp_context: CanvasRenderingContext2D | undefined;
-    constructor(context: CanvasRenderingContext2D, editor: Editor, incremental: boolean |  null, tmp_context?: CanvasRenderingContext2D) {
-        super(context, editor, tmp_context);
-        this.is_incremental = !!incremental;
+    constructor(editor: Editor) {
+        super(editor);
+        this.is_incremental = false;
         this.start = this.start.bind(this);
         this.action = this.action.bind(this);
         this.stop = this.stop.bind(this);

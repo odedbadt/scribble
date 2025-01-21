@@ -53,9 +53,8 @@ export class Floodfill extends ClickTool {
         return false;
         throw new Error("Method not implemented.");
     }
-    constructor(context:CanvasRenderingContext2D, editor:Editor) {
-        super(context, editor)
-        this.context = context;
+    constructor(editor:Editor) {
+        super(editor)
         this.editor = editor;
         this.app = editor.app;
     }

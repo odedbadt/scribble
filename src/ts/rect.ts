@@ -3,8 +3,8 @@ import { Editor } from "./editor";
 import { Vector2 } from "./types";
 
 export class RectTool extends ClickAndDragTool {
-    constructor(context:CanvasRenderingContext2D, editor:Editor) {
-        super(context, editor, false);
+    constructor(editor:Editor) {
+        super(editor);
     }
     editing_action(to:Vector2) {
         if (!this.from) {
