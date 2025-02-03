@@ -24,7 +24,7 @@ export class RectTool extends ClickAndDragTool {
         this.h = Math.abs(to.y - this.from.y);
         this.tmp_canvas.width = this.w;
         this.tmp_canvas.height = this.h;
-        this.tmp_context!.fillStyle = 'red'; // OD: for testing
+        this.tmp_context!.fillStyle = 'violet'; // OD: for testing
         this.tmp_context!.fillRect(0,0, this.w,this.h);
         return true;
     }

@@ -112,32 +112,48 @@ export class MainApp {
         this.document_context.moveTo(0,0);
         this.document_context.lineTo(100,100);
         this.document_context.strokeStyle = 'black'
+        this.document_context.moveTo(200,0);
+        this.document_context.lineTo(0,200);
         this.document_context.stroke();
 
 
     }
     init_camera():Camera {
-        const cameraSize = 1; // Adjust this to control how much of the scene is visible
-        const aspect = this.view_canvas.clientWidth / this.view_canvas.clientHeight;
+        // const aspect = this.view_canvas.clientWidth / this.view_canvas.clientHeight;
+        // const w = this.view_canvas.width;
+        // const h = this.view_canvas.height;
+        // const camera = new OrthographicCamera(
+        //     -w, // left
+        //     w,  // right
+        //     -h,           // top
+        //     h,          // bottom
+        //     0,                  // near
+        //     10                    // far
+        // );
+        // camera.position.z = 1;
+        // return camera
+        const aspect = 1;
         const w = this.view_canvas.width;
         const h = this.view_canvas.height;
         const camera = new OrthographicCamera(
-            -w/2, // left
-            w/2,  // right
-            h/2,           // top
-            -h/2,          // bottom
-            0,                  // near
-            100000                    // far
-        );
-        camera.position.set(z = 100;
-        return camera
+          0, // left
+          w,  // right
+          h,           // top
+          0,          // bottom
+          0,                  // near
+          10                    // far
+        );        
+        camera.position.z = 1;
+
+        return camera;
     }
     build_scene(): Scene {
         // Scene and orthographic camera
         const scene = new Scene();
-        const document_texture = new CanvasTexture(this.document_canvas);
-        //document_texture.needsUpdate = true;
-
+        const document_texture = new CanvasTexture(
+            this.document_canvas);
+        document_texture.needsUpdate = true;
+        document_texture.flipY = true;
         const document_material = new ShaderMaterial({
             uniforms: {
                 uTexture: { value: document_texture },
@@ -145,6 +161,18 @@ export class MainApp {
             vertexShader: VERTEX_SHADER_CODE,
             fragmentShader: FRAGMENT_SHADER_CODE,
         });
+        const document_geometry = new PlaneGeometry(
+            this.document_canvas.width,
+            this.document_canvas.height
+        );
+        const document_rectangle = new Mesh(document_geometry,
+            document_material);
+        
+        document_rectangle.position.set(
+            this.document_canvas.width/2,
+            this.document_canvas.height/2,
+            0
+        );
         this.editor.tool.tmp_canvas.getContext('2d')
         const overlay_texture = new Texture(this.editor.tool.tmp_canvas);
 
@@ -156,21 +184,17 @@ export class MainApp {
             fragmentShader: FRAGMENT_SHADER_CODE,
         });
 
-        const document_geometry = new PlaneGeometry(
-            this.document_canvas.width,
-            this.document_canvas.height);
-        const document_rectangle = new Mesh(document_geometry,
-            document_material);
-        document_rectangle.position.set(0,0,0);
+        // document_rectangle.position.set(this.document_canvas.width/2,
+        // this.document_canvas.height/2,0);
 
         const overlay_geometry = new PlaneGeometry(
-            100,
-            100);
+            this.state.overlay_position.w,
+            this.state.overlay_position.h);
         const overlay_rectangle = new Mesh(overlay_geometry,
             overlay_material);
         overlay_rectangle.position.set(
-            0,
-            0,
+            this.state.overlay_position.x+ this.state.overlay_position.w/2,
+            this.view_canvas.height-(this.state.overlay_position.y+ this.state.overlay_position.h/2),
             1)
         
         scene.add(document_rectangle);
@@ -190,7 +214,7 @@ export class MainApp {
             const scene = this.build_scene()
     
             renderer.render(scene, this.init_camera());
-            // requestAnimationFrame(animate)
+             //requestAnimationFrame(animate)
             setTimeout(animate,1500);
         }
         animate()

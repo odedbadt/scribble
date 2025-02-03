@@ -458,9 +458,7 @@ const FRAGMENT_SHADER_CODE = `
 varying vec2 vUv;
 uniform sampler2D uTexture;
 void main() {
-  gl_FragColor = texture2D(uTexture, vUv)
-  );
-  
+  gl_FragColor = texture2D(uTexture, vUv);
 }
 `;
 
@@ -608,7 +606,7 @@ class RectTool extends _click_and_drag_tool__WEBPACK_IMPORTED_MODULE_0__.ClickAn
         this.h = Math.abs(to.y - this.from.y);
         this.tmp_canvas.width = this.w;
         this.tmp_canvas.height = this.h;
-        this.tmp_context.fillStyle = 'red'; // OD: for testing
+        this.tmp_context.fillStyle = 'violet'; // OD: for testing
         this.tmp_context.fillRect(0, 0, this.w, this.h);
         return true;
     }
@@ -56635,28 +56633,43 @@ class MainApp {
         this.document_context.moveTo(0, 0);
         this.document_context.lineTo(100, 100);
         this.document_context.strokeStyle = 'black';
+        this.document_context.moveTo(200, 0);
+        this.document_context.lineTo(0, 200);
         this.document_context.stroke();
     }
     init_camera() {
-        const cameraSize = 1; // Adjust this to control how much of the scene is visible
-        const aspect = this.view_canvas.clientWidth / this.view_canvas.clientHeight;
+        // const aspect = this.view_canvas.clientWidth / this.view_canvas.clientHeight;
+        // const w = this.view_canvas.width;
+        // const h = this.view_canvas.height;
+        // const camera = new OrthographicCamera(
+        //     -w, // left
+        //     w,  // right
+        //     -h,           // top
+        //     h,          // bottom
+        //     0,                  // near
+        //     10                    // far
+        // );
+        // camera.position.z = 1;
+        // return camera
+        const aspect = 1;
         const w = this.view_canvas.width;
         const h = this.view_canvas.height;
-        const camera = new three__WEBPACK_IMPORTED_MODULE_4__.OrthographicCamera(-w / 2, // left
-        w / 2, // right
-        h / 2, // top
-        -h / 2, // bottom
+        const camera = new three__WEBPACK_IMPORTED_MODULE_4__.OrthographicCamera(0, // left
+        w, // right
+        h, // top
+        0, // bottom
         0, // near
-        100000 // far
+        10 // far
         );
-        camera.position.set(z = 100);
+        camera.position.z = 1;
         return camera;
     }
     build_scene() {
         // Scene and orthographic camera
         const scene = new three__WEBPACK_IMPORTED_MODULE_4__.Scene();
         const document_texture = new three__WEBPACK_IMPORTED_MODULE_4__.CanvasTexture(this.document_canvas);
-        //document_texture.needsUpdate = true;
+        document_texture.needsUpdate = true;
+        document_texture.flipY = true;
         const document_material = new three__WEBPACK_IMPORTED_MODULE_4__.ShaderMaterial({
             uniforms: {
                 uTexture: { value: document_texture },
@@ -56664,6 +56677,9 @@ class MainApp {
             vertexShader: _glsl_shader_code__WEBPACK_IMPORTED_MODULE_3__.VERTEX_SHADER_CODE,
             fragmentShader: _glsl_shader_code__WEBPACK_IMPORTED_MODULE_3__.FRAGMENT_SHADER_CODE,
         });
+        const document_geometry = new three__WEBPACK_IMPORTED_MODULE_4__.PlaneGeometry(this.document_canvas.width, this.document_canvas.height);
+        const document_rectangle = new three__WEBPACK_IMPORTED_MODULE_4__.Mesh(document_geometry, document_material);
+        document_rectangle.position.set(this.document_canvas.width / 2, this.document_canvas.height / 2, 0);
         this.editor.tool.tmp_canvas.getContext('2d');
         const overlay_texture = new three__WEBPACK_IMPORTED_MODULE_4__.Texture(this.editor.tool.tmp_canvas);
         const overlay_material = new three__WEBPACK_IMPORTED_MODULE_4__.ShaderMaterial({
@@ -56673,12 +56689,11 @@ class MainApp {
             vertexShader: _glsl_shader_code__WEBPACK_IMPORTED_MODULE_3__.VERTEX_SHADER_CODE,
             fragmentShader: _glsl_shader_code__WEBPACK_IMPORTED_MODULE_3__.FRAGMENT_SHADER_CODE,
         });
-        const document_geometry = new three__WEBPACK_IMPORTED_MODULE_4__.PlaneGeometry(this.document_canvas.width, this.document_canvas.height);
-        const document_rectangle = new three__WEBPACK_IMPORTED_MODULE_4__.Mesh(document_geometry, document_material);
-        document_rectangle.position.set(0, 0, 0);
-        const overlay_geometry = new three__WEBPACK_IMPORTED_MODULE_4__.PlaneGeometry(100, 100);
+        // document_rectangle.position.set(this.document_canvas.width/2,
+        // this.document_canvas.height/2,0);
+        const overlay_geometry = new three__WEBPACK_IMPORTED_MODULE_4__.PlaneGeometry(this.state.overlay_position.w, this.state.overlay_position.h);
         const overlay_rectangle = new three__WEBPACK_IMPORTED_MODULE_4__.Mesh(overlay_geometry, overlay_material);
-        overlay_rectangle.position.set(0, 0, 1);
+        overlay_rectangle.position.set(this.state.overlay_position.x + this.state.overlay_position.w / 2, this.view_canvas.height - (this.state.overlay_position.y + this.state.overlay_position.h / 2), 1);
         scene.add(document_rectangle);
         scene.add(overlay_rectangle);
         return scene;
@@ -56693,7 +56708,7 @@ class MainApp {
             //this.document_texture.needsUpdate = true;
             const scene = this.build_scene();
             renderer.render(scene, this.init_camera());
-            // requestAnimationFrame(animate)
+            //requestAnimationFrame(animate)
             setTimeout(animate, 1500);
         };
         animate();
