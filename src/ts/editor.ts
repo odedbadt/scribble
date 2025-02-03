@@ -31,7 +31,7 @@ const v:new (...args:any[])=>EditingTool = RectTool
  ])
 export class Editor {
     app: MainApp;
-    undo_redo_buffer: UndoRedoBuffer<RenderingContext>;
+    undo_redo_buffer: UndoRedoBuffer<ImageData>;
     tool: any;
     previous_tool_name: any;
     current_tool_name: any;
@@ -47,7 +47,7 @@ export class Editor {
             x:0, y: 0, w: this.app.view_canvas.offsetWidth, h: this.app.view_canvas.offsetHeight
         }
         this._art_canvas_bounding_rect = {
-            x:0, y: 0, w: this.app.art_canvas.offsetWidth, h: this.app.art_canvas.offsetHeight
+            x:0, y: 0, w: this.app.document_canvas.offsetWidth, h: this.app.document_canvas.offsetHeight
         }
         this.undo_redo_buffer = new UndoRedoBuffer(100);
         this.tool = new NopTool(this);
@@ -77,62 +77,62 @@ export class Editor {
     }
     staging_to_art() {
         
-        override_canvas_context(this.app.art_context, this.app.staging_canvas,
-            this._art_canvas_bounding_rect, false, false, true)
+        // override_canvas_context(this.app.document_context, this.app.staging_canvas,
+        //     this._art_canvas_bounding_rect, false, false, true)
     }
     staging_to_view() {
-        this._non_native_view_render_countdown = 10;
-        override_canvas_context(this.app.view_context, this.app.staging_canvas,
-            this.app.state.view_port, false, false, false)
-            if (this._view_rendering_countdown_interval==undefined) {
-                const _this = this;
-                this._view_rendering_countdown_interval = setInterval(() => {
-                    _this._non_native_view_render_countdown--;
-                    if (_this._non_native_view_render_countdown <=0) {
-                        _this._non_native_view_render_countdown = 10
-                        override_canvas_context(this.app.view_context, this.app.staging_canvas,
-                            this.app.state.view_port, false, true, false)
-                        window.clearInterval(this._view_rendering_countdown_interval)
-                        this._view_rendering_countdown_interval=undefined;
-                    }
-                }, 100)
-        }  
+        // this._non_native_view_render_countdown = 10;
+        // override_canvas_context(this.app.view_context, this.app.staging_canvas,
+        //     this.app.state.view_port, false, false, false)
+        //     if (this._view_rendering_countdown_interval==undefined) {
+        //         const _this = this;
+        //         this._view_rendering_countdown_interval = setInterval(() => {
+        //             _this._non_native_view_render_countdown--;
+        //             if (_this._non_native_view_render_countdown <=0) {
+        //                 _this._non_native_view_render_countdown = 10
+        //                 override_canvas_context(this.app.view_context, this.app.staging_canvas,
+        //                     this.app.state.view_port, false, true, false)
+        //                 window.clearInterval(this._view_rendering_countdown_interval)
+        //                 this._view_rendering_countdown_interval=undefined;
+        //             }
+        //         }, 100)
+        // }  
     } 
     art_to_view() {
-        this._non_native_view_render_countdown = 10;
-        override_canvas_context(this.app.view_context, this.app.art_canvas,
-            this.app.state.view_port, false, false, false)        
-        if (this._view_rendering_countdown_interval==undefined) {
-            const _this = this;
-            this._view_rendering_countdown_interval = setInterval(() => {
-                _this._non_native_view_render_countdown--;
-                if (_this._non_native_view_render_countdown <=0) {
-                    _this._non_native_view_render_countdown = 10
-                    override_canvas_context(this.app.view_context, this.app.art_canvas,
-                        this.app.state.view_port, false, true, false)
-                        window.clearInterval(this._view_rendering_countdown_interval)
-                        this._view_rendering_countdown_interval=undefined;
-                }
-            }, 100)
-        }
+        // this._non_native_view_render_countdown = 10;
+        // override_canvas_context(this.app.view_context, this.app.document_canvas,
+        //     this.app.state.view_port, false, false, false)        
+        // if (this._view_rendering_countdown_interval==undefined) {
+        //     const _this = this;
+        //     this._view_rendering_countdown_interval = setInterval(() => {
+        //         _this._non_native_view_render_countdown--;
+        //         if (_this._non_native_view_render_countdown <=0) {
+        //             _this._non_native_view_render_countdown = 10
+        //             override_canvas_context(this.app.view_context, this.app.document_canvas,
+        //                 this.app.state.view_port, false, true, false)
+        //                 window.clearInterval(this._view_rendering_countdown_interval)
+        //                 this._view_rendering_countdown_interval=undefined;
+        //         }
+        //     }, 100)
+        // }
     }
     art_to_staging() {
-        override_canvas_context(this.app.staging_context, this.app.art_canvas, this._art_canvas_bounding_rect, false, false, true)
+        // override_canvas_context(this.app.staging_context, this.app.document_canvas, this._art_canvas_bounding_rect, false, false, true)
     }
     tool_to_staging() {        
-        override_canvas_context(this.app.staging_context, this.app.tool_canvas, this._view_canvas_bounding_rect, true, false, true)
+        // override_canvas_context(this.app.staging_context, this.app.tool_canvas, this._view_canvas_bounding_rect, true, false, true)
     }
     tool_to_view() {
-        override_canvas_context(this.app.view_context, this.app.tool_canvas,
-            this.app.state.view_port, false, false, false)
+        // override_canvas_context(this.app.view_context, this.app.tool_canvas,
+        //     this.app.state.view_port, false, false, false)
     }
     tmp_tool_to_staging() {
-        override_canvas_context(this.app.staging_context, this.app.tool_tmp_canvas,
-            this._art_canvas_bounding_rect, true, false, true)
+        // override_canvas_context(this.app.staging_context, this.app.tool_tmp_canvas,
+        //     this._art_canvas_bounding_rect, true, false, true)
     }
     tmp_tool_to_view() {
-        override_canvas_context(this.app.view_context, this.app.tool_tmp_canvas,
-            this.app.state.view_port, true, false, false)
+        // override_canvas_context(this.app.view_context, this.app.tool_tmp_canvas,
+        //     this.app.state.view_port, true, false, false)
     }
     select_tool(tool_name:string) {
         this.previous_tool_name = this.current_tool_name;
@@ -173,26 +173,26 @@ export class Editor {
         this.tmp_tool_to_view();
     }
     undo() {
-        this.art_to_staging();
-        this.app.tool_context.clearRect(0, 0, this._art_canvas_bounding_rect.w, this._art_canvas_bounding_rect.h);
-        const undone_image_data = this.undo_redo_buffer.undo();
-        this.app.clear_art_canvas();
-        if (undone_image_data) {
-            this.app.art_context.putImageData(undone_image_data, 0, 0);
-        }
-        this.art_to_view();
-        this.art_to_staging();
+        // this.art_to_staging();
+        // //OD: fix this.app.tool_context.clearRect(0, 0, this._art_canvas_bounding_rect.w, this._art_canvas_bounding_rect.h);
+        // const undone_image_data = this.undo_redo_buffer.undo();
+        // this.app.clear_art_canvas();
+        // if (undone_image_data) {
+        //     this.app.document_context.putImageData(undone_image_data, 0, 0);
+        // }
+        // this.art_to_view();
+        // this.art_to_staging();
     }
     redo() {
-        const redone_image_data = this.undo_redo_buffer.redo();
-        if (redone_image_data) {
-            this.app.staging_context.clearRect(0, 0, this._art_canvas_bounding_rect.w, this._art_canvas_bounding_rect.h);
-            this.app.tool_context.clearRect(0, 0, this._art_canvas_bounding_rect.w, this._art_canvas_bounding_rect.h);
-            this.app.clear_art_canvas();
-            this.app.art_context.putImageData(redone_image_data, 0, 0);
-            this.art_to_view();
-            this.art_to_staging();
-        }
+        // const redone_image_data = this.undo_redo_buffer.redo();
+        // if (redone_image_data) {
+        //     this.app.staging_context.clearRect(0, 0, this._art_canvas_bounding_rect.w, this._art_canvas_bounding_rect.h);
+        //     this.app.tool_context.clearRect(0, 0, this._art_canvas_bounding_rect.w, this._art_canvas_bounding_rect.h);
+        //     this.app.clear_art_canvas();
+        //     this.app.document_context.putImageData(redone_image_data, 0, 0);
+        //     this.art_to_view();
+        //     this.art_to_staging();
+        // }
     }
     keydown(event:KeyboardEvent) {
         if (event.code == 'KeyU') {
@@ -204,7 +204,13 @@ export class Editor {
     }
     pointerup(event:MouseEvent) {
         this.tool.hover(this.view_coords_to_art_coords({ x: event.offsetX, y: event.offsetY }));
+        this.app.state.overlay_position.x = Math.floor(this.tool.x);
+        this.app.state.overlay_position.y = Math.floor(this.tool.y);
+        this.app.state.overlay_position.w = Math.floor(this.tool.w);
+        this.app.state.overlay_position.h = Math.floor(this.tool.h);
         this.tool.stop();
+        
+    
     }
     pointerin(event:MouseEvent) {
         if (!!event.buttons) {
@@ -212,7 +218,7 @@ export class Editor {
         //this.pointerup(event);
     }
     pointerleave(event:MouseEvent) {
-        this.app.tool_tmp_context.clearRect(0, 0, this._art_canvas_bounding_rect.w, this._art_canvas_bounding_rect.h);
+        // this.app.tool_tmp_context.clearRect(0, 0, this._art_canvas_bounding_rect.w, this._art_canvas_bounding_rect.h);
         this.art_to_staging();
         this.tool_to_staging();
         this.staging_to_view();

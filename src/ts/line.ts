@@ -11,7 +11,8 @@ export class LineTool  extends ClickAndDragTool {
             return false;
         }
         this.context.moveTo(
-            this.from.x,this.from.y);
+            this.from.x,
+            this.from.y);
         this.context.lineTo(
             at.x,at.y);
         this.context.stroke();

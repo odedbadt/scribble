@@ -2,7 +2,7 @@ import path from 'path';
 
 export default {
   entry: {
-    bundle: './src/ts/main_app.ts',
+    main: './src/ts/main_app.ts',
     three_demo: './src/ts/three_demo.ts'
   },
   output: {

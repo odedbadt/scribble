@@ -27,7 +27,7 @@ export class CursorSize  extends ClickAndDragTool {
         if (!this.tmp_context) {
             return false;
         }
-        this.app.tool_tmp_context.clearRect(0,0,this.w,this.h);
+        //this.app.tool_tmp_context.clearRect(0,0,this.w,this.h);
         this.editor.art_to_staging()
         this.editor.staging_to_view()
 

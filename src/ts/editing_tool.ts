@@ -11,19 +11,22 @@ export abstract class EditingTool {
     app: MainApp;
     h:number = 100;
     w:number = 100;
+    x:number = 0;
+    y:number = 0;
 
     constructor(editor: Editor,
     ) {
         this.editor = editor;
         this.app = editor.app;
-        this.canvas = new HTMLCanvasElement;
+        this.canvas = document.createElement("canvas") as HTMLCanvasElement;
         this.context = this.canvas.getContext('2d')!;
         this.canvas.width = 100;
         this.canvas.height = 100;
-        this.tmp_canvas = new HTMLCanvasElement;
+        this.tmp_canvas = document.createElement("canvas") as HTMLCanvasElement;
         this.tmp_context = this.tmp_canvas.getContext('2d')!;
         this.tmp_canvas.width = 100;
         this.tmp_canvas.height = 100;
+
     }
 
     select() {

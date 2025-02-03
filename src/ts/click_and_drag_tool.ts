@@ -7,7 +7,7 @@ import { override_canvas_context } from "./utils";
 export abstract class ClickAndDragTool extends EditingTool {
     is_incremental: boolean;
     dirty: boolean;
-    from: Vector2 | null;
+    from: Vector2 | null;    
     tmp_context: CanvasRenderingContext2D | undefined;
     constructor(editor: Editor) {
         super(editor);
@@ -28,6 +28,8 @@ export abstract class ClickAndDragTool extends EditingTool {
         this.context.lineCap = 'round';
         this.dirty = this.editing_start();
         this.from = at;
+        this.x = at.x;
+        this.y = at.y;
         return false
     }
     editing_start() {
@@ -36,19 +38,10 @@ export abstract class ClickAndDragTool extends EditingTool {
     }
     action(at: Vector2):boolean {
         this.editor.art_to_staging()
-        this.editor.app.tool_context.beginPath();
+        // this.editor.app.tool_context.beginPath();
         this.dirty = !!this.editing_action(at) || this.dirty;
-        if (!this.is_incremental) {
-            this.editor.staging_to_art()
-        }
-        this.editor.art_to_staging()
-        this.editor.tool_to_staging()
-        this.editor.staging_to_view()
-        this.editor.tmp_tool_to_view()
-        if (!this.is_incremental) {
-            this.context.clearRect(0, 0, this.w, this.h);
-        }
-        return true
+        return true;
+        
     }
     hover(at: any):boolean {
         if (!this.tmp_context) {
@@ -73,7 +66,7 @@ export abstract class ClickAndDragTool extends EditingTool {
         this.dirty = !!this.editing_stop(at) || this.dirty;
         if (this.dirty) {
             this.editor.staging_to_art()
-            this.editor.undo_redo_buffer.push(this.app.art_context.getImageData(0, 0, this.w, this.h));
+            this.editor.undo_redo_buffer.push(this.app.document_context!.getImageData(0, 0, this.w, this.h));
             this.from = null;
             this.editor.art_to_staging()
             this.editor.tool_to_staging()

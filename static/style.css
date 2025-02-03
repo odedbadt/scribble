@@ -74,6 +74,8 @@ body {
     margin: 0;
     pointer-events: auto;
     touch-action: none;
+    display: grid;
+    grid-template-columns: 810px 800px;
 
 }
 #canvas-area canvas {
@@ -85,9 +87,12 @@ body {
 #view-canvas {
     cursor: crosshair;
     pointer-events: auto;
+    width: 700px;
+    height: 700px;
 }
-#staging-canvas, #tool-canvas, #tool-tmp-canvas, #art-canvas {
-    visibility: hidden;
+#art-canvas {
+    width: 700px;
+    height: 700px;
 }
 #color-selector-div-back {
     position: relative;

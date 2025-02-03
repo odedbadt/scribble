@@ -11,13 +11,21 @@ export class RectTool extends ClickAndDragTool {
             return false;
         }
 
-        this.context.rect(
-                this.from.x,this.from.y,to.x - this.from.x, to.y - this.from.y);
-        if (this.app.settings.filled) {
-            this.context.fill();
-         } else {
-             this.context.stroke();
-         }
+        let tmp_canvas:HTMLCanvasElement|null = document.getElementById('rect_canvas') as HTMLCanvasElement
+
+        if (!tmp_canvas) {
+            tmp_canvas = document.createElement("canvas") as HTMLCanvasElement;
+            document.body.appendChild(tmp_canvas); // OD: for testing
+            tmp_canvas.setAttribute('id', 'rect_canvas')
+        }
+        this.tmp_canvas = tmp_canvas    
+        this.tmp_context = this.tmp_canvas.getContext('2d')!
+        this.w = Math.abs(to.x - this.from.x);
+        this.h = Math.abs(to.y - this.from.y);
+        this.tmp_canvas.width = this.w;
+        this.tmp_canvas.height = this.h;
+        this.tmp_context!.fillStyle = 'red'; // OD: for testing
+        this.tmp_context!.fillRect(0,0, this.w,this.h);
         return true;
     }
 }
