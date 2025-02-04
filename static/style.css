@@ -75,7 +75,7 @@ body {
     pointer-events: auto;
     touch-action: none;
     display: grid;
-    grid-template-columns: 400px 800px;
+    grid-template-columns: 400px 800px 400px;
 
 }
 /* #canvas-area canvas {

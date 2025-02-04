@@ -11,12 +11,12 @@ export abstract class OnSelectTool extends EditingTool {
         this.context.clearRect(0, 0, this.w, this.h);
         this.editor.art_to_staging()
         this.select_action();
-        this.editor.tool_to_staging()
+        //this.editor.tool_to_staging()
         this.editor.staging_to_view()
         this.editor.staging_to_art()
         this.editor.undo_redo_buffer.push(this.app.document_context.getImageData(0, 0, this.w, this.h))
         this.editor.art_to_staging()
-        this.editor.tool_to_staging()
+        //this.editor.tool_to_staging()
         this.editor.staging_to_view()
         if (this.editor.previous_tool_name) {
             this.app.select_tool(this.editor.previous_tool_name)

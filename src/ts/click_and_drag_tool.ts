@@ -18,6 +18,7 @@ export abstract class ClickAndDragTool extends EditingTool {
         this.stop = this.stop.bind(this);
         this.dirty = false;
         this.top_left = {x:0,y:0};
+        this.from = {x:0,y:0};
     }
     select(): void {
     }
@@ -48,7 +49,6 @@ export abstract class ClickAndDragTool extends EditingTool {
         if (!this.tmp_context) {
             return false;
         }
-        this.tmp_context.clearRect(0, 0, this.w, this.h);
         const dirty = this.hover_action(at);
         if (dirty) {
             this.editor.tool_to_view()
@@ -70,7 +70,7 @@ export abstract class ClickAndDragTool extends EditingTool {
             this.editor.undo_redo_buffer.push(this.app.document_context!.getImageData(0, 0, this.w, this.h));
             this.from = null;
             this.editor.art_to_staging()
-            this.editor.tool_to_staging()
+            this.editor.tool_to_document()
             this.editor.staging_to_view()
             this.dirty = false;
             return true

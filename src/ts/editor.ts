@@ -119,8 +119,32 @@ export class Editor {
     art_to_staging() {
         // override_canvas_context(this.app.staging_context, this.app.document_canvas, this._art_canvas_bounding_rect, false, false, true)
     }
-    tool_to_staging() {        
-        // override_canvas_context(this.app.staging_context, this.app.tool_canvas, this._view_canvas_bounding_rect, true, false, true)
+    tool_to_document() {        
+        const tool_image_data = this.tool.canvas.getContext('2d')!.getImageData(0,0,this.tool.w, this.tool.h)
+        const tool_data = tool_image_data.data;
+
+        const document_image_data = this.app.document_context.getImageData(
+            this.tool.top_left.x,this.tool.top_left.y,
+            this.tool.w, this.tool.h)
+        const document_data = document_image_data.data;
+        for (let y = 0; y < this.tool.h;++y) {
+            for (let x = 0; x < this.tool.w;++x) {
+                const document_x = x + this.tool.top_left.x; 
+                const document_y = y + this.tool.top_left.y; 
+                const tool_base_offset = 4*(y*this.tool.w+x);
+                const document_base_offset = 4*(document_y*this.app.document_canvas.width+document_x);
+                if (tool_data[tool_base_offset+3] > 0) {
+                    document_data[document_base_offset+0] = tool_data[tool_base_offset+0]
+                    document_data[document_base_offset+1] = tool_data[tool_base_offset+1]
+                    document_data[document_base_offset+2] = tool_data[tool_base_offset+2]
+                    document_data[document_base_offset+3] = tool_data[tool_base_offset+3]
+                }
+            }
+        }
+        this.app.document_context.putImageData(tool_image_data, this.tool.top_left.x, this.tool.top_left.y)
+
+                
+        
     }
     tool_to_view() {
         // override_canvas_context(this.app.view_context, this.app.tool_canvas,
@@ -226,8 +250,8 @@ export class Editor {
     pointerleave(event:MouseEvent) {
         // this.app.tool_tmp_context.clearRect(0, 0, this._art_canvas_bounding_rect.w, this._art_canvas_bounding_rect.h);
         this.art_to_staging();
-        this.tool_to_staging();
         this.staging_to_view();
         this._last_hover_spot = null
     }
+
 }

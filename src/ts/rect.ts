@@ -5,6 +5,8 @@ import { Vector2 } from "./types";
 export class RectTool extends ClickAndDragTool {
     constructor(editor:Editor) {
         super(editor);
+        this.canvas = document.createElement("canvas") as HTMLCanvasElement;
+        this.context = this.canvas.getContext('2d')! as CanvasRenderingContext2D
     }
     editing_action(to:Vector2) {
         if (!this.from) {
@@ -15,18 +17,23 @@ export class RectTool extends ClickAndDragTool {
 
         if (!tmp_canvas) {
             tmp_canvas = document.createElement("canvas") as HTMLCanvasElement;
-            document.body.appendChild(tmp_canvas); // OD: for testing
+            document.getElementById('canvas-area')!.appendChild(tmp_canvas); // OD: for testing
             tmp_canvas.setAttribute('id', 'rect_canvas')
         }
-        this.tmp_canvas = tmp_canvas    
+        this.tmp_canvas = tmp_canvas
         this.tmp_context = this.tmp_canvas.getContext('2d')!
         this.top_left = {x:Math.min(to.x, this.from.x), y: Math.min(to.y, this.from.y)};
         this.w = Math.abs(to.x - this.from.x);
         this.h = Math.abs(to.y - this.from.y);
         this.tmp_canvas.width = this.w;
         this.tmp_canvas.height = this.h;
-        this.tmp_context!.fillStyle = 'violet'; // OD: for testing
-        this.tmp_context!.fillRect(0,0, this.w,this.h);
+        this.tmp_context.fillStyle = 'red'; // OD: for testing
+        this.tmp_context.fillRect(0,0, this.w, this.h);
+        this.canvas.width = this.w;
+        this.canvas.height = this.h;
+        this.context!.fillStyle = 'red'; // OD: for testing
+        this.context!.fillRect(0,0, this.w, this.h);
+        
         return true;
     }
 }

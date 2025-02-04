@@ -23,6 +23,7 @@ class ClickAndDragTool extends _editing_tool__WEBPACK_IMPORTED_MODULE_0__.Editin
         this.stop = this.stop.bind(this);
         this.dirty = false;
         this.top_left = { x: 0, y: 0 };
+        this.from = { x: 0, y: 0 };
     }
     select() {
     }
@@ -52,7 +53,6 @@ class ClickAndDragTool extends _editing_tool__WEBPACK_IMPORTED_MODULE_0__.Editin
         if (!this.tmp_context) {
             return false;
         }
-        this.tmp_context.clearRect(0, 0, this.w, this.h);
         const dirty = this.hover_action(at);
         if (dirty) {
             this.editor.tool_to_view();
@@ -74,7 +74,7 @@ class ClickAndDragTool extends _editing_tool__WEBPACK_IMPORTED_MODULE_0__.Editin
             this.editor.undo_redo_buffer.push(this.app.document_context.getImageData(0, 0, this.w, this.h));
             this.from = null;
             this.editor.art_to_staging();
-            this.editor.tool_to_staging();
+            this.editor.tool_to_document();
             this.editor.staging_to_view();
             this.dirty = false;
             return true;
@@ -329,8 +329,26 @@ class Editor {
     art_to_staging() {
         // override_canvas_context(this.app.staging_context, this.app.document_canvas, this._art_canvas_bounding_rect, false, false, true)
     }
-    tool_to_staging() {
-        // override_canvas_context(this.app.staging_context, this.app.tool_canvas, this._view_canvas_bounding_rect, true, false, true)
+    tool_to_document() {
+        const tool_image_data = this.tool.canvas.getContext('2d').getImageData(0, 0, this.tool.w, this.tool.h);
+        const tool_data = tool_image_data.data;
+        const document_image_data = this.app.document_context.getImageData(this.tool.top_left.x, this.tool.top_left.y, this.tool.w, this.tool.h);
+        const document_data = document_image_data.data;
+        for (let y = 0; y < this.tool.h; ++y) {
+            for (let x = 0; x < this.tool.w; ++x) {
+                const document_x = x + this.tool.top_left.x;
+                const document_y = y + this.tool.top_left.y;
+                const tool_base_offset = 4 * (y * this.tool.w + x);
+                const document_base_offset = 4 * (document_y * this.app.document_canvas.width + document_x);
+                if (tool_data[tool_base_offset + 3] > 0) {
+                    document_data[document_base_offset + 0] = tool_data[tool_base_offset + 0];
+                    document_data[document_base_offset + 1] = tool_data[tool_base_offset + 1];
+                    document_data[document_base_offset + 2] = tool_data[tool_base_offset + 2];
+                    document_data[document_base_offset + 3] = tool_data[tool_base_offset + 3];
+                }
+            }
+        }
+        this.app.document_context.putImageData(tool_image_data, this.tool.top_left.x, this.tool.top_left.y);
     }
     tool_to_view() {
         // override_canvas_context(this.app.view_context, this.app.tool_canvas,
@@ -431,7 +449,6 @@ class Editor {
     pointerleave(event) {
         // this.app.tool_tmp_context.clearRect(0, 0, this._art_canvas_bounding_rect.w, this._art_canvas_bounding_rect.h);
         this.art_to_staging();
-        this.tool_to_staging();
         this.staging_to_view();
         this._last_hover_spot = null;
     }
@@ -593,6 +610,8 @@ __webpack_require__.r(__webpack_exports__);
 class RectTool extends _click_and_drag_tool__WEBPACK_IMPORTED_MODULE_0__.ClickAndDragTool {
     constructor(editor) {
         super(editor);
+        this.canvas = document.createElement("canvas");
+        this.context = this.canvas.getContext('2d');
     }
     editing_action(to) {
         if (!this.from) {
@@ -601,7 +620,7 @@ class RectTool extends _click_and_drag_tool__WEBPACK_IMPORTED_MODULE_0__.ClickAn
         let tmp_canvas = document.getElementById('rect_canvas');
         if (!tmp_canvas) {
             tmp_canvas = document.createElement("canvas");
-            document.body.appendChild(tmp_canvas); // OD: for testing
+            document.getElementById('canvas-area').appendChild(tmp_canvas); // OD: for testing
             tmp_canvas.setAttribute('id', 'rect_canvas');
         }
         this.tmp_canvas = tmp_canvas;
@@ -611,8 +630,12 @@ class RectTool extends _click_and_drag_tool__WEBPACK_IMPORTED_MODULE_0__.ClickAn
         this.h = Math.abs(to.y - this.from.y);
         this.tmp_canvas.width = this.w;
         this.tmp_canvas.height = this.h;
-        this.tmp_context.fillStyle = 'violet'; // OD: for testing
+        this.tmp_context.fillStyle = 'red'; // OD: for testing
         this.tmp_context.fillRect(0, 0, this.w, this.h);
+        this.canvas.width = this.w;
+        this.canvas.height = this.h;
+        this.context.fillStyle = 'red'; // OD: for testing
+        this.context.fillRect(0, 0, this.w, this.h);
         return true;
     }
 }
@@ -56568,6 +56591,64 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+function disposeScene(scene) {
+    // Loop through all objects in the scene
+    scene.traverse((object) => {
+        // Dispose of geometries
+        if (object.geometry) {
+            object.geometry.dispose();
+        }
+        // Dispose of materials
+        if (object.material) {
+            // If the material has textures, dispose of them too
+            if (Array.isArray(object.material)) {
+                object.material.forEach((mat) => {
+                    if (mat.map)
+                        mat.map.dispose(); // dispose of texture
+                    if (mat.lightMap)
+                        mat.lightMap.dispose();
+                    if (mat.bumpMap)
+                        mat.bumpMap.dispose();
+                    if (mat.normalMap)
+                        mat.normalMap.dispose();
+                    if (mat.aoMap)
+                        mat.aoMap.dispose();
+                    if (mat.emissiveMap)
+                        mat.emissiveMap.dispose();
+                    if (mat.envMap)
+                        mat.envMap.dispose();
+                    if (mat.displacementMap)
+                        mat.displacementMap.dispose();
+                    if (mat.specularMap)
+                        mat.specularMap.dispose();
+                });
+            }
+            else {
+                if (object.material.map)
+                    object.material.map.dispose(); // dispose of texture
+                if (object.material.lightMap)
+                    object.material.lightMap.dispose();
+                if (object.material.bumpMap)
+                    object.material.bumpMap.dispose();
+                if (object.material.normalMap)
+                    object.material.normalMap.dispose();
+                if (object.material.aoMap)
+                    object.material.aoMap.dispose();
+                if (object.material.emissiveMap)
+                    object.material.emissiveMap.dispose();
+                if (object.material.envMap)
+                    object.material.envMap.dispose();
+                if (object.material.displacementMap)
+                    object.material.displacementMap.dispose();
+                if (object.material.specularMap)
+                    object.material.specularMap.dispose();
+            }
+            object.material.dispose();
+        }
+    });
+}
+// Example usage
+; // Dispose of all objects in the scene
 function click_for_a_second(id, callback) {
     const elem = document.getElementById(id);
     if (elem) {
@@ -56685,11 +56766,10 @@ class MainApp {
         const document_geometry = new three__WEBPACK_IMPORTED_MODULE_4__.PlaneGeometry(this.document_canvas.width, this.document_canvas.height);
         const document_rectangle = new three__WEBPACK_IMPORTED_MODULE_4__.Mesh(document_geometry, document_material);
         document_rectangle.position.set(this.document_canvas.width / 2, this.document_canvas.height / 2, 0);
-        this.editor.tool.tmp_canvas.getContext('2d');
-        const overlay_texture = new three__WEBPACK_IMPORTED_MODULE_4__.Texture(this.editor.tool.tmp_canvas);
+        this.overlay_texture = new three__WEBPACK_IMPORTED_MODULE_4__.CanvasTexture(this.editor.tool.tmp_canvas);
         const overlay_material = new three__WEBPACK_IMPORTED_MODULE_4__.ShaderMaterial({
             uniforms: {
-                uTexture: { value: overlay_texture },
+                uTexture: { value: this.overlay_texture },
             },
             vertexShader: _glsl_shader_code__WEBPACK_IMPORTED_MODULE_3__.VERTEX_SHADER_CODE,
             fragmentShader: _glsl_shader_code__WEBPACK_IMPORTED_MODULE_3__.FRAGMENT_SHADER_CODE,
@@ -56713,6 +56793,7 @@ class MainApp {
             //this.document_texture.needsUpdate = true;
             const scene = this.build_scene();
             renderer.render(scene, this.init_camera());
+            disposeScene(scene);
             requestAnimationFrame(animate);
             //setTimeout(animate,100);
         };
