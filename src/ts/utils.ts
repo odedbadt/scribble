@@ -1,3 +1,4 @@
+import { Scene } from "three";
 import { Rect, Vector2 } from "./types";
 export function override_canvas_context(
     context_to:CanvasRenderingContext2D, 
@@ -166,5 +167,43 @@ export function translate_rect(r:Rect, shift:Vector2) {
         y:r.y+shift.y,
         w:r.w,
         h:r.h}
+}
+export function disposeScene(scene: Scene) {
+    // Loop through all objects in the scene
+    scene.traverse((object: any) => {
+        // Dispose of geometries
+        if (object.geometry) {
+            object.geometry.dispose();
+        }
+
+        // Dispose of materials
+        if (object.material) {
+            // If the material has textures, dispose of them too
+            if (Array.isArray(object.material)) {
+                object.material.forEach((mat: any) => {
+                    if (mat.map) mat.map.dispose(); // dispose of texture
+                    if (mat.lightMap) mat.lightMap.dispose();
+                    if (mat.bumpMap) mat.bumpMap.dispose();
+                    if (mat.normalMap) mat.normalMap.dispose();
+                    if (mat.aoMap) mat.aoMap.dispose();
+                    if (mat.emissiveMap) mat.emissiveMap.dispose();
+                    if (mat.envMap) mat.envMap.dispose();
+                    if (mat.displacementMap) mat.displacementMap.dispose();
+                    if (mat.specularMap) mat.specularMap.dispose();
+                });
+            } else {
+                if (object.material.map) object.material.map.dispose(); // dispose of texture
+                if (object.material.lightMap) object.material.lightMap.dispose();
+                if (object.material.bumpMap) object.material.bumpMap.dispose();
+                if (object.material.normalMap) object.material.normalMap.dispose();
+                if (object.material.aoMap) object.material.aoMap.dispose();
+                if (object.material.emissiveMap) object.material.emissiveMap.dispose();
+                if (object.material.envMap) object.material.envMap.dispose();
+                if (object.material.displacementMap) object.material.displacementMap.dispose();
+                if (object.material.specularMap) object.material.specularMap.dispose();
+            }
+            object.material.dispose();
+        }
+    });
 }
 

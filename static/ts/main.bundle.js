@@ -612,29 +612,29 @@ class RectTool extends _click_and_drag_tool__WEBPACK_IMPORTED_MODULE_0__.ClickAn
         super(editor);
         this.canvas = document.createElement("canvas");
         this.context = this.canvas.getContext('2d');
+        this.tmp_canvas = document.createElement("canvas");
+        this.tmp_context = this.tmp_canvas.getContext('2d');
+        this.tmp_canvas.width = this.w;
+        this.tmp_canvas.height = this.h;
     }
     editing_action(to) {
         if (!this.from) {
             return false;
         }
-        let tmp_canvas = document.getElementById('rect_canvas');
-        if (!tmp_canvas) {
-            tmp_canvas = document.createElement("canvas");
-            document.getElementById('canvas-area').appendChild(tmp_canvas); // OD: for testing
-            tmp_canvas.setAttribute('id', 'rect_canvas');
-        }
-        this.tmp_canvas = tmp_canvas;
-        this.tmp_context = this.tmp_canvas.getContext('2d');
+        // let tmp_canvas:HTMLCanvasElement|null = document.getElementById('rect_canvas') as HTMLCanvasElement
+        // if (!tmp_canvas) {
+        //     document.getElementById('canvas-area')!.appendChild(tmp_canvas); // OD: for testing
+        //     tmp_canvas.setAttribute('id', 'rect_canvas')
+        // }
+        // this.tmp_canvas = tmp_canvas
         this.top_left = { x: Math.min(to.x, this.from.x), y: Math.min(to.y, this.from.y) };
         this.w = Math.abs(to.x - this.from.x);
         this.h = Math.abs(to.y - this.from.y);
-        this.tmp_canvas.width = this.w;
-        this.tmp_canvas.height = this.h;
-        this.tmp_context.fillStyle = 'red'; // OD: for testing
+        this.tmp_context.fillStyle = this.app.settings.fore_color; // OD: for testing
         this.tmp_context.fillRect(0, 0, this.w, this.h);
         this.canvas.width = this.w;
         this.canvas.height = this.h;
-        this.context.fillStyle = 'red'; // OD: for testing
+        this.context.fillStyle = this.app.settings.fore_color; // OD: for testing
         this.context.fillRect(0, 0, this.w, this.h);
         return true;
     }
@@ -811,6 +811,7 @@ class UndoRedoBuffer {
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   disposeScene: () => (/* binding */ disposeScene),
 /* harmony export */   dist2: () => (/* binding */ dist2),
 /* harmony export */   dist2_to_set: () => (/* binding */ dist2_to_set),
 /* harmony export */   hsl_to_rgb: () => (/* binding */ hsl_to_rgb),
@@ -969,6 +970,62 @@ function translate_rect(r, shift) {
         y: r.y + shift.y,
         w: r.w,
         h: r.h };
+}
+function disposeScene(scene) {
+    // Loop through all objects in the scene
+    scene.traverse((object) => {
+        // Dispose of geometries
+        if (object.geometry) {
+            object.geometry.dispose();
+        }
+        // Dispose of materials
+        if (object.material) {
+            // If the material has textures, dispose of them too
+            if (Array.isArray(object.material)) {
+                object.material.forEach((mat) => {
+                    if (mat.map)
+                        mat.map.dispose(); // dispose of texture
+                    if (mat.lightMap)
+                        mat.lightMap.dispose();
+                    if (mat.bumpMap)
+                        mat.bumpMap.dispose();
+                    if (mat.normalMap)
+                        mat.normalMap.dispose();
+                    if (mat.aoMap)
+                        mat.aoMap.dispose();
+                    if (mat.emissiveMap)
+                        mat.emissiveMap.dispose();
+                    if (mat.envMap)
+                        mat.envMap.dispose();
+                    if (mat.displacementMap)
+                        mat.displacementMap.dispose();
+                    if (mat.specularMap)
+                        mat.specularMap.dispose();
+                });
+            }
+            else {
+                if (object.material.map)
+                    object.material.map.dispose(); // dispose of texture
+                if (object.material.lightMap)
+                    object.material.lightMap.dispose();
+                if (object.material.bumpMap)
+                    object.material.bumpMap.dispose();
+                if (object.material.normalMap)
+                    object.material.normalMap.dispose();
+                if (object.material.aoMap)
+                    object.material.aoMap.dispose();
+                if (object.material.emissiveMap)
+                    object.material.emissiveMap.dispose();
+                if (object.material.envMap)
+                    object.material.envMap.dispose();
+                if (object.material.displacementMap)
+                    object.material.displacementMap.dispose();
+                if (object.material.specularMap)
+                    object.material.specularMap.dispose();
+            }
+            object.material.dispose();
+        }
+    });
 }
 
 
@@ -56583,72 +56640,16 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _editor__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./editor */ "./src/ts/editor.ts");
 /* harmony import */ var _palette__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./palette */ "./src/ts/palette.ts");
 /* harmony import */ var _color_stack__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./color_stack */ "./src/ts/color_stack.ts");
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.core.js");
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.core.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 /* harmony import */ var _glsl_shader_code__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./glsl_shader_code */ "./src/ts/glsl_shader_code.ts");
+/* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./utils */ "./src/ts/utils.ts");
 
 
 
 
 
-function disposeScene(scene) {
-    // Loop through all objects in the scene
-    scene.traverse((object) => {
-        // Dispose of geometries
-        if (object.geometry) {
-            object.geometry.dispose();
-        }
-        // Dispose of materials
-        if (object.material) {
-            // If the material has textures, dispose of them too
-            if (Array.isArray(object.material)) {
-                object.material.forEach((mat) => {
-                    if (mat.map)
-                        mat.map.dispose(); // dispose of texture
-                    if (mat.lightMap)
-                        mat.lightMap.dispose();
-                    if (mat.bumpMap)
-                        mat.bumpMap.dispose();
-                    if (mat.normalMap)
-                        mat.normalMap.dispose();
-                    if (mat.aoMap)
-                        mat.aoMap.dispose();
-                    if (mat.emissiveMap)
-                        mat.emissiveMap.dispose();
-                    if (mat.envMap)
-                        mat.envMap.dispose();
-                    if (mat.displacementMap)
-                        mat.displacementMap.dispose();
-                    if (mat.specularMap)
-                        mat.specularMap.dispose();
-                });
-            }
-            else {
-                if (object.material.map)
-                    object.material.map.dispose(); // dispose of texture
-                if (object.material.lightMap)
-                    object.material.lightMap.dispose();
-                if (object.material.bumpMap)
-                    object.material.bumpMap.dispose();
-                if (object.material.normalMap)
-                    object.material.normalMap.dispose();
-                if (object.material.aoMap)
-                    object.material.aoMap.dispose();
-                if (object.material.emissiveMap)
-                    object.material.emissiveMap.dispose();
-                if (object.material.envMap)
-                    object.material.envMap.dispose();
-                if (object.material.displacementMap)
-                    object.material.displacementMap.dispose();
-                if (object.material.specularMap)
-                    object.material.specularMap.dispose();
-            }
-            object.material.dispose();
-        }
-    });
-}
-// Example usage
-; // Dispose of all objects in the scene
+
 function click_for_a_second(id, callback) {
     const elem = document.getElementById(id);
     if (elem) {
@@ -56665,8 +56666,8 @@ class MainApp {
     constructor() {
         this.document_canvas = document.getElementById('art-canvas');
         this.document_context = this.document_canvas.getContext('2d', { willReadFrequently: true, texImage3d: false });
-        this.document_texture = new three__WEBPACK_IMPORTED_MODULE_4__.Texture(this.document_canvas);
-        this.overlay_texture = new three__WEBPACK_IMPORTED_MODULE_4__.Texture();
+        this.document_texture = new three__WEBPACK_IMPORTED_MODULE_5__.Texture(this.document_canvas);
+        this.overlay_texture = new three__WEBPACK_IMPORTED_MODULE_5__.Texture();
         this.view_canvas = document.getElementById('view-canvas');
         // this.staging_canvas = document.getElementById('staging-canvas')! as HTMLCanvasElement;
         // this.staging_context = this.staging_canvas.getContext('2d', { willReadFrequently: true })! as CanvasRenderingContext2D;
@@ -56740,7 +56741,7 @@ class MainApp {
         const aspect = 1;
         const w = this.view_canvas.width;
         const h = this.view_canvas.height;
-        const camera = new three__WEBPACK_IMPORTED_MODULE_4__.OrthographicCamera(0, // left
+        const camera = new three__WEBPACK_IMPORTED_MODULE_5__.OrthographicCamera(0, // left
         w, // right
         h, // top
         0, // bottom
@@ -56752,22 +56753,22 @@ class MainApp {
     }
     build_scene() {
         // Scene and orthographic camera
-        const scene = new three__WEBPACK_IMPORTED_MODULE_4__.Scene();
-        const document_texture = new three__WEBPACK_IMPORTED_MODULE_4__.CanvasTexture(this.document_canvas);
+        const scene = new three__WEBPACK_IMPORTED_MODULE_5__.Scene();
+        const document_texture = new three__WEBPACK_IMPORTED_MODULE_5__.CanvasTexture(this.document_canvas);
         document_texture.needsUpdate = true;
         document_texture.flipY = true;
-        const document_material = new three__WEBPACK_IMPORTED_MODULE_4__.ShaderMaterial({
+        const document_material = new three__WEBPACK_IMPORTED_MODULE_5__.ShaderMaterial({
             uniforms: {
                 uTexture: { value: document_texture },
             },
             vertexShader: _glsl_shader_code__WEBPACK_IMPORTED_MODULE_3__.VERTEX_SHADER_CODE,
             fragmentShader: _glsl_shader_code__WEBPACK_IMPORTED_MODULE_3__.FRAGMENT_SHADER_CODE,
         });
-        const document_geometry = new three__WEBPACK_IMPORTED_MODULE_4__.PlaneGeometry(this.document_canvas.width, this.document_canvas.height);
-        const document_rectangle = new three__WEBPACK_IMPORTED_MODULE_4__.Mesh(document_geometry, document_material);
+        const document_geometry = new three__WEBPACK_IMPORTED_MODULE_5__.PlaneGeometry(this.document_canvas.width, this.document_canvas.height);
+        const document_rectangle = new three__WEBPACK_IMPORTED_MODULE_5__.Mesh(document_geometry, document_material);
         document_rectangle.position.set(this.document_canvas.width / 2, this.document_canvas.height / 2, 0);
-        this.overlay_texture = new three__WEBPACK_IMPORTED_MODULE_4__.CanvasTexture(this.editor.tool.tmp_canvas);
-        const overlay_material = new three__WEBPACK_IMPORTED_MODULE_4__.ShaderMaterial({
+        this.overlay_texture = new three__WEBPACK_IMPORTED_MODULE_5__.CanvasTexture(this.editor.tool.tmp_canvas);
+        const overlay_material = new three__WEBPACK_IMPORTED_MODULE_5__.ShaderMaterial({
             uniforms: {
                 uTexture: { value: this.overlay_texture },
             },
@@ -56776,15 +56777,15 @@ class MainApp {
         });
         // document_rectangle.position.set(this.document_canvas.width/2,
         // this.document_canvas.height/2,0);
-        const overlay_geometry = new three__WEBPACK_IMPORTED_MODULE_4__.PlaneGeometry(this.state.overlay_position.w, this.state.overlay_position.h);
-        const overlay_rectangle = new three__WEBPACK_IMPORTED_MODULE_4__.Mesh(overlay_geometry, overlay_material);
+        const overlay_geometry = new three__WEBPACK_IMPORTED_MODULE_5__.PlaneGeometry(this.state.overlay_position.w, this.state.overlay_position.h);
+        const overlay_rectangle = new three__WEBPACK_IMPORTED_MODULE_5__.Mesh(overlay_geometry, overlay_material);
         overlay_rectangle.position.set(this.state.overlay_position.x + this.state.overlay_position.w / 2, this.view_canvas.height - (this.state.overlay_position.y + this.state.overlay_position.h / 2), 1);
         scene.add(document_rectangle);
         scene.add(overlay_rectangle);
         return scene;
     }
     init_render_loop() {
-        const renderer = new three__WEBPACK_IMPORTED_MODULE_5__.WebGLRenderer({
+        const renderer = new three__WEBPACK_IMPORTED_MODULE_6__.WebGLRenderer({
             antialias: true,
             canvas: this.view_canvas
         });
@@ -56793,7 +56794,7 @@ class MainApp {
             //this.document_texture.needsUpdate = true;
             const scene = this.build_scene();
             renderer.render(scene, this.init_camera());
-            disposeScene(scene);
+            (0,_utils__WEBPACK_IMPORTED_MODULE_4__.disposeScene)(scene);
             requestAnimationFrame(animate);
             //setTimeout(animate,100);
         };

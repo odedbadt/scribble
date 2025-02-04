@@ -5,47 +5,7 @@ import { Rect } from "./types";
 import { GoogleDrive } from "./gdrive"
 import { WebGLRenderer, Scene, Camera, OrthographicCamera, ShaderMaterial, Mesh, PlaneGeometry, Texture, CanvasTexture } from "three"
 import { FRAGMENT_SHADER_CODE, VERTEX_SHADER_CODE } from "./glsl_shader_code"
-function disposeScene(scene:Scene) {
-    // Loop through all objects in the scene
-    scene.traverse((object:any) => {
-        // Dispose of geometries
-        if (object.geometry) {
-            object.geometry.dispose();
-        }
-
-        // Dispose of materials
-        if (object.material) {
-            // If the material has textures, dispose of them too
-            if (Array.isArray(object.material)) {
-                object.material.forEach((mat:any) => {
-                    if (mat.map) mat.map.dispose(); // dispose of texture
-                    if (mat.lightMap) mat.lightMap.dispose();
-                    if (mat.bumpMap) mat.bumpMap.dispose();
-                    if (mat.normalMap) mat.normalMap.dispose();
-                    if (mat.aoMap) mat.aoMap.dispose();
-                    if (mat.emissiveMap) mat.emissiveMap.dispose();
-                    if (mat.envMap) mat.envMap.dispose();
-                    if (mat.displacementMap) mat.displacementMap.dispose();
-                    if (mat.specularMap) mat.specularMap.dispose();
-                });
-            } else {
-                if (object.material.map) object.material.map.dispose(); // dispose of texture
-                if (object.material.lightMap) object.material.lightMap.dispose();
-                if (object.material.bumpMap) object.material.bumpMap.dispose();
-                if (object.material.normalMap) object.material.normalMap.dispose();
-                if (object.material.aoMap) object.material.aoMap.dispose();
-                if (object.material.emissiveMap) object.material.emissiveMap.dispose();
-                if (object.material.envMap) object.material.envMap.dispose();
-                if (object.material.displacementMap) object.material.displacementMap.dispose();
-                if (object.material.specularMap) object.material.specularMap.dispose();
-            }
-            object.material.dispose();
-        }
-    });
-}
-
-// Example usage
-; // Dispose of all objects in the scene
+import { disposeScene } from "./utils";
 
 function click_for_a_second(id: string, callback: Function) {
     const elem = document.getElementById(id);
