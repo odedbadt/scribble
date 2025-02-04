@@ -81,10 +81,10 @@ export class MainApp {
                 h: this.document_canvas.clientHeight
             },
             overlay_position: {
-                x:0,
-                y:0,
-                w:100,
-                h: 100
+                x:100,
+                y:100,
+                w:200,
+                h: 200
             }
         }
         this.document_context.imageSmoothingEnabled = false;
@@ -214,8 +214,8 @@ export class MainApp {
             const scene = this.build_scene()
     
             renderer.render(scene, this.init_camera());
-             //requestAnimationFrame(animate)
-            setTimeout(animate,1500);
+            requestAnimationFrame(animate)
+            //setTimeout(animate,100);
         }
         animate()
     }

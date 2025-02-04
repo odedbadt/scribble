@@ -20,6 +20,7 @@ export class RectTool extends ClickAndDragTool {
         }
         this.tmp_canvas = tmp_canvas    
         this.tmp_context = this.tmp_canvas.getContext('2d')!
+        this.top_left = {x:Math.min(to.x, this.from.x), y: Math.min(to.y, this.from.y)};
         this.w = Math.abs(to.x - this.from.x);
         this.h = Math.abs(to.y - this.from.y);
         this.tmp_canvas.width = this.w;

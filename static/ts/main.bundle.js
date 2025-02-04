@@ -22,7 +22,7 @@ class ClickAndDragTool extends _editing_tool__WEBPACK_IMPORTED_MODULE_0__.Editin
         this.action = this.action.bind(this);
         this.stop = this.stop.bind(this);
         this.dirty = false;
-        this.from = null;
+        this.top_left = { x: 0, y: 0 };
     }
     select() {
     }
@@ -378,8 +378,9 @@ class Editor {
             this.tmp_tool_to_view();
         }
         // Appply action
-        this.staging_to_view();
-        this.tmp_tool_to_view();
+        // this.staging_to_view()
+        // this.tmp_tool_to_view();
+        this.refresh_overlay();
     }
     undo() {
         // this.art_to_staging();
@@ -411,12 +412,15 @@ class Editor {
             this.redo();
         }
     }
-    pointerup(event) {
-        this.tool.hover(this.view_coords_to_art_coords({ x: event.offsetX, y: event.offsetY }));
-        this.app.state.overlay_position.x = Math.floor(this.tool.x);
-        this.app.state.overlay_position.y = Math.floor(this.tool.y);
+    refresh_overlay() {
+        this.app.state.overlay_position.x = Math.floor(this.tool.top_left.x);
+        this.app.state.overlay_position.y = Math.floor(this.tool.top_left.y);
         this.app.state.overlay_position.w = Math.floor(this.tool.w);
         this.app.state.overlay_position.h = Math.floor(this.tool.h);
+    }
+    pointerup(event) {
+        this.tool.hover(this.view_coords_to_art_coords({ x: event.offsetX, y: event.offsetY }));
+        this.refresh_overlay();
         this.tool.stop();
     }
     pointerin(event) {
@@ -602,6 +606,7 @@ class RectTool extends _click_and_drag_tool__WEBPACK_IMPORTED_MODULE_0__.ClickAn
         }
         this.tmp_canvas = tmp_canvas;
         this.tmp_context = this.tmp_canvas.getContext('2d');
+        this.top_left = { x: Math.min(to.x, this.from.x), y: Math.min(to.y, this.from.y) };
         this.w = Math.abs(to.x - this.from.x);
         this.h = Math.abs(to.y - this.from.y);
         this.tmp_canvas.width = this.w;
@@ -56606,10 +56611,10 @@ class MainApp {
                 h: this.document_canvas.clientHeight
             },
             overlay_position: {
-                x: 0,
-                y: 0,
-                w: 100,
-                h: 100
+                x: 100,
+                y: 100,
+                w: 200,
+                h: 200
             }
         };
         this.document_context.imageSmoothingEnabled = false;
@@ -56708,8 +56713,8 @@ class MainApp {
             //this.document_texture.needsUpdate = true;
             const scene = this.build_scene();
             renderer.render(scene, this.init_camera());
-            //requestAnimationFrame(animate)
-            setTimeout(animate, 1500);
+            requestAnimationFrame(animate);
+            //setTimeout(animate,100);
         };
         animate();
     }

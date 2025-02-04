@@ -8,6 +8,7 @@ export abstract class ClickAndDragTool extends EditingTool {
     is_incremental: boolean;
     dirty: boolean;
     from: Vector2 | null;    
+    top_left: Vector2 | null;    
     tmp_context: CanvasRenderingContext2D | undefined;
     constructor(editor: Editor) {
         super(editor);
@@ -16,7 +17,7 @@ export abstract class ClickAndDragTool extends EditingTool {
         this.action = this.action.bind(this);
         this.stop = this.stop.bind(this);
         this.dirty = false;
-        this.from = null;
+        this.top_left = {x:0,y:0};
     }
     select(): void {
     }

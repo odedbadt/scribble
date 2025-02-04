@@ -169,8 +169,9 @@ export class Editor {
         }
         // Appply action
        
-        this.staging_to_view()
-        this.tmp_tool_to_view();
+        // this.staging_to_view()
+        // this.tmp_tool_to_view();
+        this.refresh_overlay()
     }
     undo() {
         // this.art_to_staging();
@@ -202,12 +203,17 @@ export class Editor {
             this.redo();
         }
     }
-    pointerup(event:MouseEvent) {
-        this.tool.hover(this.view_coords_to_art_coords({ x: event.offsetX, y: event.offsetY }));
-        this.app.state.overlay_position.x = Math.floor(this.tool.x);
-        this.app.state.overlay_position.y = Math.floor(this.tool.y);
+    refresh_overlay() {
+        this.app.state.overlay_position.x = Math.floor(this.tool.top_left.x);
+        this.app.state.overlay_position.y = Math.floor(this.tool.top_left.y);
         this.app.state.overlay_position.w = Math.floor(this.tool.w);
         this.app.state.overlay_position.h = Math.floor(this.tool.h);
+
+    }
+
+    pointerup(event:MouseEvent) {
+        this.tool.hover(this.view_coords_to_art_coords({ x: event.offsetX, y: event.offsetY }));
+        this.refresh_overlay()
         this.tool.stop();
         
     
