@@ -3,10 +3,10 @@ import { MainApp } from "./main_app";
 import { Vector2 } from "./types";
 
 export abstract class EditingTool {
-    canvas: HTMLCanvasElement;
-    context: CanvasRenderingContext2D;
-    tmp_canvas?: HTMLCanvasElement;
-    tmp_context?: CanvasRenderingContext2D;
+    applied_canvas: HTMLCanvasElement;
+    applied_context: CanvasRenderingContext2D;
+    staging_canvas?: HTMLCanvasElement;
+    staging_context?: CanvasRenderingContext2D;
     editor: Editor;
     app: MainApp;
     h:number = 100;
@@ -18,21 +18,21 @@ export abstract class EditingTool {
     ) {
         this.editor = editor;
         this.app = editor.app;
-        this.canvas = document.createElement("canvas") as HTMLCanvasElement;
-        this.context = this.canvas.getContext('2d')!;
-        this.canvas.width = 100;
-        this.canvas.height = 100;
-        this.tmp_canvas = document.createElement("canvas") as HTMLCanvasElement;
-        this.tmp_context = this.tmp_canvas.getContext('2d')!;
-        this.tmp_canvas.width = 100;
-        this.tmp_canvas.height = 100;
+        this.applied_canvas = document.createElement("canvas") as HTMLCanvasElement;
+        this.applied_context = this.applied_canvas.getContext('2d')!;
+        this.applied_canvas.width = 100;
+        this.applied_canvas.height = 100;
+        this.staging_canvas = document.createElement("canvas") as HTMLCanvasElement;
+        this.staging_context = this.staging_canvas.getContext('2d')!;
+        this.staging_canvas.width = 100;
+        this.staging_canvas.height = 100;
 
     }
 
     select() {
-        this.context!.clearRect(0, 0,
-            this.canvas!.width,
-            this.canvas!.height);
+        this.applied_context!.clearRect(0, 0,
+            this.applied_canvas!.width,
+            this.applied_canvas!.height);
     }
     abstract start(at: Vector2, buttons: number): boolean;
     abstract action(at: Vector2): boolean;

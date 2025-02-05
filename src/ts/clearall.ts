@@ -18,10 +18,10 @@ export class ClearAllTool extends OnSelectTool {
         this.app = editor.app;
     }
     select_action() {
-        const w = this.context.canvas.clientWidth;
-        const h = this.context.canvas.clientHeight;
-        this.context.fillStyle = this.app.settings.back_color;
-        this.context.fillRect(0, 0, w, h);
+        const w = this.applied_context.canvas.clientWidth;
+        const h = this.applied_context.canvas.clientHeight;
+        this.applied_context.fillStyle = this.app.settings.back_color;
+        this.applied_context.fillRect(0, 0, w, h);
     }
     hover():boolean {
         return false

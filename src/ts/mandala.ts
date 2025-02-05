@@ -34,11 +34,11 @@ export class mandala extends ClickAndDragTool {
     }
 
     hover_action(at: { x: any; y: any; }) {
-        if (!this.tmp_context) {
+        if (!this.staging_context) {
             return false;
         }
-        this.tmp_context.fillStyle = this.app.settings.fore_color;
-        const tmp_context = this.tmp_context!;
+        this.staging_context.fillStyle = this.app.settings.fore_color;
+        const tmp_context = this.staging_context!;
         const _this = this;
         this._angles.forEach((angle) => {
             const rotated = rotate(at, _this.w, _this.h, angle);
@@ -56,13 +56,13 @@ export class mandala extends ClickAndDragTool {
             this._angles.forEach((angle) => {
                 const rotated_recorded = rotate(this._recorded_to, _this.w, _this.h, angle, mirror);
                 const rotated_to = rotate(to, _this.w, _this.h, angle, mirror);
-                _this.context.moveTo(rotated_recorded.x, rotated_recorded.y);
-                _this.context.lineTo(rotated_to.x, rotated_to.y);
+                _this.applied_context.moveTo(rotated_recorded.x, rotated_recorded.y);
+                _this.applied_context.lineTo(rotated_to.x, rotated_to.y);
             });
         })
         }
         this._recorded_to = to;
-        this.context.stroke();
+        this.applied_context.stroke();
         return true;
     }
     editing_stop(at:Vector2):boolean {

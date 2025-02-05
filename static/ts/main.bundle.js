@@ -28,11 +28,11 @@ class ClickAndDragTool extends _editing_tool__WEBPACK_IMPORTED_MODULE_0__.Editin
     select() {
     }
     start(at, buttons) {
-        this.context.clearRect(0, 0, this.w, this.h);
-        this.context.fillStyle = this.app.settings.fore_color;
-        this.context.strokeStyle = this.app.settings.fore_color;
-        this.context.lineWidth = this.app.settings.line_width;
-        this.context.lineCap = 'round';
+        this.applied_context.clearRect(0, 0, this.w, this.h);
+        this.applied_context.fillStyle = this.app.settings.fore_color;
+        this.applied_context.strokeStyle = this.app.settings.fore_color;
+        this.applied_context.lineWidth = this.app.settings.line_width;
+        this.applied_context.lineCap = 'round';
         this.dirty = this.editing_start();
         this.from = at;
         this.x = at.x;
@@ -50,7 +50,7 @@ class ClickAndDragTool extends _editing_tool__WEBPACK_IMPORTED_MODULE_0__.Editin
         return true;
     }
     hover(at) {
-        if (!this.tmp_context) {
+        if (!this.staging_context) {
             return false;
         }
         const dirty = this.hover_action(at);
@@ -182,17 +182,17 @@ class EditingTool {
         this.y = 0;
         this.editor = editor;
         this.app = editor.app;
-        this.canvas = document.createElement("canvas");
-        this.context = this.canvas.getContext('2d');
-        this.canvas.width = 100;
-        this.canvas.height = 100;
-        this.tmp_canvas = document.createElement("canvas");
-        this.tmp_context = this.tmp_canvas.getContext('2d');
-        this.tmp_canvas.width = 100;
-        this.tmp_canvas.height = 100;
+        this.applied_canvas = document.createElement("canvas");
+        this.applied_context = this.applied_canvas.getContext('2d');
+        this.applied_canvas.width = 100;
+        this.applied_canvas.height = 100;
+        this.staging_canvas = document.createElement("canvas");
+        this.staging_context = this.staging_canvas.getContext('2d');
+        this.staging_canvas.width = 100;
+        this.staging_canvas.height = 100;
     }
     select() {
-        this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.applied_context.clearRect(0, 0, this.applied_canvas.width, this.applied_canvas.height);
     }
 }
 class NopTool extends EditingTool {
@@ -610,12 +610,12 @@ __webpack_require__.r(__webpack_exports__);
 class RectTool extends _click_and_drag_tool__WEBPACK_IMPORTED_MODULE_0__.ClickAndDragTool {
     constructor(editor) {
         super(editor);
-        this.canvas = document.createElement("canvas");
-        this.context = this.canvas.getContext('2d');
-        this.tmp_canvas = document.createElement("canvas");
-        this.tmp_context = this.tmp_canvas.getContext('2d');
-        this.tmp_canvas.width = this.w;
-        this.tmp_canvas.height = this.h;
+        this.applied_canvas = document.createElement("canvas");
+        this.applied_context = this.applied_canvas.getContext('2d');
+        this.staging_canvas = document.createElement("canvas");
+        this.staging_context = this.staging_canvas.getContext('2d');
+        this.staging_canvas.width = this.w;
+        this.staging_canvas.height = this.h;
     }
     editing_action(to) {
         if (!this.from) {
@@ -630,12 +630,24 @@ class RectTool extends _click_and_drag_tool__WEBPACK_IMPORTED_MODULE_0__.ClickAn
         this.top_left = { x: Math.min(to.x, this.from.x), y: Math.min(to.y, this.from.y) };
         this.w = Math.abs(to.x - this.from.x);
         this.h = Math.abs(to.y - this.from.y);
-        this.tmp_context.fillStyle = this.app.settings.fore_color; // OD: for testing
-        this.tmp_context.fillRect(0, 0, this.w, this.h);
-        this.canvas.width = this.w;
-        this.canvas.height = this.h;
-        this.context.fillStyle = this.app.settings.fore_color; // OD: for testing
-        this.context.fillRect(0, 0, this.w, this.h);
+        this.staging_context.fillStyle = this.app.settings.fore_color; // OD: for testing
+        this.staging_context.fillRect(0, 0, this.w, this.h);
+        this.staging_context.beginPath();
+        // this.tmp_context!.moveTo(this.w,0)
+        // this.tmp_context!.lineTo(0,this.h)
+        this.staging_context.moveTo(0, 0);
+        this.staging_context.lineTo(this.w, this.h);
+        this.staging_context.stroke();
+        this.applied_canvas.width = this.w;
+        this.applied_canvas.height = this.h;
+        this.applied_context.fillStyle = this.app.settings.fore_color; // OD: for testing
+        this.applied_context.fillRect(0, 0, this.w, this.h);
+        this.applied_context.beginPath();
+        this.applied_context.moveTo(0, 0);
+        this.applied_context.lineTo(this.w, this.h);
+        this.applied_context.moveTo(this.w, 0);
+        this.applied_context.lineTo(0, this.h);
+        this.applied_context.stroke();
         return true;
     }
 }
@@ -56653,7 +56665,7 @@ __webpack_require__.r(__webpack_exports__);
 function click_for_a_second(id, callback) {
     const elem = document.getElementById(id);
     if (elem) {
-        elem.addEventListener('click', () => {
+        elem.addEventListener('πlick', () => {
             elem.classList.add('pressed');
             callback();
             window.setTimeout(() => {
@@ -56680,7 +56692,7 @@ class MainApp {
         this.palette = new _palette__WEBPACK_IMPORTED_MODULE_1__.Palette(this.palette_hl_canvas, this.palette_sat_canvas, [1, 0.5, 0.5]);
         this.editor = new _editor__WEBPACK_IMPORTED_MODULE_0__.Editor(this);
         this.settings = {
-            fore_color: 'rgba(0,0,0,255)',
+            fore_color: 'rgba(255,0,0,255)',
             back_color: 'rgba(255,255,255,255)',
             line_width: 10,
             filled: true,
@@ -56778,6 +56790,16 @@ class MainApp {
         // document_rectangle.position.set(this.document_canvas.width/2,
         // this.document_canvas.height/2,0);
         const overlay_geometry = new three__WEBPACK_IMPORTED_MODULE_5__.PlaneGeometry(this.state.overlay_position.w, this.state.overlay_position.h);
+        const uvs = overlay_geometry.attributes.uv.array;
+        // Map the UVs so that (0,0) on the plane maps to (0,0) on the texture,
+        // and (w1,h1) on the plane maps to (w2,h2) on the texture.
+        for (let i = 0; i < uvs.length; i += 2) {
+            uvs[i] = uvs[i] * this.state.overlay_position.w /
+                this.editor.tool.tmp_canvas.width;
+            uvs[i + 1] = uvs[i + 1] * this.state.overlay_position.h /
+                this.editor.tool.tmp_canvas.height;
+        }
+        //overlay_geometry.attributes.uv.needsUpdate = true;
         const overlay_rectangle = new three__WEBPACK_IMPORTED_MODULE_5__.Mesh(overlay_geometry, overlay_material);
         overlay_rectangle.position.set(this.state.overlay_position.x + this.state.overlay_position.w / 2, this.view_canvas.height - (this.state.overlay_position.y + this.state.overlay_position.h / 2), 1);
         scene.add(document_rectangle);

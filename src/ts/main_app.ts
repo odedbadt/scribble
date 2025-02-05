@@ -10,7 +10,7 @@ import { disposeScene } from "./utils";
 function click_for_a_second(id: string, callback: Function) {
     const elem = document.getElementById(id);
     if (elem) {
-        elem.addEventListener('click', () => {
+        elem.addEventListener('πlick', () => {
             elem.classList.add('pressed')
             callback()
             window.setTimeout(() => {
@@ -70,7 +70,7 @@ export class MainApp {
         this.palette = new Palette(this.palette_hl_canvas, this.palette_sat_canvas, [1, 0.5, 0.5])
         this.editor = new Editor(this);
         this.settings = {
-            fore_color: 'rgba(0,0,0,255)',
+            fore_color: 'rgba(255,0,0,255)',
             back_color: 'rgba(255,255,255,255)',
             line_width: 10,
             filled: true,
@@ -191,6 +191,18 @@ export class MainApp {
         const overlay_geometry = new PlaneGeometry(
             this.state.overlay_position.w,
             this.state.overlay_position.h);
+        const uvs = overlay_geometry.attributes.uv.array;
+
+        // Map the UVs so that (0,0) on the plane maps to (0,0) on the texture,
+        // and (w1,h1) on the plane maps to (w2,h2) on the texture.
+        for (let i = 0; i < uvs.length; i += 2) {
+            uvs[i] = uvs[i] * this.state.overlay_position.w /
+            this.editor.tool.tmp_canvas!.width;
+            uvs[i + 1] = uvs[i + 1] * this.state.overlay_position.h /
+            this.editor.tool.tmp_canvas!.height;
+        }   
+        //overlay_geometry.attributes.uv.needsUpdate = true;
+
         const overlay_rectangle = new Mesh(overlay_geometry,
             overlay_material);
         overlay_rectangle.position.set(

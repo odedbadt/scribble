@@ -8,8 +8,7 @@ export abstract class ClickAndDragTool extends EditingTool {
     is_incremental: boolean;
     dirty: boolean;
     from: Vector2 | null;    
-    top_left: Vector2 | null;    
-    tmp_context: CanvasRenderingContext2D | undefined;
+    top_left: Vector2 | null;
     constructor(editor: Editor) {
         super(editor);
         this.is_incremental = false;
@@ -18,16 +17,16 @@ export abstract class ClickAndDragTool extends EditingTool {
         this.stop = this.stop.bind(this);
         this.dirty = false;
         this.top_left = {x:0,y:0};
-        this.from = {x:0,y:0};
+        this.from = {x:0,y:0}
     }
     select(): void {
     }
     start(at: Vector2, buttons:number):boolean {
-        this.context.clearRect(0, 0, this.w, this.h);
-        this.context.fillStyle = this.app.settings.fore_color;
-        this.context.strokeStyle = this.app.settings.fore_color;
-        this.context.lineWidth = this.app.settings.line_width;
-        this.context.lineCap = 'round';
+        this.applied_context.clearRect(0, 0, this.w, this.h);
+        this.applied_context.fillStyle = this.app.settings.fore_color;
+        this.applied_context.strokeStyle = this.app.settings.fore_color;
+        this.applied_context.lineWidth = this.app.settings.line_width;
+        this.applied_context.lineCap = 'round';
         this.dirty = this.editing_start();
         this.from = at;
         this.x = at.x;
@@ -46,7 +45,7 @@ export abstract class ClickAndDragTool extends EditingTool {
         
     }
     hover(at: any):boolean {
-        if (!this.tmp_context) {
+        if (!this.staging_context) {
             return false;
         }
         const dirty = this.hover_action(at);

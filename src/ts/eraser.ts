@@ -7,20 +7,20 @@ export class EraserTool extends ClickAndDragTool{
         super(editor);
         }
     hover_action(at:Vector2):boolean {
-        if (!this.tmp_context) {
+        if (!this.staging_context) {
             return false;
         }
 
-        this.tmp_context.fillStyle = this.app.settings.back_color
-        this.tmp_context.strokeStyle = this.app.settings.fore_color
+        this.staging_context.fillStyle = this.app.settings.back_color
+        this.staging_context.strokeStyle = this.app.settings.fore_color
 
-        this.tmp_context.lineWidth = 1
-        this.tmp_context.beginPath();
+        this.staging_context.lineWidth = 1
+        this.staging_context.beginPath();
         const r = this.app.settings.line_width;
-        this.tmp_context.ellipse(
+        this.staging_context.ellipse(
             at.x,at.y,r,r,0,0,Math.PI*2);
-        this.tmp_context.fill()
-        this.tmp_context.stroke()
+        this.staging_context.fill()
+        this.staging_context.stroke()
         return true
 
 
@@ -28,15 +28,15 @@ export class EraserTool extends ClickAndDragTool{
 
     editing_action(to:Vector2) {
         if (this._recorded_to) {
-            this.context.strokeStyle = this.app.settings.back_color
-            this.context.lineWidth = this.app.settings.line_width * 2
-            this.context.moveTo(
+            this.applied_context.strokeStyle = this.app.settings.back_color
+            this.applied_context.lineWidth = this.app.settings.line_width * 2
+            this.applied_context.moveTo(
                 this._recorded_to.x,this._recorded_to.y);
-            this.context.lineTo(
+            this.applied_context.lineTo(
                 to.x,to.y);
         }
         this._recorded_to = to;
-        this.context.stroke();
+        this.applied_context.stroke();
         return true
 
     }

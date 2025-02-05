@@ -6,13 +6,13 @@ export class CursorSize  extends ClickAndDragTool {
         super(editor);
     }
     editing_start():boolean {
-        if (!this.tmp_context) {
+        if (!this.staging_context) {
             return false;
         }
-        this.tmp_context.fillStyle = this.app.settings.fore_color;
-        this.tmp_context.strokeStyle = this.app.settings.fore_color;
-        this.tmp_context.lineWidth = this.app.settings.line_width;
-        this.tmp_context.lineCap = 'round';
+        this.staging_context.fillStyle = this.app.settings.fore_color;
+        this.staging_context.strokeStyle = this.app.settings.fore_color;
+        this.staging_context.lineWidth = this.app.settings.line_width;
+        this.staging_context.lineCap = 'round';
         return false;
     }
     start(at:Vector2, buttons:number):boolean {
@@ -24,7 +24,7 @@ export class CursorSize  extends ClickAndDragTool {
         if (this.from == null) {
             return false;
         }
-        if (!this.tmp_context) {
+        if (!this.staging_context) {
             return false;
         }
         //this.app.tool_tmp_context.clearRect(0,0,this.w,this.h);
@@ -33,10 +33,10 @@ export class CursorSize  extends ClickAndDragTool {
 
         const r = Math.sqrt((at.x - this.from.x)*(at.x - this.from.x)+
         (at.y - this.from.y)*(at.y - this.from.y))
-        this.tmp_context.beginPath();
-        this.tmp_context.ellipse(
+        this.staging_context.beginPath();
+        this.staging_context.ellipse(
                 this.from.x,this.from.y,r,r,0,0,Math.PI*2);
-        this.tmp_context.fill();
+        this.staging_context.fill();
         this.app.settings.line_width = 2*r;
         this.editor.tmp_tool_to_view()
 

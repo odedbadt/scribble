@@ -10,12 +10,12 @@ export class LineTool  extends ClickAndDragTool {
         if (!this.from) {
             return false;
         }
-        this.context.moveTo(
+        this.applied_context.moveTo(
             this.from.x,
             this.from.y);
-        this.context.lineTo(
+        this.applied_context.lineTo(
             at.x,at.y);
-        this.context.stroke();
+        this.applied_context.stroke();
         return true
     }
 }
