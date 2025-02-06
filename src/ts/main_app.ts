@@ -3,7 +3,7 @@ import { Palette } from './palette'
 import { ColorStack } from "./color_stack";
 import { Rect } from "./types";
 import { GoogleDrive } from "./gdrive"
-import { WebGLRenderer, Scene, Camera, OrthographicCamera, ShaderMaterial, Mesh, PlaneGeometry, Texture, CanvasTexture } from "three"
+import { WebGLRenderer, Scene, Camera, OrthographicCamera, ShaderMaterial, Mesh, PlaneGeometry, Texture, CanvasTexture, MeshBasicMaterial } from "three"
 import { FRAGMENT_SHADER_CODE, VERTEX_SHADER_CODE } from "./glsl_shader_code"
 import { disposeScene } from "./utils";
 
@@ -175,7 +175,7 @@ export class MainApp {
             this.document_canvas.height/2,
             0
         );
-        this.overlay_texture = new CanvasTexture(this.editor.tool.tmp_canvas);
+        this.overlay_texture = new CanvasTexture(this.editor.tool.staging_canvas);
 
         const overlay_material = new ShaderMaterial({
             uniforms: {
@@ -195,13 +195,15 @@ export class MainApp {
 
         // Map the UVs so that (0,0) on the plane maps to (0,0) on the texture,
         // and (w1,h1) on the plane maps to (w2,h2) on the texture.
-        for (let i = 0; i < uvs.length; i += 2) {
-            uvs[i] = uvs[i] * this.state.overlay_position.w /
-            this.editor.tool.tmp_canvas!.width;
-            uvs[i + 1] = uvs[i + 1] * this.state.overlay_position.h /
-            this.editor.tool.tmp_canvas!.height;
-        }   
-        //overlay_geometry.attributes.uv.needsUpdate = true;
+        // const x_ratio = this.editor.tool ? this.editor.tool.staging_canvas.width : 1;
+        // const y_ratio = this.editor.tool ? this.editor.tool.staging_canvas.height : 1;
+        // console.log(uvs);
+        // for (let i = 0; i < uvs.length; i += 2) {
+        //     uvs[i] = uvs[i] * x_ratio;
+        //     uvs[i + 1] = uvs[i + 1] * y_ratio;
+        // }   
+        // console.log(uvs);
+        overlay_geometry.attributes.uv.needsUpdate = true;
 
         const overlay_rectangle = new Mesh(overlay_geometry,
             overlay_material);
@@ -228,8 +230,8 @@ export class MainApp {
     
             renderer.render(scene, this.init_camera());
             disposeScene(scene)
-requestAnimationFrame(animate)
-            //setTimeout(animate,100);
+            requestAnimationFrame(animate)
+            //setTimeout(animate,1000);
         }
         animate()
     }

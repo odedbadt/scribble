@@ -18,21 +18,22 @@ export class RectTool extends ClickAndDragTool {
             return false;
         }
 
-        // let tmp_canvas:HTMLCanvasElement|null = document.getElementById('rect_canvas') as HTMLCanvasElement
+        let staging_canvas:HTMLCanvasElement= document.getElementById('rect_canvas') as HTMLCanvasElement
 
-        // if (!tmp_canvas) {
-        //     document.getElementById('canvas-area')!.appendChild(tmp_canvas); // OD: for testing
-        //     tmp_canvas.setAttribute('id', 'rect_canvas')
-        // }
-        // this.tmp_canvas = tmp_canvas
+        if (!document.getElementById('rect_canvas')) {
+            document.getElementById('canvas-area')!.appendChild(this.staging_canvas); // OD: for testing
+            this.staging_canvas.setAttribute('id', 'rect_canvas')
+        }
+        this.staging_canvas.width = this.w;
+        this.staging_canvas.height = this.h;
         this.top_left = {x:Math.min(to.x, this.from.x), y: Math.min(to.y, this.from.y)};
         this.w = Math.abs(to.x - this.from.x);
         this.h = Math.abs(to.y - this.from.y);
         this.staging_context!.fillStyle = this.app.settings.fore_color; // OD: for testing
         this.staging_context!.fillRect(0,0, this.w, this.h);
         this.staging_context!.beginPath()
-        // this.tmp_context!.moveTo(this.w,0)
-        // this.tmp_context!.lineTo(0,this.h)
+        this.staging_context!.moveTo(this.w,0)
+        this.staging_context!.lineTo(0,this.h)
         this.staging_context!.moveTo(0,0)
         this.staging_context!.lineTo(this.w,this.h)
         this.staging_context!.stroke()

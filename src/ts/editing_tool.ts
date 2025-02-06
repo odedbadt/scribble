@@ -5,8 +5,8 @@ import { Vector2 } from "./types";
 export abstract class EditingTool {
     applied_canvas: HTMLCanvasElement;
     applied_context: CanvasRenderingContext2D;
-    staging_canvas?: HTMLCanvasElement;
-    staging_context?: CanvasRenderingContext2D;
+    staging_canvas: HTMLCanvasElement;
+    staging_context: CanvasRenderingContext2D;
     editor: Editor;
     app: MainApp;
     h:number = 100;

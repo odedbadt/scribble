@@ -120,7 +120,7 @@ export class Editor {
         // override_canvas_context(this.app.staging_context, this.app.document_canvas, this._art_canvas_bounding_rect, false, false, true)
     }
     tool_to_document() {        
-        const tool_image_data = this.tool.canvas.getContext('2d')!.getImageData(0,0,this.tool.w, this.tool.h)
+        const tool_image_data = this.tool.applied_context.getImageData(0,0,this.tool.w, this.tool.h)
         const tool_data = tool_image_data.data;
 
         const document_image_data = this.app.document_context.getImageData(

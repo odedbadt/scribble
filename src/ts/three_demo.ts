@@ -21,7 +21,7 @@ function createScene() {
   // Scene and orthographic camera
   const scene = new THREE.Scene();
   const aspect = 1;
-  const cameraSize = 1; // Adjust this to control how much of the scene is visible
+  const cameraSize = 10; // Adjust this to control how much of the scene is visible
   const camera = new THREE.OrthographicCamera(
     -cameraSize * aspect, // left
     cameraSize * aspect,  // right
@@ -60,10 +60,13 @@ function createScene() {
   // Draw something on the 2D canvas
   ctx_front.fillStyle = "green";
   ctx_front.fillRect(0, 0, canvasSize, canvasSize);
-  ctx_front.strokeStyle = "white"
-  ctx_front.moveTo(0,256)
-  ctx_front.lineTo(256,0)
-  ctx_front.stroke()
+  ctx_front.strokeStyle = "black"
+  ctx_front.lineWidth=0.5
+  ctx_front.moveTo(0,canvasSize)
+  ctx_front.lineTo(canvasSize,0);
+  ctx_front.moveTo(0,0)
+  ctx_front.lineTo(canvasSize,canvasSize);
+  ctx_front.stroke();
 
 
   // Create a texture from the 2D canvas
@@ -83,6 +86,7 @@ function createScene() {
   });
   const canvasTexture_front = new THREE.Texture(canvas2D_front);
   canvasTexture_front.needsUpdate = true;
+  canvasTexture_front.magFilter = THREE.NearestFilter;
   const material_front = new THREE.ShaderMaterial({
     uniforms: {
       uTexture: { value: canvasTexture_front },
@@ -94,13 +98,23 @@ function createScene() {
   // Geometry for the rectangle
   const geometry = new THREE.PlaneGeometry(2, 2); // Dimensions match orthographic projection
   const mesh = new THREE.Mesh(geometry, material);
-  const geometry_front = new THREE.PlaneGeometry(1, 1); // Dimensions match orthographic projection
+  const geometry_front = new THREE.PlaneGeometry(10, 10); // Dimensions match orthographic projection
   const mesh_front = new THREE.Mesh(geometry_front, material_front);
   mesh.position.set(0,0,0)
-  mesh_front.position.set(0,0,90);
+  mesh_front.position.set(0,0,-1);
   scene.add(mesh);
-  //scene.add(mesh_front);
-
+  scene.add(mesh_front);
+  const uvs = geometry_front.attributes.uv.array;
+  
+  const x_ratio = 1;
+  const y_ratio = 1;
+  console.log(uvs);
+  for (let i = 0; i < uvs.length; i += 2) {
+      uvs[i] = uvs[i] * x_ratio;
+      uvs[i + 1] = uvs[i + 1] * y_ratio;
+  }
+  console.log('BLA!', uvs);
+  geometry_front.attributes.uv.needsUpdate = true;
   document.body.appendChild(renderer.domElement);
 
   // Animation loop
@@ -116,7 +130,7 @@ function createScene() {
     canvasTexture.needsUpdate = true;
     canvasTexture_front.needsUpdate = true;
     renderer.render(scene, camera);
-    setTimeout(animate,1500);
+    // setTimeout(animate,1500);
 
   }
 
