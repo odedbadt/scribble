@@ -55729,7 +55729,43 @@ function createScene() {
     }
     animate();
 }
-window.addEventListener('load', createScene);
+function copy_canvas() {
+    const source_canvas = document.createElement('canvas');
+    const dest_canvas = document.createElement('canvas');
+    document.body.appendChild(source_canvas);
+    document.body.appendChild(dest_canvas);
+    source_canvas.width = 20;
+    source_canvas.height = 20;
+    dest_canvas.width = 600;
+    dest_canvas.height = 600;
+    const source_context = source_canvas.getContext('2d');
+    const dest_context = dest_canvas.getContext('2d');
+    source_context.fillStyle = 'red';
+    source_context.beginPath();
+    source_context.ellipse(10, 10, 10, 10, 0, 0, Math.PI * 2);
+    source_context.fill();
+    const source_image_data = source_context.getImageData(0, 0, 20, 20);
+    const source_data = source_image_data.data;
+    const dest_image_data = dest_context.getImageData(100, 100, 20, 20);
+    const dest_data = dest_image_data.data;
+    for (let y = 0; y < 20; ++y) {
+        for (let x = 0; x < 20; ++x) {
+            const base_offset = 4 * (y * 20 + x);
+            if (source_data[base_offset + 3] > 0) {
+                dest_data[base_offset + 0] = 0;
+                dest_data[base_offset + 1] = 255;
+                dest_data[base_offset + 2] = 0;
+                dest_data[base_offset + 3] = 255;
+            }
+        }
+    }
+    dest_context.putImageData(dest_image_data, 0, 0);
+}
+function go() {
+    //createScene();
+    copy_canvas();
+}
+window.addEventListener('load', go);
 
 })();
 

@@ -44,7 +44,6 @@ class ClickAndDragTool extends _editing_tool__WEBPACK_IMPORTED_MODULE_0__.Editin
         return false;
     }
     action(at) {
-        this.editor.art_to_staging();
         // this.editor.app.tool_context.beginPath();
         this.dirty = !!this.editing_action(at) || this.dirty;
         return true;
@@ -55,7 +54,6 @@ class ClickAndDragTool extends _editing_tool__WEBPACK_IMPORTED_MODULE_0__.Editin
         }
         const dirty = this.hover_action(at);
         if (dirty) {
-            this.editor.tool_to_view();
             return true;
         }
         return false;
@@ -70,12 +68,9 @@ class ClickAndDragTool extends _editing_tool__WEBPACK_IMPORTED_MODULE_0__.Editin
     stop(at) {
         this.dirty = !!this.editing_stop(at) || this.dirty;
         if (this.dirty) {
-            this.editor.staging_to_art();
             this.editor.undo_redo_buffer.push(this.app.document_context.getImageData(0, 0, this.w, this.h));
             this.from = null;
-            this.editor.art_to_staging();
             this.editor.tool_to_document();
-            this.editor.staging_to_view();
             this.dirty = false;
             return true;
         }
@@ -231,15 +226,17 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _undo_redo_buffer__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./undo_redo_buffer */ "./src/ts/undo_redo_buffer.ts");
 /* harmony import */ var _editing_tool__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./editing_tool */ "./src/ts/editing_tool.ts");
-/* harmony import */ var _rect__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./rect */ "./src/ts/rect.ts");
+/* harmony import */ var _line__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./line */ "./src/ts/line.ts");
+/* harmony import */ var _rect__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./rect */ "./src/ts/rect.ts");
 
 
 
-const v = _rect__WEBPACK_IMPORTED_MODULE_2__.RectTool;
+
+const v = _rect__WEBPACK_IMPORTED_MODULE_3__.RectTool;
 const tool_classes = new Map([
     //  ["scribble", ScribbleTool]
-    ["rect", _rect__WEBPACK_IMPORTED_MODULE_2__.RectTool]
-    // ,["line",  LineTool]
+    ["rect", _rect__WEBPACK_IMPORTED_MODULE_3__.RectTool],
+    ["line", _line__WEBPACK_IMPORTED_MODULE_2__.LineTool]
     // ,["circle",  CircleTool]
     // ,["dropper",  Dropper]
     // ,["floodfill",  Floodfill]
@@ -336,19 +333,16 @@ class Editor {
         const document_data = document_image_data.data;
         for (let y = 0; y < this.tool.h; ++y) {
             for (let x = 0; x < this.tool.w; ++x) {
-                const document_x = x + this.tool.top_left.x;
-                const document_y = y + this.tool.top_left.y;
-                const tool_base_offset = 4 * (y * this.tool.w + x);
-                const document_base_offset = 4 * (document_y * this.app.document_canvas.width + document_x);
-                if (tool_data[tool_base_offset + 3] > 0) {
-                    document_data[document_base_offset + 0] = tool_data[tool_base_offset + 0];
-                    document_data[document_base_offset + 1] = tool_data[tool_base_offset + 1];
-                    document_data[document_base_offset + 2] = tool_data[tool_base_offset + 2];
-                    document_data[document_base_offset + 3] = tool_data[tool_base_offset + 3];
+                const base_offset = 4 * (y * this.tool.w + x);
+                if (tool_data[base_offset + 3] > 0) {
+                    document_data[base_offset + 0] = tool_data[base_offset + 0];
+                    document_data[base_offset + 1] = tool_data[base_offset + 1];
+                    document_data[base_offset + 2] = tool_data[base_offset + 2];
+                    document_data[base_offset + 3] = tool_data[base_offset + 3];
                 }
             }
         }
-        this.app.document_context.putImageData(tool_image_data, this.tool.top_left.x, this.tool.top_left.y);
+        this.app.document_context.putImageData(document_image_data, this.tool.top_left.x, this.tool.top_left.y);
     }
     tool_to_view() {
         // override_canvas_context(this.app.view_context, this.app.tool_canvas,
@@ -373,7 +367,6 @@ class Editor {
         this.tool.select();
         if (this._last_hover_spot) {
             this.tool.hover(this.view_coords_to_art_coords(this._last_hover_spot));
-            this.tmp_tool_to_view();
         }
     }
     deselect_tool() {
@@ -381,7 +374,6 @@ class Editor {
     }
     pointerdown(event) {
         event.preventDefault();
-        this.art_to_staging();
         this.tool.start(this.view_coords_to_art_coords({ x: event.offsetX, y: event.offsetY }), event.buttons);
     }
     pointermove(event) {
@@ -389,11 +381,9 @@ class Editor {
         if (event.buttons) {
             this.tool.action(this.view_coords_to_art_coords({ x: event.offsetX, y: event.offsetY }));
             this.tool.hover(this.view_coords_to_art_coords({ x: event.offsetX, y: event.offsetY }));
-            this.tmp_tool_to_view();
         }
         else {
             this.tool.hover(this.view_coords_to_art_coords({ x: event.offsetX, y: event.offsetY }));
-            this.tmp_tool_to_view();
         }
         // Appply action
         // this.staging_to_view()
@@ -448,8 +438,6 @@ class Editor {
     }
     pointerleave(event) {
         // this.app.tool_tmp_context.clearRect(0, 0, this._art_canvas_bounding_rect.w, this._art_canvas_bounding_rect.h);
-        this.art_to_staging();
-        this.staging_to_view();
         this._last_hover_spot = null;
     }
 }
@@ -482,6 +470,69 @@ void main() {
   gl_FragColor = texture2D(uTexture, vUv);
 }
 `;
+
+
+/***/ }),
+
+/***/ "./src/ts/line.ts":
+/*!************************!*\
+  !*** ./src/ts/line.ts ***!
+  \************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   LineTool: () => (/* binding */ LineTool)
+/* harmony export */ });
+/* harmony import */ var _click_and_drag_tool__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./click_and_drag_tool */ "./src/ts/click_and_drag_tool.ts");
+
+class LineTool extends _click_and_drag_tool__WEBPACK_IMPORTED_MODULE_0__.ClickAndDragTool {
+    constructor(editor) {
+        super(editor);
+        this.applied_canvas = document.createElement("canvas");
+        this.applied_context = this.applied_canvas.getContext('2d');
+        this.staging_canvas = document.createElement("canvas");
+        this.staging_context = this.staging_canvas.getContext('2d');
+        this.staging_canvas.width = this.w;
+        this.staging_canvas.height = this.h;
+    }
+    editing_action(to) {
+        if (!this.from) {
+            return false;
+        }
+        const flip = (to.x < this.from.x) !== (to.y < this.from.y);
+        let staging_canvas = document.getElementById('rect_canvas');
+        if (!document.getElementById('rect_canvas')) {
+            document.getElementById('canvas-area').appendChild(this.staging_canvas); // OD: for testing
+            this.staging_canvas.setAttribute('id', 'rect_canvas');
+        }
+        const draw_on_canvas = (context) => {
+            context.fillStyle = 'rgb(1,1,1,0)';
+            context.fillRect(0, 0, this.w, this.h);
+            context.strokeStyle = this.app.settings.fore_color; // OD: for testing
+            context.beginPath();
+            if (flip) {
+                context.moveTo(this.w, 0);
+                context.lineTo(0, this.h);
+            }
+            else {
+                context.moveTo(0, 0);
+                context.lineTo(this.w, this.h);
+            }
+            context.stroke();
+        };
+        this.top_left = { x: Math.min(to.x, this.from.x), y: Math.min(to.y, this.from.y) };
+        this.w = Math.floor(Math.abs(to.x - this.from.x));
+        this.h = Math.floor(Math.abs(to.y - this.from.y));
+        this.applied_canvas.width = this.w;
+        this.applied_canvas.height = this.h;
+        this.staging_canvas.width = this.w;
+        this.staging_canvas.height = this.h;
+        draw_on_canvas(this.staging_context);
+        draw_on_canvas(this.applied_context);
+        return true;
+    }
+}
 
 
 /***/ }),
@@ -629,8 +680,8 @@ class RectTool extends _click_and_drag_tool__WEBPACK_IMPORTED_MODULE_0__.ClickAn
         this.staging_canvas.width = this.w;
         this.staging_canvas.height = this.h;
         this.top_left = { x: Math.min(to.x, this.from.x), y: Math.min(to.y, this.from.y) };
-        this.w = Math.abs(to.x - this.from.x);
-        this.h = Math.abs(to.y - this.from.y);
+        this.w = Math.floor(Math.abs(to.x - this.from.x));
+        this.h = Math.floor(Math.abs(to.y - this.from.y));
         this.staging_context.fillStyle = this.app.settings.fore_color; // OD: for testing
         this.staging_context.fillRect(0, 0, this.w, this.h);
         this.staging_context.beginPath();
@@ -56727,8 +56778,7 @@ class MainApp {
     init_canvases() {
         const w = this.document_canvas.width;
         const h = this.document_canvas.height;
-        this.document_context.fillStyle = 'blue';
-        this.document_context.fillRect(0, 0, w, h);
+        this.document_context.clearRect(0, 0, w, h);
         this.document_context.beginPath();
         this.document_context.moveTo(0, 0);
         this.document_context.lineTo(100, 100);
@@ -56787,6 +56837,7 @@ class MainApp {
             },
             vertexShader: _glsl_shader_code__WEBPACK_IMPORTED_MODULE_3__.VERTEX_SHADER_CODE,
             fragmentShader: _glsl_shader_code__WEBPACK_IMPORTED_MODULE_3__.FRAGMENT_SHADER_CODE,
+            transparent: true
         });
         // document_rectangle.position.set(this.document_canvas.width/2,
         // this.document_canvas.height/2,0);
@@ -56848,8 +56899,6 @@ class MainApp {
                 'h': view_port_w / view_canvas_aspect
             };
             this.document_context.drawImage(img, 0, 0, this.document_canvas.width, this.document_canvas.height);
-            this.editor.art_to_view();
-            this.editor.art_to_staging();
         });
         img.src = url;
     }
@@ -57045,8 +57094,6 @@ class MainApp {
                 this.state.view_port.y = Math.max(0, this.state.view_port.y + deltaY / this.view_canvas.clientHeight * 100);
                 this.state.view_port.x = Math.max(0, this.state.view_port.x + deltaX / this.view_canvas.clientWidth * 100);
             }
-            this.editor.art_to_view();
-            this.editor.art_to_staging();
         });
     }
     init() {

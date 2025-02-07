@@ -108,8 +108,7 @@ export class MainApp {
     init_canvases() {
         const w = this.document_canvas.width;
         const h = this.document_canvas.height;
-        this.document_context.fillStyle = 'blue'
-        this.document_context.fillRect(0,0,w,h);
+        this.document_context.clearRect(0,0,w,h);
         this.document_context.beginPath();
         this.document_context.moveTo(0,0);
         this.document_context.lineTo(100,100);
@@ -183,6 +182,7 @@ export class MainApp {
             },
             vertexShader: VERTEX_SHADER_CODE,
             fragmentShader: FRAGMENT_SHADER_CODE,
+            transparent: true
         });
 
         // document_rectangle.position.set(this.document_canvas.width/2,
@@ -264,8 +264,6 @@ export class MainApp {
             };
             
             this.document_context.drawImage(img, 0, 0, this.document_canvas.width, this.document_canvas.height);
-            this.editor.art_to_view()
-            this.editor.art_to_staging()
         });
         img.src = url;
     }
@@ -478,12 +476,6 @@ export class MainApp {
                 this.state.view_port.y = Math.max(0, this.state.view_port.y + deltaY / this.view_canvas.clientHeight * 100)
                 this.state.view_port.x = Math.max(0, this.state.view_port.x + deltaX / this.view_canvas.clientWidth * 100)
             }
-            this.editor.art_to_view();
-
-            this.editor.art_to_staging()
-
-
-
         });
     }
     init() {

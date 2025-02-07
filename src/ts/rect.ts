@@ -27,8 +27,8 @@ export class RectTool extends ClickAndDragTool {
         this.staging_canvas.width = this.w;
         this.staging_canvas.height = this.h;
         this.top_left = {x:Math.min(to.x, this.from.x), y: Math.min(to.y, this.from.y)};
-        this.w = Math.abs(to.x - this.from.x);
-        this.h = Math.abs(to.y - this.from.y);
+        this.w = Math.floor(Math.abs(to.x - this.from.x));
+        this.h = Math.floor(Math.abs(to.y - this.from.y));
         this.staging_context!.fillStyle = this.app.settings.fore_color; // OD: for testing
         this.staging_context!.fillRect(0,0, this.w, this.h);
         this.staging_context!.beginPath()

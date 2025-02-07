@@ -27,9 +27,9 @@ export class CursorSize  extends ClickAndDragTool {
         if (!this.staging_context) {
             return false;
         }
-        //πthis.app.tool_tmp_context.clearRect(0,0,this.w,this.h);
-        this.editor.art_to_staging()
-        this.editor.staging_to_view()
+        //this.app.tool_tmp_context.clearRect(0,0,this.w,this.h);
+        
+        
 
         const r = Math.sqrt((at.x - this.from.x)*(at.x - this.from.x)+
         (at.y - this.from.y)*(at.y - this.from.y))
@@ -38,7 +38,7 @@ export class CursorSize  extends ClickAndDragTool {
                 this.from.x,this.from.y,r,r,0,0,Math.PI*2);
         this.staging_context.fill();
         this.app.settings.line_width = 2*r;
-        this.editor.tmp_tool_to_view()
+        
 
         return false;
     }

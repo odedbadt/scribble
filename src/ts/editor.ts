@@ -19,7 +19,7 @@ const v:new (...args:any[])=>EditingTool = RectTool
  ([
     //  ["scribble", ScribbleTool]
     ["rect",  RectTool]
-    // ,["line",  LineTool]
+    ,["line",  LineTool]
     // ,["circle",  CircleTool]
     // ,["dropper",  Dropper]
     // ,["floodfill",  Floodfill]
@@ -124,24 +124,21 @@ export class Editor {
         const tool_data = tool_image_data.data;
 
         const document_image_data = this.app.document_context.getImageData(
-            this.tool.top_left.x,this.tool.top_left.y,
+            this.tool.top_left.x, this.tool.top_left.y,
             this.tool.w, this.tool.h)
         const document_data = document_image_data.data;
         for (let y = 0; y < this.tool.h;++y) {
             for (let x = 0; x < this.tool.w;++x) {
-                const document_x = x + this.tool.top_left.x; 
-                const document_y = y + this.tool.top_left.y; 
-                const tool_base_offset = 4*(y*this.tool.w+x);
-                const document_base_offset = 4*(document_y*this.app.document_canvas.width+document_x);
-                if (tool_data[tool_base_offset+3] > 0) {
-                    document_data[document_base_offset+0] = tool_data[tool_base_offset+0]
-                    document_data[document_base_offset+1] = tool_data[tool_base_offset+1]
-                    document_data[document_base_offset+2] = tool_data[tool_base_offset+2]
-                    document_data[document_base_offset+3] = tool_data[tool_base_offset+3]
+                const base_offset = 4*(y*this.tool.w+x);
+                if (tool_data[base_offset+3] > 0) {
+                    document_data[base_offset+0] = tool_data[base_offset+0]
+                    document_data[base_offset+1] = tool_data[base_offset+1]
+                    document_data[base_offset+2] = tool_data[base_offset+2]
+                    document_data[base_offset+3] = tool_data[base_offset+3]
                 }
             }
         }
-        this.app.document_context.putImageData(tool_image_data, this.tool.top_left.x, this.tool.top_left.y)
+        this.app.document_context.putImageData(document_image_data, this.tool.top_left.x, this.tool.top_left.y)
 
                 
         
@@ -169,7 +166,6 @@ export class Editor {
         this.tool.select();
         if (this._last_hover_spot) {
             this.tool.hover(this.view_coords_to_art_coords(this._last_hover_spot));
-            this.tmp_tool_to_view();
         }
     }
     deselect_tool() {
@@ -177,7 +173,6 @@ export class Editor {
     }
     pointerdown(event:MouseEvent) {
         event.preventDefault();
-        this.art_to_staging();
         this.tool.start(this.view_coords_to_art_coords({ x: event.offsetX, y: event.offsetY }), event.buttons);
     }
     pointermove(event:MouseEvent) {
@@ -185,11 +180,9 @@ export class Editor {
         if (event.buttons) {
             this.tool.action(this.view_coords_to_art_coords({ x: event.offsetX, y: event.offsetY }));
             this.tool.hover(this.view_coords_to_art_coords({ x: event.offsetX, y: event.offsetY }));
-            this.tmp_tool_to_view();
         }
         else {
             this.tool.hover(this.view_coords_to_art_coords({ x: event.offsetX, y: event.offsetY }));
-            this.tmp_tool_to_view();
         }
         // Appply action
        
@@ -249,8 +242,6 @@ export class Editor {
     }
     pointerleave(event:MouseEvent) {
         // this.app.tool_tmp_context.clearRect(0, 0, this._art_canvas_bounding_rect.w, this._art_canvas_bounding_rect.h);
-        this.art_to_staging();
-        this.staging_to_view();
         this._last_hover_spot = null
     }
 

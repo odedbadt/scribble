@@ -38,7 +38,6 @@ export abstract class ClickAndDragTool extends EditingTool {
         return false;
     }
     action(at: Vector2):boolean {
-        this.editor.art_to_staging()
         // this.editor.app.tool_context.beginPath();
         this.dirty = !!this.editing_action(at) || this.dirty;
         return true;
@@ -50,7 +49,6 @@ export abstract class ClickAndDragTool extends EditingTool {
         }
         const dirty = this.hover_action(at);
         if (dirty) {
-            this.editor.tool_to_view()
             return true;
         }
         return false;
@@ -65,12 +63,10 @@ export abstract class ClickAndDragTool extends EditingTool {
     stop(at:Vector2):boolean {
         this.dirty = !!this.editing_stop(at) || this.dirty;
         if (this.dirty) {
-            this.editor.staging_to_art()
+            
             this.editor.undo_redo_buffer.push(this.app.document_context!.getImageData(0, 0, this.w, this.h));
             this.from = null;
-            this.editor.art_to_staging()
             this.editor.tool_to_document()
-            this.editor.staging_to_view()
             this.dirty = false;
             return true
         }
