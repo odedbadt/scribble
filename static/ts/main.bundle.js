@@ -226,17 +226,19 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _undo_redo_buffer__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./undo_redo_buffer */ "./src/ts/undo_redo_buffer.ts");
 /* harmony import */ var _editing_tool__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./editing_tool */ "./src/ts/editing_tool.ts");
-/* harmony import */ var _line__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./line */ "./src/ts/line.ts");
-/* harmony import */ var _rect__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./rect */ "./src/ts/rect.ts");
+/* harmony import */ var _scribble__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./scribble */ "./src/ts/scribble.ts");
+/* harmony import */ var _line__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./line */ "./src/ts/line.ts");
+/* harmony import */ var _rect__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./rect */ "./src/ts/rect.ts");
 
 
 
 
-const v = _rect__WEBPACK_IMPORTED_MODULE_3__.RectTool;
+
+const v = _rect__WEBPACK_IMPORTED_MODULE_4__.RectTool;
 const tool_classes = new Map([
-    //  ["scribble", ScribbleTool]
-    ["rect", _rect__WEBPACK_IMPORTED_MODULE_3__.RectTool],
-    ["line", _line__WEBPACK_IMPORTED_MODULE_2__.LineTool]
+    ["scribble", _scribble__WEBPACK_IMPORTED_MODULE_2__.ScribbleTool],
+    ["rect", _rect__WEBPACK_IMPORTED_MODULE_4__.RectTool],
+    ["line", _line__WEBPACK_IMPORTED_MODULE_3__.LineTool]
     // ,["circle",  CircleTool]
     // ,["dropper",  Dropper]
     // ,["floodfill",  Floodfill]
@@ -421,6 +423,9 @@ class Editor {
         }
     }
     refresh_overlay() {
+        if (this.tool.top_left == null) {
+            return;
+        }
         this.app.state.overlay_position.x = Math.floor(this.tool.top_left.x);
         this.app.state.overlay_position.y = Math.floor(this.tool.top_left.y);
         this.app.state.overlay_position.w = Math.floor(this.tool.w);
@@ -700,6 +705,88 @@ class RectTool extends _click_and_drag_tool__WEBPACK_IMPORTED_MODULE_0__.ClickAn
         this.applied_context.moveTo(this.w, 0);
         this.applied_context.lineTo(0, this.h);
         this.applied_context.stroke();
+        return true;
+    }
+}
+
+
+/***/ }),
+
+/***/ "./src/ts/scribble.ts":
+/*!****************************!*\
+  !*** ./src/ts/scribble.ts ***!
+  \****************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   ScribbleTool: () => (/* binding */ ScribbleTool)
+/* harmony export */ });
+/* harmony import */ var _click_and_drag_tool__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./click_and_drag_tool */ "./src/ts/click_and_drag_tool.ts");
+
+class ScribbleTool extends _click_and_drag_tool__WEBPACK_IMPORTED_MODULE_0__.ClickAndDragTool {
+    constructor(editor) {
+        super(editor);
+        this.applied_canvas = document.createElement("canvas");
+        this.applied_context = this.applied_canvas.getContext('2d', { willReadFrequently: true });
+        this.staging_canvas = document.createElement("canvas");
+        this.staging_context = this.staging_canvas.getContext('2d', { willReadFrequently: true });
+        this.w = 30;
+        this.h = 30;
+        this.c = 0;
+        this.staging_canvas.width = this.w;
+        this.staging_canvas.height = this.h;
+        this.applied_canvas.width = this.w;
+        this.applied_canvas.height = this.h;
+        this.top_left = null;
+    }
+    editing_action(to) {
+        // if (!this.from) {
+        //     return false;
+        // }
+        const extend_canvas = (canvas) => {
+            const w = canvas.width;
+            const h = canvas.height;
+            const ctx = canvas.getContext('2d');
+            const src_image_data = ctx.getImageData(0, 0, w, h);
+            canvas.width = w * 3;
+            canvas.height = h * 3;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(w * 3, h * 3);
+            ctx.moveTo(w * 3, 0);
+            ctx.lineTo(0, h * 3);
+            ctx.stroke();
+            ctx.putImageData(src_image_data, w, h);
+        };
+        const draw_on_canvas = (context) => {
+            context.fillStyle = 'rgb(1,1,1,0)';
+            context.fillRect(0, 0, this.w, this.h);
+            context.fillStyle = this.app.settings.fore_color;
+            context.beginPath();
+            context.ellipse(cx, cy, 10, 10, 0, 0, Math.PI * 2);
+            context.fill();
+        };
+        if (this.top_left == null) {
+            this.top_left = { x: Math.floor(to.x - this.w / 2),
+                y: Math.floor(to.y - this.h / 2) };
+        }
+        const cx = Math.floor(to.x - this.top_left.x);
+        const cy = Math.floor(to.y - this.top_left.y);
+        const extend = cy < 10 || cy > this.h - 10 ||
+            cx < 10 || cx > this.w - 10;
+        draw_on_canvas(this.staging_context);
+        draw_on_canvas(this.applied_context);
+        if (extend) {
+            console.log('W1', this.w, this.h);
+            extend_canvas(this.staging_canvas);
+            extend_canvas(this.applied_canvas);
+            this.top_left.x = this.top_left.x - this.w;
+            this.top_left.y = this.top_left.y - this.h;
+            this.w = this.staging_canvas.width;
+            this.h = this.staging_canvas.height;
+            console.log('W2', this.w, this.h);
+        }
         return true;
     }
 }

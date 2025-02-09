@@ -1,7 +1,7 @@
 import { UndoRedoBuffer } from "./undo_redo_buffer"
 import { EditingTool, NopTool } from './editing_tool'
 import { MainApp } from "./main_app";
-// import { ScribbleTool } from "./scribble";
+import { ScribbleTool } from "./scribble";
 import { CircleTool } from "./circle";
 import { ClearAllTool } from "./clearall";
 import { Dropper } from "./dropper";
@@ -17,7 +17,7 @@ import { unit_rect, Vector2, Rect } from "./types"
 const v:new (...args:any[])=>EditingTool = RectTool
  const tool_classes = new Map<string, new (...args:any[])=>EditingTool>
  ([
-    //  ["scribble", ScribbleTool]
+    ["scribble", ScribbleTool],
     ["rect",  RectTool]
     ,["line",  LineTool]
     // ,["circle",  CircleTool]
@@ -221,6 +221,9 @@ export class Editor {
         }
     }
     refresh_overlay() {
+        if (this.tool.top_left == null) {
+            return
+        }
         this.app.state.overlay_position.x = Math.floor(this.tool.top_left.x);
         this.app.state.overlay_position.y = Math.floor(this.tool.top_left.y);
         this.app.state.overlay_position.w = Math.floor(this.tool.w);

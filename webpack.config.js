@@ -24,7 +24,7 @@ export default {
             },
           },
         ],
-        exclude: [/node_modules/, /scribble/],
+        exclude: [/node_modules/],
         
       },
     ],
