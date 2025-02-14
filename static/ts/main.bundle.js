@@ -2,6 +2,83 @@
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
+/***/ "./src/ts/circle.ts":
+/*!**************************!*\
+  !*** ./src/ts/circle.ts ***!
+  \**************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   CircleTool: () => (/* binding */ CircleTool)
+/* harmony export */ });
+/* harmony import */ var _click_and_drag_tool__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./click_and_drag_tool */ "./src/ts/click_and_drag_tool.ts");
+
+class CircleTool extends _click_and_drag_tool__WEBPACK_IMPORTED_MODULE_0__.ClickAndDragTool {
+    constructor(editor) {
+        super(editor);
+    }
+    editing_action(at) {
+        if (this.from == null) {
+            return false;
+        }
+        const r = Math.sqrt((at.x - this.from.x) * (at.x - this.from.x) +
+            (at.y - this.from.y) * (at.y - this.from.y));
+        this.applied_context.ellipse(this.from.x, this.from.y, r, r, 0, 0, Math.PI * 2);
+        if (this.app.settings.filled) {
+            this.applied_context.fill();
+        }
+        else {
+            this.applied_context.stroke();
+        }
+        return true;
+    }
+}
+
+
+/***/ }),
+
+/***/ "./src/ts/clearall.ts":
+/*!****************************!*\
+  !*** ./src/ts/clearall.ts ***!
+  \****************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   ClearAllTool: () => (/* binding */ ClearAllTool)
+/* harmony export */ });
+/* harmony import */ var _on_select_tool__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./on_select_tool */ "./src/ts/on_select_tool.ts");
+
+class ClearAllTool extends _on_select_tool__WEBPACK_IMPORTED_MODULE_0__.OnSelectTool {
+    start(at, buttons) {
+        throw new Error("Method not implemented.");
+    }
+    action(at) {
+        throw new Error("Method not implemented.");
+    }
+    stop(at) {
+        throw new Error("Method not implemented.");
+    }
+    constructor(editor) {
+        super(editor);
+        this.editor = editor;
+        this.app = editor.app;
+    }
+    select_action() {
+        const w = this.applied_context.canvas.clientWidth;
+        const h = this.applied_context.canvas.clientHeight;
+        this.applied_context.fillStyle = this.app.settings.back_color;
+        this.applied_context.fillRect(0, 0, w, h);
+    }
+    hover() {
+        return false;
+    }
+}
+
+
+/***/ }),
+
 /***/ "./src/ts/click_and_drag_tool.ts":
 /*!***************************************!*\
   !*** ./src/ts/click_and_drag_tool.ts ***!
@@ -85,6 +162,36 @@ class ClickAndDragTool extends _editing_tool__WEBPACK_IMPORTED_MODULE_0__.Editin
 
 /***/ }),
 
+/***/ "./src/ts/click_tool.ts":
+/*!******************************!*\
+  !*** ./src/ts/click_tool.ts ***!
+  \******************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   ClickTool: () => (/* binding */ ClickTool)
+/* harmony export */ });
+/* harmony import */ var _editing_tool__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./editing_tool */ "./src/ts/editing_tool.ts");
+
+class ClickTool extends _editing_tool__WEBPACK_IMPORTED_MODULE_0__.EditingTool {
+    constructor(editor) {
+        super(editor);
+        this.start = this.start.bind(this);
+    }
+    select() {
+    }
+    start(at, buttons) {
+        this.applied_context.clearRect(0, 0, this.w, this.h);
+        this.editing_start(at, buttons);
+        this.editor.undo_redo_buffer.push(this.app.document_context.getImageData(0, 0, this.w, this.h));
+        return true;
+    }
+}
+
+
+/***/ }),
+
 /***/ "./src/ts/color_stack.ts":
 /*!*******************************!*\
   !*** ./src/ts/color_stack.ts ***!
@@ -158,6 +265,106 @@ class ColorStack {
 
 /***/ }),
 
+/***/ "./src/ts/cursor_size.ts":
+/*!*******************************!*\
+  !*** ./src/ts/cursor_size.ts ***!
+  \*******************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   CursorSize: () => (/* binding */ CursorSize)
+/* harmony export */ });
+/* harmony import */ var _click_and_drag_tool__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./click_and_drag_tool */ "./src/ts/click_and_drag_tool.ts");
+
+class CursorSize extends _click_and_drag_tool__WEBPACK_IMPORTED_MODULE_0__.ClickAndDragTool {
+    constructor(editor) {
+        super(editor);
+    }
+    editing_start() {
+        if (!this.staging_context) {
+            return false;
+        }
+        this.staging_context.fillStyle = this.app.settings.fore_color;
+        this.staging_context.strokeStyle = this.app.settings.fore_color;
+        this.staging_context.lineWidth = this.app.settings.line_width;
+        this.staging_context.lineCap = 'round';
+        return false;
+    }
+    start(at, buttons) {
+        this.app.settings.line_width = 0.5;
+        super.start(at, buttons);
+        return false;
+    }
+    editing_action(at) {
+        if (this.from == null) {
+            return false;
+        }
+        if (!this.staging_context) {
+            return false;
+        }
+        //this.app.tool_tmp_context.clearRect(0,0,this.w,this.h);
+        const r = Math.sqrt((at.x - this.from.x) * (at.x - this.from.x) +
+            (at.y - this.from.y) * (at.y - this.from.y));
+        this.staging_context.beginPath();
+        this.staging_context.ellipse(this.from.x, this.from.y, r, r, 0, 0, Math.PI * 2);
+        this.staging_context.fill();
+        this.app.settings.line_width = 2 * r;
+        return false;
+    }
+    hover(at) {
+        return false;
+    }
+    editing_stop(at) {
+        if (this.editor.previous_tool_name) {
+            this.app.select_tool(this.editor.previous_tool_name);
+        }
+        return false;
+    }
+}
+
+
+/***/ }),
+
+/***/ "./src/ts/dropper.ts":
+/*!***************************!*\
+  !*** ./src/ts/dropper.ts ***!
+  \***************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   Dropper: () => (/* binding */ Dropper)
+/* harmony export */ });
+/* harmony import */ var _click_tool__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./click_tool */ "./src/ts/click_tool.ts");
+
+class Dropper extends _click_tool__WEBPACK_IMPORTED_MODULE_0__.ClickTool {
+    action(at) {
+        throw new Error("Method not implemented.");
+    }
+    stop(at) {
+        throw new Error("Method not implemented.");
+    }
+    constructor(editor) {
+        super(editor);
+    }
+    editing_start(at, buttons) {
+        const color = this.app.document_context.getImageData(at.x, at.y, 1, 1).data;
+        const sampled_color = `rgba(${color[0]},${color[1]},${color[2]},255)`;
+        this.app.color_stack.select_color(Array.from(color), !!(buttons & 1), true);
+        if (this.editor.previous_tool_name) {
+            this.app.select_tool(this.editor.previous_tool_name);
+        }
+        return false;
+    }
+    hover(at) {
+        return false;
+    }
+}
+
+
+/***/ }),
+
 /***/ "./src/ts/editing_tool.ts":
 /*!********************************!*\
   !*** ./src/ts/editing_tool.ts ***!
@@ -171,20 +378,24 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 class EditingTool {
     constructor(editor) {
-        this.h = 100;
-        this.w = 100;
+        this.h = 200;
+        this.w = 200;
         this.x = 0;
         this.y = 0;
         this.editor = editor;
         this.app = editor.app;
         this.applied_canvas = document.createElement("canvas");
+        this.applied_context = this.applied_canvas.getContext('2d', { willReadFrequently: true });
+        this.staging_canvas = document.createElement("canvas");
+        this.staging_context = this.staging_canvas.getContext('2d', { willReadFrequently: true });
+        this.applied_canvas = document.createElement("canvas");
         this.applied_context = this.applied_canvas.getContext('2d');
-        this.applied_canvas.width = 100;
-        this.applied_canvas.height = 100;
+        this.applied_canvas.width = this.w;
+        this.applied_canvas.height = this.h;
         this.staging_canvas = document.createElement("canvas");
         this.staging_context = this.staging_canvas.getContext('2d');
-        this.staging_canvas.width = 100;
-        this.staging_canvas.height = 100;
+        this.staging_canvas.width = this.w;
+        this.staging_canvas.height = this.h;
     }
     select() {
         this.applied_context.clearRect(0, 0, this.applied_canvas.width, this.applied_canvas.height);
@@ -227,26 +438,42 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _undo_redo_buffer__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./undo_redo_buffer */ "./src/ts/undo_redo_buffer.ts");
 /* harmony import */ var _editing_tool__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./editing_tool */ "./src/ts/editing_tool.ts");
 /* harmony import */ var _scribble__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./scribble */ "./src/ts/scribble.ts");
-/* harmony import */ var _line__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./line */ "./src/ts/line.ts");
-/* harmony import */ var _rect__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./rect */ "./src/ts/rect.ts");
+/* harmony import */ var _circle__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./circle */ "./src/ts/circle.ts");
+/* harmony import */ var _clearall__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./clearall */ "./src/ts/clearall.ts");
+/* harmony import */ var _dropper__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./dropper */ "./src/ts/dropper.ts");
+/* harmony import */ var _eraser__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./eraser */ "./src/ts/eraser.ts");
+/* harmony import */ var _floodfill__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./floodfill */ "./src/ts/floodfill.ts");
+/* harmony import */ var _line__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./line */ "./src/ts/line.ts");
+/* harmony import */ var _rect__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./rect */ "./src/ts/rect.ts");
+/* harmony import */ var _cursor_size__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./cursor_size */ "./src/ts/cursor_size.ts");
+/* harmony import */ var _styletogglers__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./styletogglers */ "./src/ts/styletogglers.ts");
+/* harmony import */ var _mandala__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ./mandala */ "./src/ts/mandala.ts");
 
 
 
 
 
-const v = _rect__WEBPACK_IMPORTED_MODULE_4__.RectTool;
+
+
+
+
+
+
+
+
+const v = _rect__WEBPACK_IMPORTED_MODULE_9__.RectTool;
 const tool_classes = new Map([
     ["scribble", _scribble__WEBPACK_IMPORTED_MODULE_2__.ScribbleTool],
-    ["rect", _rect__WEBPACK_IMPORTED_MODULE_4__.RectTool],
-    ["line", _line__WEBPACK_IMPORTED_MODULE_3__.LineTool]
-    // ,["circle",  CircleTool]
-    // ,["dropper",  Dropper]
-    // ,["floodfill",  Floodfill]
-    // ,["eraser",  EraserTool]
-    // ,["clearall", ClearAllTool]
-    // ,["cursor_size", CursorSize]
-    // ,["fillstyle", FillStyleToggler]
-    // ,["mandala", mandala]
+    ["rect", _rect__WEBPACK_IMPORTED_MODULE_9__.RectTool],
+    ["line", _line__WEBPACK_IMPORTED_MODULE_8__.LineTool],
+    ["circle", _circle__WEBPACK_IMPORTED_MODULE_3__.CircleTool],
+    ["dropper", _dropper__WEBPACK_IMPORTED_MODULE_5__.Dropper],
+    ["floodfill", _floodfill__WEBPACK_IMPORTED_MODULE_7__.Floodfill],
+    ["eraser", _eraser__WEBPACK_IMPORTED_MODULE_6__.EraserTool],
+    ["clearall", _clearall__WEBPACK_IMPORTED_MODULE_4__.ClearAllTool],
+    ["cursor_size", _cursor_size__WEBPACK_IMPORTED_MODULE_10__.CursorSize],
+    ["fillstyle", _styletogglers__WEBPACK_IMPORTED_MODULE_11__.FillStyleToggler],
+    ["mandala", _mandala__WEBPACK_IMPORTED_MODULE_12__.mandala]
 ]);
 class Editor {
     constructor(app) {
@@ -450,6 +677,176 @@ class Editor {
 
 /***/ }),
 
+/***/ "./src/ts/eraser.ts":
+/*!**************************!*\
+  !*** ./src/ts/eraser.ts ***!
+  \**************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   EraserTool: () => (/* binding */ EraserTool)
+/* harmony export */ });
+/* harmony import */ var _click_and_drag_tool__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./click_and_drag_tool */ "./src/ts/click_and_drag_tool.ts");
+
+class EraserTool extends _click_and_drag_tool__WEBPACK_IMPORTED_MODULE_0__.ClickAndDragTool {
+    constructor(editor) {
+        super(editor);
+        this._prev = null;
+        this.w = 30;
+        this.h = 30;
+        this.staging_canvas.width = this.w;
+        this.staging_canvas.height = this.h;
+        this.applied_canvas.width = this.w;
+        this.applied_canvas.height = this.h;
+        this.top_left = null;
+    }
+    editing_action(to) {
+        if (!this.from) {
+            return false;
+        }
+        if (this.top_left == null) {
+            this.top_left = { x: Math.floor(to.x - this.w / 2),
+                y: Math.floor(to.y - this.h / 2) };
+        }
+        if (this._prev == null) {
+            this._prev = { x: to.x, y: to.y };
+        }
+        const extend_canvas = (canvas) => {
+            const w = canvas.width;
+            const h = canvas.height;
+            const ctx = canvas.getContext('2d');
+            const src_image_data = ctx.getImageData(0, 0, w, h);
+            canvas.width = w * 3;
+            canvas.height = h * 3;
+            // ctx.beginPath()
+            // ctx.moveTo(0,0);
+            // ctx.lineTo(w*3,h*3);
+            // ctx.moveTo(w*3,0);
+            // ctx.lineTo(0,h*3);
+            // ctx.stroke();
+            ctx.putImageData(src_image_data, w, h);
+        };
+        const fx = Math.floor(this._prev.x - this.top_left.x);
+        const fy = Math.floor(this._prev.y - this.top_left.y);
+        const cx = Math.floor(to.x - this.top_left.x);
+        const cy = Math.floor(to.y - this.top_left.y);
+        const draw_on_canvas = (context) => {
+            context.fillStyle = 'rgb(1,1,1,0)';
+            context.fillRect(0, 0, this.w, this.h);
+            context.fillStyle = this.app.settings.back_color;
+            context.beginPath();
+            context.moveTo(fx, fy);
+            context.lineTo(cx, cy);
+            context.strokeStyle = this.app.settings.back_color;
+            context.lineWidth = 20;
+            context.stroke();
+            context.ellipse(cx, cy, 10, 10, 0, 0, Math.PI * 2);
+            context.lineWidth = 0;
+            context.strokeStyle = 'rgba(1,1,1,1)';
+            context.fill();
+        };
+        const extend = cy < 10 || cy > this.h - 10 ||
+            cx < 10 || cx > this.w - 10;
+        draw_on_canvas(this.staging_context);
+        draw_on_canvas(this.applied_context);
+        if (extend) {
+            extend_canvas(this.staging_canvas);
+            extend_canvas(this.applied_canvas);
+            this.top_left.x = this.top_left.x - this.w;
+            this.top_left.y = this.top_left.y - this.h;
+            this.w = this.staging_canvas.width;
+            this.h = this.staging_canvas.height;
+        }
+        this._prev = { x: to.x, y: to.y };
+        return true;
+    }
+}
+
+
+/***/ }),
+
+/***/ "./src/ts/floodfill.ts":
+/*!*****************************!*\
+  !*** ./src/ts/floodfill.ts ***!
+  \*****************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   Floodfill: () => (/* binding */ Floodfill)
+/* harmony export */ });
+/* harmony import */ var _click_tool__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./click_tool */ "./src/ts/click_tool.ts");
+/* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./utils */ "./src/ts/utils.ts");
+
+
+function _equal_colors(c1, c2) {
+    return c1[0] == c2[0] &&
+        c1[1] == c2[1] &&
+        c1[2] == c2[2];
+}
+function _floodfill(read_context, write_context, replaced_color, tool_color, x, y, w, h) {
+    const context_image_data = read_context.getImageData(0, 0, w, h);
+    const context_data = context_image_data.data;
+    let safety = w * h * 4;
+    let stack = [{ x: Math.floor(x), y: Math.floor(y) }];
+    while (stack.length > 0 && safety-- > 0) {
+        const dot = stack.pop();
+        if (!dot) {
+            break;
+        }
+        const x = dot.x;
+        const y = dot.y;
+        if (x < 0 ||
+            y < 0 ||
+            x > w ||
+            y >= h) {
+            continue;
+        }
+        const offset = (w * y + x) * 4;
+        const color_at_xy = context_data.slice(offset, offset + 4);
+        if (!_equal_colors(replaced_color, color_at_xy)) {
+            continue;
+        }
+        context_data[offset + 0] = tool_color[0];
+        context_data[offset + 1] = tool_color[1];
+        context_data[offset + 2] = tool_color[2];
+        context_data[offset + 3] = 255;
+        stack.push({ x: x + 1, y: y });
+        stack.push({ x: x - 1, y: y });
+        stack.push({ x: x, y: y - 1 });
+        stack.push({ x: x, y: y + 1 });
+    }
+    write_context.putImageData(context_image_data, 0, 0);
+}
+class Floodfill extends _click_tool__WEBPACK_IMPORTED_MODULE_0__.ClickTool {
+    action(at) {
+        return false;
+        throw new Error("Method not implemented.");
+    }
+    stop(at) {
+        return false;
+        throw new Error("Method not implemented.");
+    }
+    constructor(editor) {
+        super(editor);
+        this.editor = editor;
+        this.app = editor.app;
+    }
+    editing_start(at) {
+        const replaced_color = this.app.document_context.getImageData(at.x, at.y, 1, 1).data;
+        const parsed_fore_color = (0,_utils__WEBPACK_IMPORTED_MODULE_1__.parse_RGBA)(this.app.settings.fore_color);
+        _floodfill(this.app.document_context, this.applied_context, replaced_color, parsed_fore_color, at.x, at.y, this.w, this.h);
+        return true;
+    }
+    hover(at) {
+        return false;
+    }
+}
+
+
+/***/ }),
+
 /***/ "./src/ts/glsl_shader_code.ts":
 /*!************************************!*\
   !*** ./src/ts/glsl_shader_code.ts ***!
@@ -536,6 +933,135 @@ class LineTool extends _click_and_drag_tool__WEBPACK_IMPORTED_MODULE_0__.ClickAn
         draw_on_canvas(this.staging_context);
         draw_on_canvas(this.applied_context);
         return true;
+    }
+}
+
+
+/***/ }),
+
+/***/ "./src/ts/mandala.ts":
+/*!***************************!*\
+  !*** ./src/ts/mandala.ts ***!
+  \***************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   mandala: () => (/* binding */ mandala)
+/* harmony export */ });
+/* harmony import */ var _click_and_drag_tool__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./click_and_drag_tool */ "./src/ts/click_and_drag_tool.ts");
+
+function rotate(v, w, h, a, mirror) {
+    const v2 = {
+        'x': (mirror ? -1 : 1) * (v.x - (w / 2)),
+        'y': v.y - (h / 2)
+    };
+    const v3 = {
+        'x': v2.x * Math.cos(a) - v2.y * Math.sin(a),
+        'y': v2.x * Math.sin(a) + v2.y * Math.cos(a)
+    };
+    const v4 = {
+        'x': v3.x + (w / 2),
+        'y': v3.y + (h / 2)
+    };
+    return v4;
+}
+class mandala extends _click_and_drag_tool__WEBPACK_IMPORTED_MODULE_0__.ClickAndDragTool {
+    constructor(editor) {
+        super(editor);
+        this._n = 8;
+        const angles = [];
+        for (let j = 0; j < this._n; ++j) {
+            angles.push(Math.PI * 2 * (j / this._n));
+        }
+        this._angles = Array.from(angles);
+        this.applied_canvas.width = this.editor.app.document_canvas.width;
+        this.applied_canvas.height = this.editor.app.document_canvas.height;
+        this.w = 1000; //this.applied_canvas.width;
+        this.h = 1000; //this.applied_canvas.height ;
+        this.top_left = { x: 0, y: 0 };
+    }
+    hover_action(at) {
+        if (!this.staging_context) {
+            return false;
+        }
+        this.staging_context.fillStyle = this.app.settings.fore_color;
+        const tmp_context = this.staging_context;
+        this._angles.forEach((angle) => {
+            const rotated = rotate(at, this.w, this.h, angle);
+            tmp_context.beginPath();
+            const r = this.app.settings.line_width / 2;
+            tmp_context.ellipse(rotated.x, rotated.y, r, r, 0, 0, Math.PI * 2);
+            tmp_context.fill();
+        });
+        return true;
+    }
+    editing_action(to) {
+        if (!document.getElementById('mandala_canvas')) {
+            document.getElementById('canvas-area').appendChild(this.staging_canvas); // OD: for testing
+            this.staging_canvas.setAttribute('id', 'mandala_canvas');
+        }
+        this.applied_context.fillStyle = 'rgb(1,1,1,0)';
+        this.applied_context.fillRect(0, 0, this.w, this.h);
+        this.staging_context.fillStyle = 'rgb(1,1,1,0)';
+        this.staging_context.fillRect(0, 0, this.w, this.h);
+        this.applied_context.beginPath();
+        this.staging_context.beginPath();
+        if (this._recorded_to) {
+            Array.from([true, false]).forEach((mirror) => {
+                this._angles.forEach((angle) => {
+                    const rotated_recorded = rotate(this._recorded_to, this.w, this.h, angle, mirror);
+                    const rotated_to = rotate(to, this.w, this.h, angle, mirror);
+                    this.applied_context.moveTo(rotated_recorded.x, rotated_recorded.y);
+                    this.applied_context.lineTo(rotated_to.x, rotated_to.y);
+                    this.staging_context.moveTo(rotated_recorded.x, rotated_recorded.y);
+                    this.staging_context.lineTo(rotated_to.x, rotated_to.y);
+                });
+            });
+        }
+        this._recorded_to = to;
+        this.applied_context.stroke();
+        this.staging_context.stroke();
+        return true;
+    }
+    editing_stop(at) {
+        this._recorded_to = null;
+        return true;
+    }
+}
+
+
+/***/ }),
+
+/***/ "./src/ts/on_select_tool.ts":
+/*!**********************************!*\
+  !*** ./src/ts/on_select_tool.ts ***!
+  \**********************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   OnSelectTool: () => (/* binding */ OnSelectTool)
+/* harmony export */ });
+/* harmony import */ var _editing_tool__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./editing_tool */ "./src/ts/editing_tool.ts");
+
+class OnSelectTool extends _editing_tool__WEBPACK_IMPORTED_MODULE_0__.EditingTool {
+    constructor(editor) {
+        super(editor);
+        this.select = this.select.bind(this);
+    }
+    select() {
+        this.applied_context.clearRect(0, 0, this.w, this.h);
+        this.select_action();
+        //
+        this.editor.undo_redo_buffer.push(this.app.document_context.getImageData(0, 0, this.w, this.h));
+        //
+        if (this.editor.previous_tool_name) {
+            this.app.select_tool(this.editor.previous_tool_name);
+        }
+    }
+    hover() {
+        return false;
     }
 }
 
@@ -727,13 +1253,9 @@ __webpack_require__.r(__webpack_exports__);
 class ScribbleTool extends _click_and_drag_tool__WEBPACK_IMPORTED_MODULE_0__.ClickAndDragTool {
     constructor(editor) {
         super(editor);
-        this.applied_canvas = document.createElement("canvas");
-        this.applied_context = this.applied_canvas.getContext('2d', { willReadFrequently: true });
-        this.staging_canvas = document.createElement("canvas");
-        this.staging_context = this.staging_canvas.getContext('2d', { willReadFrequently: true });
+        this._prev = null;
         this.w = 30;
         this.h = 30;
-        this.c = 0;
         this.staging_canvas.width = this.w;
         this.staging_canvas.height = this.h;
         this.applied_canvas.width = this.w;
@@ -741,9 +1263,16 @@ class ScribbleTool extends _click_and_drag_tool__WEBPACK_IMPORTED_MODULE_0__.Cli
         this.top_left = null;
     }
     editing_action(to) {
-        // if (!this.from) {
-        //     return false;
-        // }
+        if (!this.from) {
+            return false;
+        }
+        if (this.top_left == null) {
+            this.top_left = { x: Math.floor(to.x - this.w / 2),
+                y: Math.floor(to.y - this.h / 2) };
+        }
+        if (this._prev == null) {
+            this._prev = { x: to.x, y: to.y };
+        }
         const extend_canvas = (canvas) => {
             const w = canvas.width;
             const h = canvas.height;
@@ -751,43 +1280,91 @@ class ScribbleTool extends _click_and_drag_tool__WEBPACK_IMPORTED_MODULE_0__.Cli
             const src_image_data = ctx.getImageData(0, 0, w, h);
             canvas.width = w * 3;
             canvas.height = h * 3;
-            ctx.beginPath();
-            ctx.moveTo(0, 0);
-            ctx.lineTo(w * 3, h * 3);
-            ctx.moveTo(w * 3, 0);
-            ctx.lineTo(0, h * 3);
-            ctx.stroke();
+            // ctx.beginPath()
+            // ctx.moveTo(0,0);
+            // ctx.lineTo(w*3,h*3);
+            // ctx.moveTo(w*3,0);
+            // ctx.lineTo(0,h*3);
+            // ctx.stroke();
             ctx.putImageData(src_image_data, w, h);
         };
+        const fx = Math.floor(this._prev.x - this.top_left.x);
+        const fy = Math.floor(this._prev.y - this.top_left.y);
+        const cx = Math.floor(to.x - this.top_left.x);
+        const cy = Math.floor(to.y - this.top_left.y);
         const draw_on_canvas = (context) => {
             context.fillStyle = 'rgb(1,1,1,0)';
             context.fillRect(0, 0, this.w, this.h);
             context.fillStyle = this.app.settings.fore_color;
             context.beginPath();
+            context.moveTo(fx, fy);
+            context.lineTo(cx, cy);
+            context.strokeStyle = this.app.settings.fore_color;
+            context.lineWidth = 20;
+            context.stroke();
             context.ellipse(cx, cy, 10, 10, 0, 0, Math.PI * 2);
+            context.lineWidth = 0;
+            context.strokeStyle = 'rgba(0,0,0,0)';
             context.fill();
         };
-        if (this.top_left == null) {
-            this.top_left = { x: Math.floor(to.x - this.w / 2),
-                y: Math.floor(to.y - this.h / 2) };
-        }
-        const cx = Math.floor(to.x - this.top_left.x);
-        const cy = Math.floor(to.y - this.top_left.y);
         const extend = cy < 10 || cy > this.h - 10 ||
             cx < 10 || cx > this.w - 10;
         draw_on_canvas(this.staging_context);
         draw_on_canvas(this.applied_context);
         if (extend) {
-            console.log('W1', this.w, this.h);
             extend_canvas(this.staging_canvas);
             extend_canvas(this.applied_canvas);
             this.top_left.x = this.top_left.x - this.w;
             this.top_left.y = this.top_left.y - this.h;
             this.w = this.staging_canvas.width;
             this.h = this.staging_canvas.height;
-            console.log('W2', this.w, this.h);
         }
+        this._prev = { x: to.x, y: to.y };
         return true;
+    }
+}
+
+
+/***/ }),
+
+/***/ "./src/ts/styletogglers.ts":
+/*!*********************************!*\
+  !*** ./src/ts/styletogglers.ts ***!
+  \*********************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   FillStyleToggler: () => (/* binding */ FillStyleToggler)
+/* harmony export */ });
+/* harmony import */ var _on_select_tool__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./on_select_tool */ "./src/ts/on_select_tool.ts");
+
+function _equal_colors(c1, c2) {
+    return c1[0] == c2[0] &&
+        c1[1] == c2[1] &&
+        c1[2] == c2[2];
+}
+class FillStyleToggler extends _on_select_tool__WEBPACK_IMPORTED_MODULE_0__.OnSelectTool {
+    start(at, buttons) {
+        throw new Error("Method not implemented.");
+    }
+    action(at) {
+        throw new Error("Method not implemented.");
+    }
+    stop(at) {
+        throw new Error("Method not implemented.");
+    }
+    constructor(editor) {
+        super(editor);
+        this.editor = editor;
+        this.app = editor.app;
+    }
+    select_action() {
+        this.app.settings.filled = !this.app.settings.filled;
+        const styled_buttons = document.getElementsByClassName('fillable');
+        for (let j = 0; j < styled_buttons.length; ++j) {
+            styled_buttons[j].classList.toggle('filled');
+        }
     }
 }
 

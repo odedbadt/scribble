@@ -9,8 +9,8 @@ export abstract class EditingTool {
     staging_context: CanvasRenderingContext2D;
     editor: Editor;
     app: MainApp;
-    h:number = 100;
-    w:number = 100;
+    h:number = 200;
+    w:number = 200;
     x:number = 0;
     y:number = 0;
 
@@ -19,13 +19,17 @@ export abstract class EditingTool {
         this.editor = editor;
         this.app = editor.app;
         this.applied_canvas = document.createElement("canvas") as HTMLCanvasElement;
+        this.applied_context = this.applied_canvas.getContext('2d', { willReadFrequently: true })! as CanvasRenderingContext2D
+        this.staging_canvas = document.createElement("canvas") as HTMLCanvasElement;
+        this.staging_context = this.staging_canvas.getContext('2d', { willReadFrequently: true })! as CanvasRenderingContext2D
+        this.applied_canvas = document.createElement("canvas") as HTMLCanvasElement;
         this.applied_context = this.applied_canvas.getContext('2d')!;
-        this.applied_canvas.width = 100;
-        this.applied_canvas.height = 100;
+        this.applied_canvas.width = this.w;
+        this.applied_canvas.height = this.h;
         this.staging_canvas = document.createElement("canvas") as HTMLCanvasElement;
         this.staging_context = this.staging_canvas.getContext('2d')!;
-        this.staging_canvas.width = 100;
-        this.staging_canvas.height = 100;
+        this.staging_canvas.width = this.w;
+        this.staging_canvas.height = this.h;
 
     }
 
@@ -59,6 +63,4 @@ export class NopTool extends EditingTool {
     hover(at: Vector2): boolean {
         return false
     }
-
-
 }

@@ -75,7 +75,7 @@ body {
     pointer-events: auto;
     touch-action: none;
     display: grid;
-    grid-template-columns: 400px 800px 400px;
+    grid-template-columns: 600px 800px 400px;
 
 }
 /* #canvas-area canvas {
@@ -87,8 +87,8 @@ body {
 #view-canvas {
     cursor: crosshair;
     pointer-events: auto;
-    width: 300px;
-    height: 300px;
+    width: 600px;
+    height: 600px;
     border: 1px solid black;
 }
 #art-canvas {

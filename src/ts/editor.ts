@@ -9,7 +9,6 @@ import { EraserTool } from "./eraser";
 import { Floodfill } from "./floodfill";
 import { LineTool } from "./line";
 import { RectTool } from "./rect";
-import { override_canvas_context } from "./utils";
 import { CursorSize } from './cursor_size'
 import { FillStyleToggler } from './styletogglers'
 import { mandala } from "./mandala";
@@ -20,14 +19,14 @@ const v:new (...args:any[])=>EditingTool = RectTool
     ["scribble", ScribbleTool],
     ["rect",  RectTool]
     ,["line",  LineTool]
-    // ,["circle",  CircleTool]
-    // ,["dropper",  Dropper]
-    // ,["floodfill",  Floodfill]
-    // ,["eraser",  EraserTool]
-    // ,["clearall", ClearAllTool]
-    // ,["cursor_size", CursorSize]
-    // ,["fillstyle", FillStyleToggler]
-    // ,["mandala", mandala]
+    ,["circle",  CircleTool]
+    ,["dropper",  Dropper]
+    ,["floodfill",  Floodfill]
+    ,["eraser",  EraserTool]
+    ,["clearall", ClearAllTool]
+    ,["cursor_size", CursorSize]
+    ,["fillstyle", FillStyleToggler]
+    ,["mandala", mandala]
  ])
 export class Editor {
     app: MainApp;
