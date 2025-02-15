@@ -174,7 +174,7 @@ export class MainApp {
             this.document_canvas.height/2,
             0
         );
-        this.overlay_texture = new CanvasTexture(this.editor.tool.staging_canvas);
+        this.overlay_texture = new CanvasTexture(this.editor.tool.canvas);
 
         const overlay_material = new ShaderMaterial({
             uniforms: {
@@ -186,7 +186,7 @@ export class MainApp {
         });
 
         // document_rectangle.position.set(this.document_canvas.width/2,
-        // this.document_canvas.height/2,0);
+        // this.document_πcanvas.height/2,0);
 
         const overlay_geometry = new PlaneGeometry(
             this.state.overlay_position.w,

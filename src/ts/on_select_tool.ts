@@ -8,7 +8,7 @@ export abstract class OnSelectTool extends EditingTool {
         this.select = this.select.bind(this);
     }
     select() {
-        this.applied_context.clearRect(0, 0, this.w, this.h);
+        this.context.clearRect(0, 0, this.w, this.h);
         
         this.select_action();
         //

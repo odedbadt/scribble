@@ -38,7 +38,7 @@ export class Editor {
     private _last_hover_spot: Vector2 | null;
     private _view_canvas_bounding_rect: Rect;
     private _art_canvas_bounding_rect: Rect;
-    private _non_native_view_render_countdown = 10 
+    private _non_native_view_render_countdown = 10
     private _view_rendering_countdown_interval?: NodeJS.Timeout|undefined = undefined;
     constructor(app: MainApp) {
         this.app = app;
@@ -55,10 +55,10 @@ export class Editor {
     view_coords_to_art_coords(view_coords:Vector2):Vector2 {
         return {
             x: this.app.state.view_port.x +
-            view_coords.x  / 
+            view_coords.x  /
             this._view_canvas_bounding_rect.w * this.app.state.view_port.w,
             y: this.app.state.view_port.y +
-            view_coords.y  / 
+            view_coords.y  /
             this._view_canvas_bounding_rect.h * this.app.state.view_port.h
                 }
     }
@@ -75,7 +75,6 @@ export class Editor {
         }
     }
     staging_to_art() {
-        
         // override_canvas_context(this.app.document_context, this.app.staging_canvas,
         //     this._art_canvas_bounding_rect, false, false, true)
     }
@@ -95,12 +94,12 @@ export class Editor {
         //                 this._view_rendering_countdown_interval=undefined;
         //             }
         //         }, 100)
-        // }  
-    } 
+        // }
+    }
     art_to_view() {
         // this._non_native_view_render_countdown = 10;
         // override_canvas_context(this.app.view_context, this.app.document_canvas,
-        //     this.app.state.view_port, false, false, false)        
+        //     this.app.state.view_port, false, false, false)
         // if (this._view_rendering_countdown_interval==undefined) {
         //     const _this = this;
         //     this._view_rendering_countdown_interval = setInterval(() => {
@@ -118,10 +117,9 @@ export class Editor {
     art_to_staging() {
         // override_canvas_context(this.app.staging_context, this.app.document_canvas, this._art_canvas_bounding_rect, false, false, true)
     }
-    tool_to_document() {        
-        const tool_image_data = this.tool.applied_context.getImageData(0,0,this.tool.w, this.tool.h)
+    tool_to_document() {
+        const tool_image_data = this.tool.context.getImageData(0,0,this.tool.w, this.tool.h)
         const tool_data = tool_image_data.data;
-
         const document_image_data = this.app.document_context.getImageData(
             this.tool.top_left.x, this.tool.top_left.y,
             this.tool.w, this.tool.h)
@@ -138,9 +136,6 @@ export class Editor {
             }
         }
         this.app.document_context.putImageData(document_image_data, this.tool.top_left.x, this.tool.top_left.y)
-
-                
-        
     }
     tool_to_view() {
         // override_canvas_context(this.app.view_context, this.app.tool_canvas,
@@ -184,7 +179,6 @@ export class Editor {
             this.tool.hover(this.view_coords_to_art_coords({ x: event.offsetX, y: event.offsetY }));
         }
         // Appply action
-       
         // this.staging_to_view()
         // this.tmp_tool_to_view();
         this.refresh_overlay()
@@ -227,15 +221,13 @@ export class Editor {
         this.app.state.overlay_position.y = Math.floor(this.tool.top_left.y);
         this.app.state.overlay_position.w = Math.floor(this.tool.w);
         this.app.state.overlay_position.h = Math.floor(this.tool.h);
-
     }
-
     pointerup(event:MouseEvent) {
-        this.tool.hover(this.view_coords_to_art_coords({ x: event.offsetX, y: event.offsetY }));
+        this.tool.hover(this.view_coords_to_art_coords(
+            { x: event.offsetX, y: event.offsetY })
+            );
         this.refresh_overlay()
         this.tool.stop();
-        
-    
     }
     pointerin(event:MouseEvent) {
         if (!!event.buttons) {
@@ -246,5 +238,4 @@ export class Editor {
         // this.app.tool_tmp_context.clearRect(0, 0, this._art_canvas_bounding_rect.w, this._art_canvas_bounding_rect.h);
         this._last_hover_spot = null
     }
-
 }

@@ -11,8 +11,8 @@ export class ScribbleTool extends ClickAndDragTool {
         this.h = 30;
         this.staging_canvas.width = this.w;
         this.staging_canvas.height = this.h;
-        this.applied_canvas.width = this.w;
-        this.applied_canvas.height = this.h;
+        this.canvas.width = this.w;
+        this.canvas.height = this.h;
 
         this.top_left = null;
 
@@ -72,11 +72,11 @@ export class ScribbleTool extends ClickAndDragTool {
             cx < 10 ||  cx > this.w - 10
 
         draw_on_canvas(this.staging_context)
-        draw_on_canvas(this.applied_context)
+        draw_on_canvas(this.context)
         
         if (extend) {
             extend_canvas(this.staging_canvas)
-            extend_canvas(this.applied_canvas)
+            extend_canvas(this.canvas)
             this.top_left!.x = this.top_left!.x - this.w;
             this.top_left!.y = this.top_left!.y - this.h;
             this.w = this.staging_canvas.width;

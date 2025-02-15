@@ -3,8 +3,8 @@ import { MainApp } from "./main_app";
 import { Rect, Vector2 } from "./types";
 
 export abstract class EditingTool {
-    applied_canvas: HTMLCanvasElement;
-    applied_context: CanvasRenderingContext2D;
+    canvas: HTMLCanvasElement;
+    context: CanvasRenderingContext2D;
     staging_canvas: HTMLCanvasElement;
     staging_context: CanvasRenderingContext2D;
     editor: Editor;
@@ -19,14 +19,14 @@ export abstract class EditingTool {
     ) {
         this.editor = editor;
         this.app = editor.app;
-        this.applied_canvas = document.createElement("canvas") as HTMLCanvasElement;
-        this.applied_context = this.applied_canvas.getContext('2d', { willReadFrequently: true })! as CanvasRenderingContext2D
+        this.canvas = document.createElement("canvas") as HTMLCanvasElement;
+        this.context = this.canvas.getContext('2d', { willReadFrequently: true })! as CanvasRenderingContext2D
         this.staging_canvas = document.createElement("canvas") as HTMLCanvasElement;
         this.staging_context = this.staging_canvas.getContext('2d', { willReadFrequently: true })! as CanvasRenderingContext2D
-        this.applied_canvas = document.createElement("canvas") as HTMLCanvasElement;
-        this.applied_context = this.applied_canvas.getContext('2d')!;
-        this.applied_canvas.width = this.w;
-        this.applied_canvas.height = this.h;
+        this.canvas = document.createElement("canvas") as HTMLCanvasElement;
+        this.context = this.canvas.getContext('2d')!;
+        this.canvas.width = this.w;
+        this.canvas.height = this.h;
         this.staging_canvas = document.createElement("canvas") as HTMLCanvasElement;
         this.staging_context = this.staging_canvas.getContext('2d')!;
         this.staging_canvas.width = this.w;
@@ -48,15 +48,15 @@ export abstract class EditingTool {
             canvas.height = bounds.h;
             ctx.putImageData(src_image_data,-bounds.x,-bounds.y);
             }
-            extend_canvas(this.applied_canvas)
+            extend_canvas(this.canvas)
             extend_canvas(this.staging_canvas);
             this.editor.app.state.overlay_position= bounds;
 
     }
     select() {
-        this.applied_context!.clearRect(0, 0,
-            this.applied_canvas!.width,
-            this.applied_canvas!.height);
+        this.context!.clearRect(0, 0,
+            this.canvas!.width,
+            this.canvas!.height);
     }
     abstract start(at: Vector2, buttons: number): boolean;
     abstract action(at: Vector2): boolean;

@@ -61,7 +61,7 @@ export class Floodfill extends ClickTool {
     editing_start(at:Vector2) {
         const replaced_color = this.app.document_context.getImageData(at.x,at.y,1,1).data;
         const parsed_fore_color = parse_RGBA(this.app.settings.fore_color);
-        _floodfill(this.app.document_context, this.applied_context, replaced_color, parsed_fore_color,at.x,at.y, this.w, this.h);
+        _floodfill(this.app.document_context, this.context, replaced_color, parsed_fore_color,at.x,at.y, this.w, this.h);
         return true
     }
     hover(at:Vector2):boolean {

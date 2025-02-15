@@ -32,8 +32,8 @@ export class mandala extends ClickAndDragTool {
             angles.push(Math.PI * 2 * (j / this._n));
         }
         this._angles = Array.from(angles);
-        this.applied_canvas.width = this.editor.app.document_canvas.width;
-        this.applied_canvas.height = this.editor.app.document_canvas.height;
+        this.canvas.width = this.editor.app.document_canvas.width;
+        this.canvas.height = this.editor.app.document_canvas.height;
         this.center = {x:300,y:300}
         this.top_left = { x: 0, y: 0 }
     }
@@ -59,8 +59,8 @@ export class mandala extends ClickAndDragTool {
             document.getElementById('canvas-area')!.appendChild(this.staging_canvas); // OD: for testing
             this.staging_canvas.setAttribute('id', 'mandala_canvas')
         }
-        this.applied_context.fillStyle = 'rgb(1,1,1,0)'
-        this.applied_context.fillRect(0,0, this.w, this.h);
+        this.context.fillStyle = 'rgb(1,1,1,0)'
+        this.context.fillRect(0,0, this.w, this.h);
         this.staging_context.fillStyle = 'rgb(1,1,1,0)'
         this.staging_context.fillRect(0,0, this.w, this.h);   
         this.staging_context.beginPath();
@@ -70,7 +70,7 @@ export class mandala extends ClickAndDragTool {
                        
         })
         if (this._recorded_to) {
-            this.applied_context.beginPath();
+            this.context.beginPath();
             this.staging_context.beginPath();                    
             const dist = Math.sqrt(dist2(
                 [this.center.x, this.center.y], 
@@ -81,25 +81,25 @@ export class mandala extends ClickAndDragTool {
                 this._angles.forEach((angle) => {
                     const rotated_recorded = rotate(this._recorded_to, this.w, this.h, angle, mirror);
                     const rotated_to = rotate(to, this.w, this.h, angle, mirror);
-                    this.applied_context.moveTo(rotated_recorded.x, rotated_recorded.y);
-                    this.applied_context.lineTo(rotated_to.x, rotated_to.y);
+                    this.context.moveTo(rotated_recorded.x, rotated_recorded.y);
+                    this.context.lineTo(rotated_to.x, rotated_to.y);
                     this.staging_context.moveTo(rotated_recorded.x, rotated_recorded.y);
                     this.staging_context.lineTo(rotated_to.x, rotated_to.y);
                     this.staging_context.beginPath();
                     this.staging_context.ellipse(rotated_to.x, rotated_to.y, r, r, 0, 0, Math.PI * 2);
                     this.staging_context.fill();
-                    this.applied_context.beginPath();
-                    this.applied_context.ellipse(rotated_to.x, rotated_to.y, r, r, 0, 0, Math.PI * 2);
-                    this.applied_context.fill(); 
+                    this.context.beginPath();
+                    this.context.ellipse(rotated_to.x, rotated_to.y, r, r, 0, 0, Math.PI * 2);
+                    this.context.fill(); 
                 });
             })
         }
         this._recorded_to = to;
-        this.applied_context.lineWidth = this.editor.app.settings.line_width
-        this.applied_context.strokeStyle = this.editor.app.settings.fore_color
+        this.context.lineWidth = this.editor.app.settings.line_width
+        this.context.strokeStyle = this.editor.app.settings.fore_color
         this.staging_context.strokeStyle = this.editor.app.settings.fore_color
         this.staging_context.lineWidth = this.editor.app.settings.line_width
-        this.applied_context.stroke();
+        this.context.stroke();
         this.staging_context.stroke();
         return true;
     }

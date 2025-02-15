@@ -22,11 +22,11 @@ export abstract class ClickAndDragTool extends EditingTool {
     select(): void {
     }
     start(at: Vector2, buttons:number):boolean {
-        this.applied_context.clearRect(0, 0, this.w, this.h);
-        this.applied_context.fillStyle = this.app.settings.fore_color;
-        this.applied_context.strokeStyle = this.app.settings.fore_color;
-        this.applied_context.lineWidth = this.app.settings.line_width;
-        this.applied_context.lineCap = 'round';
+        this.context.clearRect(0, 0, this.w, this.h);
+        this.context.fillStyle = this.app.settings.fore_color;
+        this.context.strokeStyle = this.app.settings.fore_color;
+        this.context.lineWidth = this.app.settings.line_width;
+        this.context.lineCap = 'round';
         this.dirty = this.editing_start();
         this.from = at;
         this.x = at.x;

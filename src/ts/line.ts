@@ -5,8 +5,8 @@ import { Vector2 } from "./types";
 export class LineTool extends ClickAndDragTool {
     constructor(editor:Editor) {
         super(editor);
-        this.applied_canvas = document.createElement("canvas") as HTMLCanvasElement;
-        this.applied_context = this.applied_canvas.getContext('2d')! as CanvasRenderingContext2D
+        this.canvas = document.createElement("canvas") as HTMLCanvasElement;
+        this.context = this.canvas.getContext('2d')! as CanvasRenderingContext2D
         this.staging_canvas = document.createElement("canvas") as HTMLCanvasElement;
         this.staging_context = this.staging_canvas.getContext('2d')!
         this.staging_canvas.width = this.w;
@@ -42,12 +42,11 @@ export class LineTool extends ClickAndDragTool {
         this.top_left = {x:Math.min(to.x, this.from.x), y: Math.min(to.y, this.from.y)};
         this.w = Math.floor(Math.abs(to.x - this.from.x));
         this.h = Math.floor(Math.abs(to.y - this.from.y));
-        this.applied_canvas.width = this.w;
-        this.applied_canvas.height = this.h;
+        this.canvas.width = this.w;
+        this.canvas.height = this.h;
         this.staging_canvas.width = this.w;
         this.staging_canvas.height = this.h;
-        draw_on_canvas(this.staging_context)
-        draw_on_canvas(this.applied_context)
+        draw_on_canvas(this.context)
 
         return true;
     }

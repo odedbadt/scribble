@@ -10,7 +10,7 @@ export abstract class ClickTool extends EditingTool {
     select() {
     }
     start(at:Vector2, buttons:number):boolean {
-        this.applied_context.clearRect(0,0,this.w,this.h);
+        this.context.clearRect(0,0,this.w,this.h);
         
         this.editing_start(at, buttons);
         
