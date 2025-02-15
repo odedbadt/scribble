@@ -1,7 +1,7 @@
 import { ClickAndDragTool } from './click_and_drag_tool'
 import { Editor } from "./editor";
 import { Vector2 } from './types';
-import { parse_RGBA } from './utils';
+import { dist2, parse_RGBA } from './utils';
 
 function rotate(v: Vector2, w: number, h: number, a: number, mirror?: boolean) {
     const v2: Vector2 = {
@@ -22,6 +22,7 @@ export class mandala extends ClickAndDragTool {
     private _recorded_to: any;
     private _n: number;
     private _angles: Array<number>;
+    center: { x: number; y: number; };
     constructor(editor: Editor,
     ) {
         super(editor);
@@ -33,25 +34,24 @@ export class mandala extends ClickAndDragTool {
         this._angles = Array.from(angles);
         this.applied_canvas.width = this.editor.app.document_canvas.width;
         this.applied_canvas.height = this.editor.app.document_canvas.height;
-        this.w = 1000;//this.applied_canvas.width;
-        this.h = 1000;//this.applied_canvas.height ;
-        
+        this.center = {x:300,y:300}
         this.top_left = { x: 0, y: 0 }
     }
 
     hover_action(at: { x: any; y: any; }) {
-        if (!this.staging_context) {
-            return false;
-        }
-        this.staging_context.fillStyle = this.app.settings.fore_color;
-        const tmp_context = this.staging_context!;
-        this._angles.forEach((angle) => {
-            const rotated = rotate(at, this.w, this.h, angle);
-            tmp_context.beginPath();
-            const r = this.app.settings.line_width / 2;
-            tmp_context.ellipse(rotated.x, rotated.y, r, r, 0, 0, Math.PI * 2);
-            tmp_context.fill();
-        })
+        // if (!this.staging_context) {
+        //     return false;
+        // }
+        // this.staging_context.fillStyle = this.app.settings.fore_color;
+        // this.staging_context.fillStyle = 'rgb(1,1,1,0)'
+        // this.staging_context.fillRect(0,0, this.w, this.h);  
+        // this._angles.forEach((angle) => {
+        //     const rotated = rotate(at, this.w, this.h, angle);
+        //     this.staging_context.beginPath();
+        //     const r = this.app.settings.line_width / 2;
+        //     this.staging_context.ellipse(rotated.x, rotated.y, r, r, 0, 0, Math.PI * 2);
+        //     this.staging_context.fill();
+        // })
         return true;
     }
     editing_action(to: { x: any; y: any; }) {
@@ -63,9 +63,20 @@ export class mandala extends ClickAndDragTool {
         this.applied_context.fillRect(0,0, this.w, this.h);
         this.staging_context.fillStyle = 'rgb(1,1,1,0)'
         this.staging_context.fillRect(0,0, this.w, this.h);   
-        this.applied_context.beginPath();
-        this.staging_context.beginPath();          
+        this.staging_context.beginPath();
+        const r = this.app.settings.line_width / 2;
+        this._angles.forEach((angle) => {
+            const rotated = rotate(to, this.w, this.h, angle);
+                       
+        })
         if (this._recorded_to) {
+            this.applied_context.beginPath();
+            this.staging_context.beginPath();                    
+            const dist = Math.sqrt(dist2(
+                [this.center.x, this.center.y], 
+                [this._recorded_to.x, this._recorded_to.y]))
+            this.extend_canvases({x:this.w/2-dist*1.2,y:this.h/2-dist*1.2, 
+                w:this.w + dist*2.4, h:this.h+dist*2.4})
             Array.from([true, false]).forEach((mirror) => {
                 this._angles.forEach((angle) => {
                     const rotated_recorded = rotate(this._recorded_to, this.w, this.h, angle, mirror);
@@ -74,10 +85,20 @@ export class mandala extends ClickAndDragTool {
                     this.applied_context.lineTo(rotated_to.x, rotated_to.y);
                     this.staging_context.moveTo(rotated_recorded.x, rotated_recorded.y);
                     this.staging_context.lineTo(rotated_to.x, rotated_to.y);
+                    this.staging_context.beginPath();
+                    this.staging_context.ellipse(rotated_to.x, rotated_to.y, r, r, 0, 0, Math.PI * 2);
+                    this.staging_context.fill();
+                    this.applied_context.beginPath();
+                    this.applied_context.ellipse(rotated_to.x, rotated_to.y, r, r, 0, 0, Math.PI * 2);
+                    this.applied_context.fill(); 
                 });
             })
         }
         this._recorded_to = to;
+        this.applied_context.lineWidth = this.editor.app.settings.line_width
+        this.applied_context.strokeStyle = this.editor.app.settings.fore_color
+        this.staging_context.strokeStyle = this.editor.app.settings.fore_color
+        this.staging_context.lineWidth = this.editor.app.settings.line_width
         this.applied_context.stroke();
         this.staging_context.stroke();
         return true;

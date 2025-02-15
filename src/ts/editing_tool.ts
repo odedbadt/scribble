@@ -1,6 +1,6 @@
 import { Editor } from "./editor"
 import { MainApp } from "./main_app";
-import { Vector2 } from "./types";
+import { Rect, Vector2 } from "./types";
 
 export abstract class EditingTool {
     applied_canvas: HTMLCanvasElement;
@@ -13,6 +13,7 @@ export abstract class EditingTool {
     w:number = 200;
     x:number = 0;
     y:number = 0;
+    safety = 0
 
     constructor(editor: Editor,
     ) {
@@ -32,7 +33,26 @@ export abstract class EditingTool {
         this.staging_canvas.height = this.h;
 
     }
+    extend_canvases(bounds:Rect)  {
+        const extend_canvas = (canvas:HTMLCanvasElement) => {
+            if (this.safety > 1) {
 
+                return;
+            }
+            this.safety++
+            const w = canvas.width;
+            const h = canvas.height;
+            const ctx = canvas.getContext('2d')!
+            const src_image_data = ctx.getImageData(0,0,w,h)
+            canvas.width = bounds.w;
+            canvas.height = bounds.h;
+            ctx.putImageData(src_image_data,-bounds.x,-bounds.y);
+            }
+            extend_canvas(this.applied_canvas)
+            extend_canvas(this.staging_canvas);
+            this.editor.app.state.overlay_position= bounds;
+
+    }
     select() {
         this.applied_context!.clearRect(0, 0,
             this.applied_canvas!.width,
