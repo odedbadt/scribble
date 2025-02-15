@@ -1,6 +1,7 @@
 import { ClickAndDragTool } from "./click_and_drag_tool"
 import { Editor } from "./editor";
 import { Vector2 } from "./types";
+import { rect_union } from "./utils";
 
 export class ScribbleTool extends ClickAndDragTool {
     private _prev:Vector2|null = null;
@@ -47,43 +48,26 @@ export class ScribbleTool extends ClickAndDragTool {
 
             ctx.putImageData(src_image_data,w,h);
         }
-        const fx = Math.floor(this._prev.x - this.top_left!.x)
-        const fy = Math.floor(this._prev.y - this.top_left!.y)        
-        const cx = Math.floor(to.x - this.top_left!.x)
-        const cy = Math.floor(to.y - this.top_left!.y)        
-        const draw_on_canvas = (context:CanvasRenderingContext2D) => {
-            context.fillStyle = 'rgb(1,1,1,0)'
-            context.fillRect(0,0, this.w, this.h);
-            context.fillStyle = this.app.settings.fore_color;
-            context.beginPath()
-            context.moveTo(fx, fy)
-            context.lineTo(cx, cy)
-            context.strokeStyle = this.app.settings.fore_color;
-            context.lineWidth = 20
-            context.stroke()
-
-            context.ellipse(cx, cy, 10,10,0,0,Math.PI*2)
-            context.lineWidth = 0
-            context.strokeStyle = 'rgba(0,0,0,0)'
-            
-            context.fill()
-        }
-        const extend = cy < 10 ||  cy > this.h - 10 ||
-            cx < 10 ||  cx > this.w - 10
-
-        draw_on_canvas(this.context)
-        
-        if (extend) {
-            extend_canvas(this.staging_canvas)
-            extend_canvas(this.canvas)
-            this.top_left!.x = this.top_left!.x - this.w;
-            this.top_left!.y = this.top_left!.y - this.h;
-            this.w = this.staging_canvas.width;
-            this.h = this.staging_canvas.height;
-
-        }
-        
-        this._prev = {x:to.x, y:to.y}
+        const fx = Math.floor(this._prev.x - this.bounds.x)
+        const fy = Math.floor(this._prev.y - this.bounds.y)        
+        const cx = Math.floor(to.x - this.bounds.x)
+        const cy = Math.floor(to.y - this.bounds.y)
+        const lw = this.app.settings.line_width*1.2;
+        this.extend_canvas(rect_union(this.bounds, {x:cx-lw, y:cy-lw,w:lw*2,h:lw*2}))
+        this.context.fillStyle = 'rgb(1,1,1,0)'
+        this.context.fillRect(0,0, this.w, this.h);
+        this.context.fillStyle = this.app.settings.fore_color;
+        this.context.beginPath()
+        this.context.moveTo(fx, fy)
+        this.context.lineTo(cx, cy)
+        this.context.strokeStyle = this.app.settings.fore_color;
+        this.context.lineWidth = 20
+        this.context.stroke()
+        this.context.ellipse(cx, cy, 10,10,0,0,Math.PI*2)
+        this.context.lineWidth = 0
+        this.context.strokeStyle = 'rgba(0,0,0,0)'        
+        this.context.fill()        
+        this._prev = {...to}
         return true;
     }
 }

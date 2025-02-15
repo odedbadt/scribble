@@ -168,6 +168,13 @@ export function translate_rect(r:Rect, shift:Vector2) {
         w:r.w,
         h:r.h}
 }
+export function rect_union(r1:Rect, r2:Rect) {
+    const left = Math.min(r1.x,r2.x);
+    const top = Math.min(r1.y,r2.y);
+    const right = Math.max(r1.x + r1.w,r2.x+ r2.w);
+    const bottom = Math.max(r1.y + r1.h,r2.y+ r2.h);
+    return {x:left, y:top, w: right - left, h: bottom - top}
+}
 export function disposeScene(scene: Scene) {
     // Loop through all objects in the scene
     scene.traverse((object: any) => {

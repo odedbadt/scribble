@@ -121,7 +121,7 @@ export class Editor {
         const tool_image_data = this.tool.context.getImageData(0,0,this.tool.w, this.tool.h)
         const tool_data = tool_image_data.data;
         const document_image_data = this.app.document_context.getImageData(
-            this.tool.top_left.x, this.tool.top_left.y,
+            this.tool.bounds.x, this.tool.bounds.y,
             this.tool.w, this.tool.h)
         const document_data = document_image_data.data;
         for (let y = 0; y < this.tool.h;++y) {
@@ -136,7 +136,7 @@ export class Editor {
                 }
             }
         }
-        this.app.document_context.putImageData(document_image_data, this.tool.top_left.x, this.tool.top_left.y)
+        this.app.document_context.putImageData(document_image_data, this.tool.bounds.x, this.tool.bounds.y)
     }
     tool_to_view() {
         // override_canvas_context(this.app.view_context, this.app.tool_canvas,
@@ -218,10 +218,7 @@ export class Editor {
         if (this.tool.top_left == null) {
             return
         }
-        this.app.state.overlay_position.x = Math.floor(this.tool.top_left.x);
-        this.app.state.overlay_position.y = Math.floor(this.tool.top_left.y);
-        this.app.state.overlay_position.w = Math.floor(this.tool.w);
-        this.app.state.overlay_position.h = Math.floor(this.tool.h);
+        this.app.state.overlay_position= {...this.tool.bounds};
     }
     pointerup(event:MouseEvent) {
         this.tool.hover(this.view_coords_to_art_coords(

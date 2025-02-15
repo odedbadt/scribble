@@ -7,6 +7,7 @@ export abstract class EditingTool {
     context: CanvasRenderingContext2D;
     staging_canvas: HTMLCanvasElement;
     staging_context: CanvasRenderingContext2D;
+    bounds: Rect;
     editor: Editor;
     app: MainApp;
     h:number = 200;
@@ -31,26 +32,19 @@ export abstract class EditingTool {
         this.staging_context = this.staging_canvas.getContext('2d')!;
         this.staging_canvas.width = this.w;
         this.staging_canvas.height = this.h;
+        this.bounds = {x:0, y:0, w:100, h:100}
 
     }
-    extend_canvases(bounds:Rect)  {
-        const extend_canvas = (canvas:HTMLCanvasElement) => {
-            if (this.safety > 1) {
-
-                return;
-            }
-            this.safety++
-            const w = canvas.width;
-            const h = canvas.height;
-            const ctx = canvas.getContext('2d')!
-            const src_image_data = ctx.getImageData(0,0,w,h)
-            canvas.width = bounds.w;
-            canvas.height = bounds.h;
-            ctx.putImageData(src_image_data,-bounds.x,-bounds.y);
-            }
-            extend_canvas(this.canvas)
-            extend_canvas(this.staging_canvas);
-            this.editor.app.state.overlay_position= bounds;
+    extend_canvas(bounds:Rect)  {
+        const w = this.canvas.width;
+        const h = this.canvas.height;
+        const ctx = this.canvas.getContext('2d')!
+        const src_image_data = ctx.getImageData(0,0,w,h)
+        this.canvas.width = bounds.w;
+        this.canvas.height = bounds.h;
+        ctx.putImageData(src_image_data,-bounds.x,-bounds.y);        
+        this.editor.app.state.overlay_position = {...bounds};
+        this.bounds = {...bounds}
 
     }
     select() {
