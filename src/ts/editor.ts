@@ -128,10 +128,11 @@ export class Editor {
             for (let x = 0; x < this.tool.w;++x) {
                 const base_offset = 4*(y*this.tool.w+x);
                 if (tool_data[base_offset+3] > 0) {
-                    document_data[base_offset+0] = tool_data[base_offset+0]
-                    document_data[base_offset+1] = tool_data[base_offset+1]
-                    document_data[base_offset+2] = tool_data[base_offset+2]
-                    document_data[base_offset+3] = tool_data[base_offset+3]
+                    const opacity = tool_data[base_offset+3]/255
+                    document_data[base_offset+0] = opacity*tool_data[base_offset+0]+(1-opacity)*document_data[base_offset+0]
+                    document_data[base_offset+1] = opacity*tool_data[base_offset+1]+(1-opacity)*document_data[base_offset+1]
+                    document_data[base_offset+2] = opacity*tool_data[base_offset+2]+(1-opacity)*document_data[base_offset+2]
+                    document_data[base_offset+3] = opacity*tool_data[base_offset+3]+(1-opacity)*document_data[base_offset+3]
                 }
             }
         }

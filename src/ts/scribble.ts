@@ -71,7 +71,6 @@ export class ScribbleTool extends ClickAndDragTool {
         const extend = cy < 10 ||  cy > this.h - 10 ||
             cx < 10 ||  cx > this.w - 10
 
-        draw_on_canvas(this.staging_context)
         draw_on_canvas(this.context)
         
         if (extend) {
