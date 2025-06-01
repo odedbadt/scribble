@@ -1,16 +1,7 @@
 import { hsl_to_rgb, vec_diff } from "./utils";
-
 export class Palette {
-    _hl_canvas: HTMLCanvasElement;
-    _hl_w: number;
-    _hl_h: number;
-    private _sat_canvas: HTMLCanvasElement;
-    _sat_w: number;
-    private _sat_h: number;
-    private _rgb_color: number[];
-    private _hsl_color: number[];
-    constructor(hl_canvas: HTMLCanvasElement, sat_canvas: HTMLCanvasElement, initial_color_hsl: number[]) {
-        this._hl_canvas = hl_canvas
+    constructor(hl_canvas, sat_canvas, initial_color_hsl) {
+        this._hl_canvas = hl_canvas;
         this._hl_w = hl_canvas.width;
         this._hl_h = hl_canvas.height;
         this._sat_canvas = sat_canvas;
@@ -20,16 +11,15 @@ export class Palette {
         this._sat_h = sat_canvas.height;
     }
     _plot_hl() {
-        const hl_context: CanvasRenderingContext2D = this._hl_canvas.getContext('2d', { willReadFrequently: true })!
-        const hl_image_data = hl_context.getImageData(0, 0, this._hl_w, this._hl_h)
+        const hl_context = this._hl_canvas.getContext('2d', { willReadFrequently: true });
+        const hl_image_data = hl_context.getImageData(0, 0, this._hl_w, this._hl_h);
         const hl_data = hl_image_data.data;
         for (let y = 0; y < this._hl_h; ++y) {
             for (let x = 0; x < this._hl_w; ++x) {
-                const hl = this._hl_canvas_xy_to_hl(x, y)
+                const hl = this._hl_canvas_xy_to_hl(x, y);
                 const h = hl[0];
                 const l = hl[1];
                 const hsl_val = [h, this._hsl_color[1], l];
-
                 const rgb_val = hsl_to_rgb(hsl_val);
                 if ((Math.abs(h - this._hsl_color[0]) <= 1 / this._hl_w) ||
                     (Math.abs(l - this._hsl_color[2]) <= 1 / this._hl_h)) {
@@ -39,20 +29,18 @@ export class Palette {
                     rgb_val[1] = negative[1];
                     rgb_val[2] = negative[2];
                 }
-                const offset = 4 * (x + y * this._hl_w)
-                hl_data[offset] = rgb_val[0]
-                hl_data[offset + 1] = rgb_val[1]
-                hl_data[offset + 2] = rgb_val[2]
+                const offset = 4 * (x + y * this._hl_w);
+                hl_data[offset] = rgb_val[0];
+                hl_data[offset + 1] = rgb_val[1];
+                hl_data[offset + 2] = rgb_val[2];
                 hl_data[offset + 3] = 255;
             }
         }
         hl_context.putImageData(hl_image_data, 0, 0);
-
-
     }
     _plot_sat() {
-        const sat_context: CanvasRenderingContext2D = this._sat_canvas.getContext('2d', { willReadFrequently: true })!
-        const sat_image_data = sat_context.getImageData(0, 0, this._sat_w, this._sat_h)
+        const sat_context = this._sat_canvas.getContext('2d', { willReadFrequently: true });
+        const sat_image_data = sat_context.getImageData(0, 0, this._sat_w, this._sat_h);
         const sat_data = sat_image_data.data;
         for (let y = 0; y < this._sat_h; ++y) {
             for (let x = 0; x < this._sat_w; ++x) {
@@ -71,40 +59,37 @@ export class Palette {
             }
         }
         sat_context.putImageData(sat_image_data, 0, 0);
-
     }
-
     plot() {
         this._plot_hl();
         this._plot_sat();
     }
-    get_rgb_color_at(x: number, y: number): Uint8ClampedArray {
-        const context: CanvasRenderingContext2D = this._hl_canvas.getContext('2d')!
+    get_rgb_color_at(x, y) {
+        const context = this._hl_canvas.getContext('2d');
         const data = context.getImageData(x, y, 1, 1).data;
         return data;
-
     }
-    get_rgb_color(): number[] {
+    get_rgb_color() {
         return this._rgb_color;
     }
-    _hl_canvas_xy_to_hl(x: number, y: number): number[] {
+    _hl_canvas_xy_to_hl(x, y) {
         const h = 2 * ((x / this._hl_w + 2.5) % 1);
         const l = Math.min(1.0, Math.max(0, 0.5 + (y / this._hl_h - 0.5) * 1.25));
-        return [h, l]
+        return [h, l];
     }
-    _sat_canvas_to_sat(x: number, y: number): number {
-        return y / this._sat_h
+    _sat_canvas_to_sat(x, y) {
+        return y / this._sat_h;
     }
-    hl_click(x: number, y: number) {
-        const hl = this._hl_canvas_xy_to_hl(x, y)
-        this._hsl_color = [hl[0], this._hsl_color[1], hl[1]]
+    hl_click(x, y) {
+        const hl = this._hl_canvas_xy_to_hl(x, y);
+        this._hsl_color = [hl[0], this._hsl_color[1], hl[1]];
         this._rgb_color = hsl_to_rgb(this._hsl_color);
-        this.plot()
+        this.plot();
     }
-    sat_click(x: number, y: number) {
-        this._hsl_color = [this._hsl_color[0], this._sat_canvas_to_sat(x, y), this._hsl_color[2]]
+    sat_click(x, y) {
+        this._hsl_color = [this._hsl_color[0], this._sat_canvas_to_sat(x, y), this._hsl_color[2]];
         this._rgb_color = hsl_to_rgb(this._hsl_color);
-        this.plot()
+        this.plot();
     }
-
 }
+//# sourceMappingURL=palette.js.map

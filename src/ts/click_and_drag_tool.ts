@@ -1,50 +1,41 @@
-import {EditingTool} from "./editing_tool"
+import { EditingTool } from "./editing_tool"
 import { Editor } from "./editor";
 import { MainApp } from "./main_app";
-import { Vector2, unit_rect } from "./types";
-import { override_canvas_context } from "./utils";
-
+import { Vector2, unit_rect, vfloor } from "./types";
+import { signal, computed, effect } from "@preact/signals";
 export abstract class ClickAndDragTool extends EditingTool {
-    is_incremental: boolean;
-    dirty: boolean;
-    from: Vector2 | null;    
-    top_left: Vector2 | null;
-    constructor(editor: Editor) {
-        super(editor);
+    is_incremental: boolean = false;
+    dirty: boolean = false;
+    drag_start: Vector2 | null = null;
+    init() {
         this.is_incremental = false;
         this.start = this.start.bind(this);
-        this.action = this.action.bind(this);
+        this.drag = this.drag.bind(this);
         this.stop = this.stop.bind(this);
         this.dirty = false;
-        this.top_left = {x:0,y:0};
-        this.from = {x:0,y:0}
+        this.drag_start = null;
     }
     select(): void {
     }
-    start(at: Vector2, buttons:number):boolean {
-        this.context.clearRect(0, 0, this.w, this.h);
-        this.context.fillStyle = this.app.settings.fore_color;
-        this.context.strokeStyle = this.app.settings.fore_color;
-        this.context.lineWidth = this.app.settings.line_width;
-        this.context.lineCap = 'round';
+    start(at: Vector2, buttons: number): void {
+        this.drag_start = vfloor(at);
         this.dirty = this.editing_start();
-        this.from = at;
-        this.x = at.x;
-        this.y = at.y;
-        return false
     }
     editing_start() {
         // nop, implemenet me
         return false;
     }
-    action(at: Vector2):boolean {
+    drag(at: Vector2): boolean {
         // this.editor.app.tool_context.beginPath();
-        this.dirty = !!this.editing_action(at) || this.dirty;
-        return true;
-        
+        this.dirty = !!this.editing_drag(vfloor(at)) || this.dirty;
+        if (this.dirty) {
+
+        }
+        return this.dirty;
+
     }
-    hover(at: any):boolean {
-        if (!this.staging_context) {
+    hover(at: any): boolean {
+        if (!this.context) {
             return false;
         }
         const dirty = this.hover_action(at);
@@ -57,22 +48,22 @@ export abstract class ClickAndDragTool extends EditingTool {
         // nop
         return false;
     }
-    editing_action(at: Vector2):boolean {
+    editing_drag(at: Vector2): boolean {
         throw new Error("Not fully implemented tool");
     }
-    stop(at:Vector2):boolean {
+    stop(at: Vector2): boolean {
         this.dirty = !!this.editing_stop(at) || this.dirty;
         if (this.dirty) {
-            
-            this.editor.undo_redo_buffer.push(this.app.document_context!.getImageData(0, 0, this.w, this.h));
-            this.from = null;
-            this.editor.tool_to_document()
+
+            //this.editor.undo_redo_buffer.push(this.app.document_context!.getImageData(0, 0, this.w, this.h));
+            //this.editor.tool_to_document()
             this.dirty = false;
             return true
         }
-        return false
+        this.drag_start = null;
+        return false;
     }
-    editing_stop(at:Vector2):boolean {
+    editing_stop(at: Vector2): boolean {
         // nop, implemenet me
         return false
     }

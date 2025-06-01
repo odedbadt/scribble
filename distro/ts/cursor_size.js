@@ -1,11 +1,9 @@
-import { ClickAndDragTool } from "./click_and_drag_tool"
-import { Editor } from "./editor";
-import { Vector2, unit_rect } from "./types";
-export class CursorSize  extends ClickAndDragTool {
-    constructor(editor:Editor) {
+import { ClickAndDragTool } from "./click_and_drag_tool";
+export class CursorSize extends ClickAndDragTool {
+    constructor(editor) {
         super(editor);
     }
-    editing_start():boolean {
+    editing_start() {
         if (!this.staging_context) {
             return false;
         }
@@ -15,12 +13,12 @@ export class CursorSize  extends ClickAndDragTool {
         this.staging_context.lineCap = 'round';
         return false;
     }
-    start(at:Vector2, buttons:number):boolean {
+    start(at, buttons) {
         this.app.settings.line_width = 0.5;
-        super.start(at, buttons)
-        return false
+        super.start(at, buttons);
+        return false;
     }
-    editing_action(at:Vector2) {
+    editing_action(at) {
         if (this.from == null) {
             return false;
         }
@@ -28,27 +26,22 @@ export class CursorSize  extends ClickAndDragTool {
             return false;
         }
         //this.app.tool_tmp_context.clearRect(0,0,this.w,this.h);
-        
-        
-
-        const r = Math.sqrt((at.x - this.from.x)*(at.x - this.from.x)+
-        (at.y - this.from.y)*(at.y - this.from.y))
+        const r = Math.sqrt((at.x - this.from.x) * (at.x - this.from.x) +
+            (at.y - this.from.y) * (at.y - this.from.y));
         this.staging_context.beginPath();
-        this.staging_context.ellipse(
-                this.from.x,this.from.y,r,r,0,0,Math.PI*2);
+        this.staging_context.ellipse(this.from.x, this.from.y, r, r, 0, 0, Math.PI * 2);
         this.staging_context.fill();
-        this.app.settings.line_width = 2*r;
-        
-
+        this.app.settings.line_width = 2 * r;
         return false;
     }
-    hover(at:Vector2):boolean{
-        return false
+    hover(at) {
+        return false;
     }
-    editing_stop(at:Vector2):boolean {
+    editing_stop(at) {
         if (this.editor.previous_tool_name) {
-            this.app.select_tool(this.editor.previous_tool_name)
+            this.app.select_tool(this.editor.previous_tool_name);
         }
         return false;
     }
 }
+//# sourceMappingURL=cursor_size.js.map

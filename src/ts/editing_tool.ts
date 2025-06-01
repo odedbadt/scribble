@@ -1,50 +1,44 @@
 import { Editor } from "./editor"
 import { MainApp } from "./main_app";
 import { Rect, Vector2 } from "./types";
+import { Signal, signal, computed, effect } from "@preact/signals";
 
 export abstract class EditingTool {
-    canvas: HTMLCanvasElement;
-    context: CanvasRenderingContext2D;
-    staging_canvas: HTMLCanvasElement;
-    staging_context: CanvasRenderingContext2D;
-    bounds: Rect;
-    editor: Editor;
-    app: MainApp;
-    h:number = 200;
-    w:number = 200;
-    x:number = 0;
-    y:number = 0;
+    canvas: HTMLCanvasElement | null = null;
+    context: CanvasRenderingContext2D | null = null;
+    canvas_bounds_signal: Signal<Rect> | null = null;
     safety = 0
+    canvas_signal: Signal<HTMLCanvasElement> | null = null;
 
-    constructor(editor: Editor,
-    ) {
-        this.editor = editor;
-        this.app = editor.app;
-        this.canvas = document.createElement("canvas") as HTMLCanvasElement;
-        this.context = this.canvas.getContext('2d', { willReadFrequently: true })! as CanvasRenderingContext2D
-        this.staging_canvas = document.createElement("canvas") as HTMLCanvasElement;
-        this.staging_context = this.staging_canvas.getContext('2d', { willReadFrequently: true })! as CanvasRenderingContext2D
+
+    init_canvas(canvas_signal: Signal<HTMLCanvasElement>,
+        canvas_bounds_signal: Signal<Rect>) {
         this.canvas = document.createElement("canvas") as HTMLCanvasElement;
         this.context = this.canvas.getContext('2d')!;
-        this.canvas.width = this.w;
-        this.canvas.height = this.h;
-        this.staging_canvas = document.createElement("canvas") as HTMLCanvasElement;
-        this.staging_context = this.staging_canvas.getContext('2d')!;
-        this.staging_canvas.width = this.w;
-        this.staging_canvas.height = this.h;
-        this.bounds = {x:0, y:0, w:100, h:100}
-
+        this.canvas.width = 200;
+        this.canvas.height = 200;
+        this.canvas_signal = canvas_signal;
+        canvas_signal.value = this.canvas;
+        // set completely arbitrary bounds (might be dropped)
+        canvas_bounds_signal.value = { x: 0, y: 0, w: 200, h: 200 }
+        this.canvas_bounds_signal = canvas_bounds_signal;
+        return this.canvas
     }
-    extend_canvas(bounds:Rect)  {
-        const w = this.canvas.width;
-        const h = this.canvas.height;
-        const ctx = this.canvas.getContext('2d')!
-        const src_image_data = ctx.getImageData(0,0,w,h)
-        this.canvas.width = bounds.w;
-        this.canvas.height = bounds.h;
-        ctx.putImageData(src_image_data,-bounds.x,-bounds.y);        
-        this.editor.app.state.overlay_position = {...bounds};
-        this.bounds = {...bounds}
+    extend_canvas(bounds: Rect) {
+        const w = this.canvas!.width;
+        const h = this.canvas!.height;
+        const ctx = this.canvas!.getContext('2d')!;
+        try {
+            const src_image_data = ctx.getImageData(0, 0, w, h)
+        } catch (e) {
+            debugger;
+
+        }
+        this.canvas!.width = bounds.w;
+        this.canvas!.height = bounds.h;
+        //ctx.putImageData(src_image_data, -bounds.x, -bounds.y);
+        this.canvas_bounds_signal!.value = bounds;
+
 
     }
     select() {
@@ -52,29 +46,23 @@ export abstract class EditingTool {
             this.canvas!.width,
             this.canvas!.height);
     }
-    abstract start(at: Vector2, buttons: number): boolean;
-    abstract action(at: Vector2): boolean;
-    abstract stop(at: Vector2): boolean;
-    abstract hover(at: Vector2): boolean;
+    abstract start(at: Vector2, buttons: number): void;
+    abstract drag(at: Vector2): void;
+    abstract stop(at: Vector2): void;
+    abstract hover(at: Vector2): void;
 
 }
 export class NopTool extends EditingTool {
-    constructor(editor: Editor) {
-        super(editor);
-    }
+
     select() {
         super.select();
     }
-    start(at: Vector2, buttons: number): boolean {
-        return false
+    start(at: Vector2, buttons: number) {
     }
-    action(at: Vector2): boolean {
-        return false
+    drag(at: Vector2) {
     }
-    stop(at: Vector2): boolean {
-        return false
+    stop(at: Vector2) {
     }
-    hover(at: Vector2): boolean {
-        return false
+    hover(at: Vector2) {
     }
 }

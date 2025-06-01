@@ -3,7 +3,7 @@ import { Editor } from "./editor";
 import { Vector2 } from './types';
 import { dist2, parse_RGBA } from './utils';
 
-function rotate(v: Vector2, center:Vector2, a: number, mirror?: boolean) {
+function rotate(v: Vector2, center: Vector2, a: number, mirror?: boolean) {
     const v2: Vector2 = {
         'x': (mirror ? -1 : 1) * (v.x - center.x),
         'y': v.y - center.y
@@ -54,7 +54,7 @@ export class mandala extends ClickAndDragTool {
         // })
         return true;
     }
-    editing_action(to: { x: any; y: any; }) {
+    editing_drag(to: { x: any; y: any; }) {
         if (!document.getElementById('mandala_canvas')) {
             document.getElementById('canvas-area')!.appendChild(this.staging_canvas); // OD: for testing
             this.staging_canvas.setAttribute('id', 'mandala_canvas')
@@ -87,7 +87,7 @@ export class mandala extends ClickAndDragTool {
                     this.context.strokeStyle = this.app.settings.fore_color;
                     this.context.lineWidth = this.app.settings.line_width;
                     this.context.stroke()
-                    }
+                }
             })
         })
         this._recorded_to = to;
