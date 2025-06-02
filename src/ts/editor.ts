@@ -12,7 +12,7 @@ import { RectTool } from "./rect";
 //import { CursorSize } from './cursor_size'
 //import { FillStyleToggler } from './styletogglers'
 //import { mandala } from "./mandala";
-import { unit_rect, Vector2, Rect } from "./types"
+import { unit_rect, Vector2, Rect, RectToRectMapping } from "./types"
 import { Signal, signal, computed, effect } from "@preact/signals";
 
 const v: new (...args: any[]) => EditingTool = RectTool
@@ -39,33 +39,33 @@ export class Editor {
     private _last_hover_spot: Vector2 | null;
     private _non_native_view_render_countdown = 10
     private _view_rendering_countdown_interval?: NodeJS.Timeout | undefined = undefined;
-    canvas_signal: Signal<HTMLCanvasElement>;
-    canvas_bounds_signal: Signal<Rect>;
+    document_canvas: HTMLCanvasElement;
+    tool_canvas_signal: Signal<HTMLCanvasElement>;
+    tool_bounds_signal: Signal<RectToRectMapping>;
     view_port_signal: Signal<Rect>;
     init_: any;
-    constructor(app: MainApp,
-        canvas_signal: Signal<HTMLCanvasElement>,
-        canvas_bounds_signal: Signal<Rect>,
+    constructor(app: MainApp, document_canvas: HTMLCanvasElement,
+        tool_canvas_signal: Signal<HTMLCanvasElement>,
+        tool_bounds_signal: Signal<RectToRectMapping>,
         view_port_signal: Signal<Rect>
 
     ) {
         this.app = app;
-        this.canvas_signal = canvas_signal;
-        this.canvas_bounds_signal = canvas_bounds_signal;
+        this.tool_canvas_signal = tool_canvas_signal;
+        this.tool_bounds_signal = tool_bounds_signal;
         this.view_port_signal = view_port_signal;
         this.undo_redo_buffer = new UndoRedoBuffer(100);
         this.tool = new NopTool();
+        this.document_canvas = document_canvas
 
         this._last_hover_spot = null;
     }
     view_coords_to_doc_coords(view_coords: Vector2): Vector2 {
         return {
-            x: this.canvas_bounds_signal.value.x +
-                view_coords.x /
-                this.view_port_signal.value.w * this.view_port_signal.value.w,
-            y: this.view_port_signal.value.y +
-                view_coords.y /
-                this.view_port_signal.value.h * this.view_port_signal.value.h
+            x: (view_coords.x - this.view_port_signal.value.x) /
+                this.view_port_signal.value.w * this.document_canvas.width,
+            y: (view_coords.y - this.view_port_signal.value.y) /
+                this.view_port_signal.value.h * this.document_canvas.height
         }
     }
     view_port_px(): Rect {
@@ -88,8 +88,8 @@ export class Editor {
             return;
         }
         this.tool = new tool_class(this);
-        this.tool.init_canvas(this.canvas_signal, this.canvas_bounds_signal);
-        this.canvas_signal.value = this.tool.canvas;
+        this.tool.init_canvas(this.tool_canvas_signal, this.tool_bounds_signal);
+        this.tool_canvas_signal.value = this.tool.canvas;
 
         this.tool.select();
         if (this._last_hover_spot) {

@@ -1,18 +1,18 @@
 import { Editor } from "./editor"
 import { MainApp } from "./main_app";
-import { Rect, Vector2 } from "./types";
+import { Rect, Vector2, RectToRectMapping } from "./types";
 import { Signal, signal, computed, effect } from "@preact/signals";
 
 export abstract class EditingTool {
     canvas: HTMLCanvasElement | null = null;
     context: CanvasRenderingContext2D | null = null;
-    canvas_bounds_signal: Signal<Rect> | null = null;
+    canvas_bounds_signal: Signal<RectToRectMapping> | null = null;
     safety = 0
     canvas_signal: Signal<HTMLCanvasElement> | null = null;
 
 
     init_canvas(canvas_signal: Signal<HTMLCanvasElement>,
-        canvas_bounds_signal: Signal<Rect>) {
+        canvas_bounds_signal: Signal<RectToRectMapping>) {
         this.canvas = document.createElement("canvas") as HTMLCanvasElement;
         this.context = this.canvas.getContext('2d')!;
         this.canvas.width = 200;
@@ -20,7 +20,10 @@ export abstract class EditingTool {
         this.canvas_signal = canvas_signal;
         canvas_signal.value = this.canvas;
         // set completely arbitrary bounds (might be dropped)
-        canvas_bounds_signal.value = { x: 0, y: 0, w: 200, h: 200 }
+        canvas_bounds_signal.value = {
+            from: { x: 0, y: 0, w: 200, h: 200 },
+            to: { x: 0, y: 0, w: 200, h: 200 }
+        }
         this.canvas_bounds_signal = canvas_bounds_signal;
         return this.canvas
     }
@@ -28,16 +31,11 @@ export abstract class EditingTool {
         const w = this.canvas!.width;
         const h = this.canvas!.height;
         const ctx = this.canvas!.getContext('2d')!;
-        try {
-            const src_image_data = ctx.getImageData(0, 0, w, h)
-        } catch (e) {
-            debugger;
-
-        }
+        const src_image_data = ctx.getImageData(0, 0, w, h)
         this.canvas!.width = bounds.w;
         this.canvas!.height = bounds.h;
-        //ctx.putImageData(src_image_data, -bounds.x, -bounds.y);
-        this.canvas_bounds_signal!.value = bounds;
+        ctx.putImageData(src_image_data, -bounds.x, -bounds.y);
+        this.canvas_bounds_signal!.value = { from: bounds, to: bounds };
 
 
     }

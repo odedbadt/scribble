@@ -1,7 +1,7 @@
 import { Editor } from "./editor"
 import { Palette } from './palette'
 import { ColorStack } from "./color_stack";
-import { Rect } from "./types";
+import { Rect, RectToRectMapping } from "./types";
 //import { GoogleDrive } from "./gdrive"
 import { signal, computed, effect } from "@preact/signals";
 import { ScribRenderer } from "./scrib_renderer";
@@ -32,7 +32,7 @@ export class MainApp {
     tool_canvas_signal: any;
     tool_bounds_signal: any;
     settings: { fore_color: string; back_color: string; line_width: number; filled: boolean; };
-    view_port_signal: any;
+    view_port_signal: Signal<Rect>;
 
     constructor() {
         this.document_canvas = document.getElementById('document-canvas')! as HTMLCanvasElement;
@@ -43,14 +43,18 @@ export class MainApp {
             document.getElementById('sat-selector-canvas')! as HTMLCanvasElement, [1, 0.5, 0.5]);
 
         this.tool_canvas_signal = signal<HTMLCanvasElement>()
-        this.tool_bounds_signal = signal<Rect>(
-            { x: 0, y: 0, w: 200, h: 200 }
+        this.tool_bounds_signal = signal<RectToRectMapping>(
+            {
+                from: { x: 0, y: 0, w: 200, h: 200 },
+                to: { x: 0, y: 0, w: 200, h: 200 }
+            }
         )
         this.view_port_signal = signal<Rect>({
             x: 0, y: 0, w:
                 this.document_canvas.width, h: this.document_canvas.height
         })
-        this.editor = new Editor(this, this.tool_canvas_signal,
+        this.editor = new Editor(this, this.document_canvas,
+            this.tool_canvas_signal,
             this.tool_bounds_signal,
             this.view_port_signal);
         this.scrib_renderer = new ScribRenderer(this.tool_canvas_signal,

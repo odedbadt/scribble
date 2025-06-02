@@ -31,7 +31,10 @@ export class LineTool extends ClickAndDragTool {
             context.stroke()
         }
         const canvas_bounding_rect = bounding_rect(this.drag_start, to);
-        this.canvas_bounds_signal!.value = canvas_bounding_rect;
+        this.canvas_bounds_signal!.value = {
+            from: canvas_bounding_rect,
+            to: canvas_bounding_rect
+        };
         const w = canvas_bounding_rect.w;
         const h = canvas_bounding_rect.h;
         this.extend_canvas(canvas_bounding_rect);
