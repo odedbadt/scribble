@@ -3,7 +3,8 @@ import { WebGLRenderer, Scene, Camera, OrthographicCamera, ShaderMaterial, Doubl
 import { FRAGMENT_SHADER_CODE, VERTEX_SHADER_CODE } from "./glsl_shader_code"
 import { disposeScene } from "./utils";
 import { signal, computed, effect, Signal } from "@preact/signals";
-import { Rect, RectToRectMapping } from "./types";
+import { Rect, RectToRectMapping, bottom, right } from "./types";
+import { from } from "rxjs";
 
 export class ScribRenderer {
     document_canvas: HTMLCanvasElement;
@@ -66,12 +67,15 @@ export class ScribRenderer {
             fragmentShader: FRAGMENT_SHADER_CODE,
         });
         const document_geometry = new PlaneGeometry(
-            1000, 1000
+            this.document_canvas.width,
+            this.document_canvas.height
+
         );
         const document_rectangle = new Mesh(document_geometry,
             new MeshBasicMaterial({ color: 0x00ff00, side: DoubleSide }));
 
-        document_rectangle.position.set(0, 0, -5);
+        document_rectangle.position.set(this.document_canvas.width * 0.5,
+            this.document_canvas.width * 0.5, -5);
         const overlay_material = new ShaderMaterial({
             uniforms: {
                 uTexture: { value: overlay_texture },
@@ -80,6 +84,8 @@ export class ScribRenderer {
             fragmentShader: FRAGMENT_SHADER_CODE,
             transparent: true
         });
+        overlay_texture.needsUpdate = true;
+        overlay_material.side = DoubleSide;
         const rect_mapping: RectToRectMapping = this.overlay_canvas_bounds_signal.value
         const from_rect: Rect = rect_mapping.from;
         const to_rect: Rect = rect_mapping.to;
@@ -88,18 +94,17 @@ export class ScribRenderer {
         // Map the UVs so that (0,0) on the plane maps to (0,0) on the texture,
         // and (w1,h1) on the plane maps to (w2,h2) on the texture.
 
-        const newUVs = new Float32Array([
-            from_rect.x, from_rect.y + from_rect.h,   // bottom left
-            from_rect.x + from_rect.w, from_rect.y + from_rect.h,   // bottom right
-            from_rect.x, from_rect.y,   // top left
-            from_rect.x + from_rect.w, from_rect.y    // top right
-        ]);
 
-        overlay_geometry.attributes.uv.array.set(newUVs);
-        overlay_geometry.attributes.uv.needsUpdate = true;
+
+        //        console.log(from_rect, newUVs2);
+        //       overlay_geometry.attributes.uv.array.set(newUVs2);
+        //overlay_geometry.attributes.uv.needsUpdate = true;
 
         const overlay_rectangle = new Mesh(overlay_geometry,
-            new MeshBasicMaterial({ color: 0xff0000, side: DoubleSide }));
+            overlay_material);
+
+
+        //new MeshBasicMaterial({ color: 0xff00ff, side: DoubleSide }));
         overlay_rectangle.position.set(
             to_rect.x + to_rect.w / 2,
             to_rect.y + to_rect.h / 2,
@@ -128,7 +133,7 @@ export class ScribRenderer {
             }
             const overlay_texture = new CanvasTexture(
                 overlay_canvas);
-            overlay_texture.flipY = true;
+            overlay_texture.flipY = false;
             const v = this.overlay_canvas_signal.value;
             overlay_texture.image = v;
             overlay_texture.needsUpdate = true;

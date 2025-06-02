@@ -4,7 +4,10 @@ import { Vector2, bounding_rect } from "./types";
 
 
 export class RectTool extends ClickAndDragTool {
-
+    editing_start() {
+        // nop, implemenet me
+        return false;
+    }
     editing_drag(to: Vector2) {
         if (!this.drag_start) {
             return false;
@@ -16,14 +19,20 @@ export class RectTool extends ClickAndDragTool {
             document.getElementById('canvas-area')!.appendChild(this.canvas); // OD: for testing
             this.canvas.setAttribute('id', 'rect_canvas')
         }
+        this.context!.clearRect(0, 0, this.canvas!.width, this.canvas!.height)
+
         const margin = 5;
         const canvas_bounding_rect = bounding_rect(this.drag_start, to);
         const extended_canvas_bounding_rect = bounding_rect(this.drag_start, to, margin);
         console.log('Sending', this.drag_start, to, '->', canvas_bounding_rect)
+        const canvas_w = this.canvas!.width;
+        const canvas_h = this.canvas!.height;
         this.canvas_bounds_signal!.value = {
             from: {
-                x: margin, y: margin, w: canvas_bounding_rect.w,
-                h: canvas_bounding_rect.h
+                x: 0,
+                y: 0,
+                w: 1,
+                h: 1
             },
             to: canvas_bounding_rect
         }

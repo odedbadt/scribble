@@ -15,7 +15,12 @@ export type RectToRectMapping = {
 export const unit_rect: Rect = { x: 0, y: 0, w: 1, h: 1 }
 export const zero_vector: Vector2 = { x: 0, y: 0 }
 
-
+export function bottom(r: Rect): number {
+    return r.y + r.h;
+}
+export function right(r: Rect): number {
+    return r.x + r.w;
+}
 export function bounding_rect(v1: Vector2, v2: Vector2, margin: number = 0): Rect {
     const left = Math.min(v1.x, v2.x) - margin;
     const top = Math.min(v1.y, v2.y) - margin;

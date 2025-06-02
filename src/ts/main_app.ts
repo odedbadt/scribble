@@ -3,7 +3,7 @@ import { Palette } from './palette'
 import { ColorStack } from "./color_stack";
 import { Rect, RectToRectMapping } from "./types";
 //import { GoogleDrive } from "./gdrive"
-import { signal, computed, effect } from "@preact/signals";
+import { Signal, signal, computed, effect } from "@preact/signals";
 import { ScribRenderer } from "./scrib_renderer";
 
 function click_for_a_second(id: string, callback: Function) {
