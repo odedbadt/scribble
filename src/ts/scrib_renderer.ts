@@ -1,9 +1,9 @@
 
-import { WebGLRenderer, Scene, Camera, OrthographicCamera, ShaderMaterial, DoubleSide, Mesh, PlaneGeometry, Texture, CanvasTexture, MeshBasicMaterial } from "three"
+import { WebGLRenderer, Scene, Camera, OrthographicCamera, ShaderMaterial, DoubleSide, Mesh, PlaneGeometry, Texture, CanvasTexture, MeshBasicMaterial, NearestFilter } from "three"
 import { FRAGMENT_SHADER_CODE, VERTEX_SHADER_CODE } from "./glsl_shader_code"
 import { disposeScene } from "./utils";
 import { signal, computed, effect, Signal } from "@preact/signals";
-import { Rect, RectToRectMapping, bottom, right } from "./types";
+import { Rect, RectToRectMapping, rbottom, rleft, rright, rtop } from "./types";
 import { from } from "rxjs";
 
 export class ScribRenderer {
@@ -82,8 +82,9 @@ export class ScribRenderer {
             },
             vertexShader: VERTEX_SHADER_CODE,
             fragmentShader: FRAGMENT_SHADER_CODE,
-            transparent: true
         });
+        overlay_texture.minFilter = NearestFilter;
+        overlay_texture.magFilter = NearestFilter;
         overlay_texture.needsUpdate = true;
         overlay_material.side = DoubleSide;
         const rect_mapping: RectToRectMapping = this.overlay_canvas_bounds_signal.value
@@ -95,7 +96,18 @@ export class ScribRenderer {
         // and (w1,h1) on the plane maps to (w2,h2) on the texture.
 
 
+        const newUVs = new Float32Array([
+            rleft(from_rect), rbottom(from_rect),   // bottom left
+            rright(from_rect), rbottom(from_rect),    // bottom right
+            rleft(from_rect), rtop(from_rect),    // top left
+            rright(from_rect), rtop(from_rect)     // top right
+        ]);
+        console.log(rleft(from_rect), rtop(from_rect));
 
+        console.log(Array.from(newUVs, (x): string => x.toFixed(2)));
+
+        overlay_geometry.attributes.uv.array.set(newUVs);
+        overlay_geometry.attributes.uv.needsUpdate = true;
         //        console.log(from_rect, newUVs2);
         //       overlay_geometry.attributes.uv.array.set(newUVs2);
         //overlay_geometry.attributes.uv.needsUpdate = true;
@@ -140,6 +152,7 @@ export class ScribRenderer {
             scene = this.build_scene(overlay_texture)
             renderer.render(scene, this.init_camera());
         });
+
         if (scene != null) {
             disposeScene(scene);
         }

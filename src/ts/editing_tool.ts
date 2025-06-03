@@ -20,10 +20,6 @@ export abstract class EditingTool {
         this.canvas_signal = canvas_signal;
         canvas_signal.value = this.canvas;
         // set completely arbitrary bounds (might be dropped)
-        canvas_bounds_signal.value = {
-            from: { x: 0, y: 0, w: 200, h: 200 },
-            to: { x: 0, y: 0, w: 200, h: 200 }
-        }
         this.canvas_bounds_signal = canvas_bounds_signal;
         return this.canvas
     }
