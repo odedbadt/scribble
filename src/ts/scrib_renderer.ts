@@ -61,7 +61,7 @@ export class ScribRenderer {
         const scene = new Scene();
         const document_texture = new CanvasTexture(
             this.document_canvas);
-        document_texture.flipY = true;
+        document_texture.flipY = false;
         const document_material = new ShaderMaterial({
             uniforms: {
                 uTexture: { value: document_texture },
@@ -75,7 +75,7 @@ export class ScribRenderer {
 
         );
         const document_rectangle = new Mesh(document_geometry,
-            new MeshBasicMaterial({ color: 0x00ff00, side: DoubleSide }));
+            document_material);
 
         document_rectangle.position.set(this.document_canvas.width * 0.5,
             this.document_canvas.width * 0.5, -5);
@@ -90,6 +90,7 @@ export class ScribRenderer {
         overlay_texture.magFilter = NearestFilter;
         overlay_texture.needsUpdate = true;
         overlay_material.side = DoubleSide;
+        document_material.side = DoubleSide;
         const rect_mapping: RectToRectMapping = bounds_mapping;
         const from_rect: Rect = rect_mapping.from;
         const to_rect: Rect = rect_mapping.to;
@@ -130,7 +131,6 @@ export class ScribRenderer {
 
         scene.add(document_rectangle);
         scene.add(overlay_rectangle);
-
         return scene
 
 

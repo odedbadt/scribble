@@ -53,7 +53,7 @@ export class MainApp {
             x: 0, y: 0, w:
                 this.document_canvas.width, h: this.document_canvas.height
         })
-        this.editor = new Editor(this, this.document_canvas,
+        this.editor = new Editor(this.document_canvas,
             this.tool_canvas_signal,
             this.tool_bounds_signal,
             this.view_port_signal);
