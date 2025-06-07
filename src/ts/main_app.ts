@@ -68,7 +68,7 @@ export class MainApp {
             filled: true,
         }
         this.init_canvases();
-        this.scrib_renderer.init_render_loop();
+        this.scrib_renderer.init();
     }
 
     // this.color_  ck = new ColorStack(this, 8, 100, 10000,

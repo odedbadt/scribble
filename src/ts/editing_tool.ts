@@ -14,11 +14,13 @@ export abstract class EditingTool {
     init_canvas(canvas_signal: Signal<HTMLCanvasElement>,
         canvas_bounds_signal: Signal<RectToRectMapping>) {
         this.canvas = document.createElement("canvas") as HTMLCanvasElement;
-        this.context = this.canvas.getContext('2d')!;
+        this.context = this.canvas.getContext('2d', {
+            'willReadFrequently': true
+        })!;
         this.canvas.width = 200;
         this.canvas.height = 200;
         this.canvas_signal = canvas_signal;
-        canvas_signal.value = this.canvas;
+        //canvas_signal.value = this.canvas;
         // set completely arbitrary bounds (might be dropped)
         this.canvas_bounds_signal = canvas_bounds_signal;
         return this.canvas
@@ -31,7 +33,7 @@ export abstract class EditingTool {
         this.canvas!.width = bounds.w;
         this.canvas!.height = bounds.h;
         ctx.putImageData(src_image_data, -bounds.x, -bounds.y);
-        this.canvas_bounds_signal!.value = { from: bounds, to: bounds };
+        //this.canvas_bounds_signal!.value = { from: bounds, to: bounds };
 
 
     }

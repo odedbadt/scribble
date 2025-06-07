@@ -23,9 +23,12 @@ export class ScribRenderer {
         this.overlay_canvas_signal = overlay_canvas_signal;
         this.overlay_canvas_bounds_signal = overlay_canvas_bounds_signal;
 
+    }
+    init() {
         this.init_camera();
         this.init_render_loop();
     }
+
     init_camera(): Camera {
         // const aspect = this.view_canvas.clientWidth / this.view_canvas.clientHeight;
         // const camera = new OrthographicCamera(
@@ -53,7 +56,7 @@ export class ScribRenderer {
         camera.lookAt(0, 0, 0);
         return camera;
     }
-    build_scene(overlay_texture: CanvasTexture): Scene {
+    build_scene(overlay_texture: CanvasTexture, bounds_mapping: RectToRectMapping): Scene {
         // Scene and orthographic camera
         const scene = new Scene();
         const document_texture = new CanvasTexture(
@@ -87,7 +90,7 @@ export class ScribRenderer {
         overlay_texture.magFilter = NearestFilter;
         overlay_texture.needsUpdate = true;
         overlay_material.side = DoubleSide;
-        const rect_mapping: RectToRectMapping = this.overlay_canvas_bounds_signal.value
+        const rect_mapping: RectToRectMapping = bounds_mapping;
         const from_rect: Rect = rect_mapping.from;
         const to_rect: Rect = rect_mapping.to;
 
@@ -102,9 +105,9 @@ export class ScribRenderer {
             rleft(from_rect), rtop(from_rect),    // top left
             rright(from_rect), rtop(from_rect)     // top right
         ]);
-        console.log(rleft(from_rect), rtop(from_rect));
+        //console.log(rleft(from_rect), rtop(from_rect));
 
-        console.log(Array.from(newUVs, (x): string => x.toFixed(2)));
+        //console.log(Array.from(newUVs, (x): string => x.toFixed(2)));
 
         overlay_geometry.attributes.uv.array.set(newUVs);
         overlay_geometry.attributes.uv.needsUpdate = true;
@@ -139,17 +142,19 @@ export class ScribRenderer {
         });
         let scene: Scene | null = null;
         effect(() => {
+            console.log('Effect triggered');
             const overlay_canvas = this.overlay_canvas_signal.value;
+            const bounds_mapping = this.overlay_canvas_bounds_signal.value;
+            console.log(overlay_canvas, bounds_mapping);
             if (!overlay_canvas) {
                 return;
             }
             const overlay_texture = new CanvasTexture(
                 overlay_canvas);
             overlay_texture.flipY = false;
-            const v = this.overlay_canvas_signal.value;
-            overlay_texture.image = v;
+            overlay_texture.image = overlay_canvas;
             overlay_texture.needsUpdate = true;
-            scene = this.build_scene(overlay_texture)
+            scene = this.build_scene(overlay_texture, bounds_mapping)
             renderer.render(scene, this.init_camera());
         });
 
