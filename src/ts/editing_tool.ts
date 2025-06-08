@@ -15,7 +15,8 @@ export abstract class EditingTool {
         canvas_bounds_signal: Signal<RectToRectMapping>) {
         this.canvas = document.createElement("canvas") as HTMLCanvasElement;
         this.context = this.canvas.getContext('2d', {
-            'willReadFrequently': true
+            'willReadFrequently': true,
+            alpha: true
         })!;
         this.canvas.width = 200;
         this.canvas.height = 200;

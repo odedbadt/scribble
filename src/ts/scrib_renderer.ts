@@ -85,6 +85,7 @@ export class ScribRenderer {
             },
             vertexShader: VERTEX_SHADER_CODE,
             fragmentShader: FRAGMENT_SHADER_CODE,
+            transparent: true
         });
         overlay_texture.minFilter = NearestFilter;
         overlay_texture.magFilter = NearestFilter;

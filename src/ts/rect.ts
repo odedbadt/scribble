@@ -13,29 +13,19 @@ export class RectTool extends ClickAndDragTool {
             return false;
         }
 
-        let staging_canvas: HTMLCanvasElement = document.getElementById('rect_canvas') as HTMLCanvasElement
 
         if (!document.getElementById('rect_canvas') && this.canvas != null) {
             document.getElementById('canvas-area')!.appendChild(this.canvas); // OD: for testing
             this.canvas.setAttribute('id', 'rect_canvas')
         }
         this.context!.clearRect(0, 0, this.canvas!.width, this.canvas!.height)
-
         const margin = 5;
         const canvas_bounding_rect = bounding_rect(this.drag_start, to);
         const extended_canvas_bounding_rect = bounding_rect(this.drag_start, to, margin);
-        const canvas_w = this.canvas!.width;
-        const canvas_h = this.canvas!.height;
-
-
-
-
-
-        canvas_bounding_rect;
         const w = extended_canvas_bounding_rect.w;
         const h = extended_canvas_bounding_rect.h;
         this.extend_canvas(extended_canvas_bounding_rect);
-        this.context!.fillStyle = 'red'; // OD: for testing;
+        this.context!.fillStyle = '0xFF0000FF'; // OD: for testing;
         this.context!.fillRect(
             margin,
             margin,

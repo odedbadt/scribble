@@ -36,8 +36,6 @@ export class Editor {
     current_tool_name: any;
     from: any;
     private _last_hover_spot: Vector2 | null;
-    private _non_native_view_render_countdown = 10
-    private _view_rendering_countdown_interval?: NodeJS.Timeout | undefined = undefined;
     document_canvas: HTMLCanvasElement;
     tool_canvas_signal: Signal<HTMLCanvasElement>;
     tool_bounds_signal: Signal<RectToRectMapping>;
@@ -216,13 +214,13 @@ export class Editor {
         const tw = tool_canvas.width;
         const th = tool_canvas.height;
         const pixel_from_rect = scale_rect(rect_to_rect_mapping.from, tw, th);
-
+        const pixel_to_rect = rect_to_rect_mapping.to;
         console.log("COMMIT", pixel_from_rect, rect_to_rect_mapping.to)
         const tool_image_data = tool_context.getImageData(pixel_from_rect.x, pixel_from_rect.y, pixel_from_rect.w, pixel_from_rect.h)
         const tool_data = tool_image_data.data;
         const document_image_data = this.document_context.getImageData(
-            pixel_from_rect.x, pixel_from_rect.y,
-            pixel_from_rect.w, pixel_from_rect.h)
+            pixel_to_rect.x, pixel_to_rect.y,
+            pixel_to_rect.w, pixel_to_rect.h)
         const document_data = document_image_data.data;
         for (let y = 0; y < pixel_from_rect.h; ++y) {
             for (let x = 0; x < pixel_from_rect.w; ++x) {
@@ -237,8 +235,7 @@ export class Editor {
             }
         }
         this.document_context.putImageData(document_image_data,
-            rect_to_rect_mapping.to.x, rect_to_rect_mapping.to.y)
-        this.tool_canvas_signal.value = tool_canvas;
+            pixel_to_rect.x, pixel_to_rect.y)
     }
     tool_to_view() {
         // override_canvas_context(this.app.view_context, this.app.tool_canvas,
