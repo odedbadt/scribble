@@ -26,6 +26,7 @@ export abstract class ClickAndDragTool extends EditingTool {
         return false;
     }
     drag(at: Vector2): boolean {
+
         // this.editor.app.tool_context.beginPath();
         this.dirty = !!this.editing_drag(vfloor(at)) || this.dirty;
         if (this.dirty) {

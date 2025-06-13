@@ -10,10 +10,7 @@ export class LineTool extends ClickAndDragTool {
         }
 
         const context = this.context!;
-        if (!document.getElementById('rect_canvas')) {
-            document.getElementById('canvas-area')!.appendChild(this.canvas!); // OD: for testing
-            this.canvas!.setAttribute('id', 'rect_canvas')
-        }
+
         context.clearRect(0, 0, this.canvas!.width, this.canvas!.height)
         const margin = 5;
         const canvas_bounding_rect = bounding_rect(this.drag_start, to);
@@ -21,7 +18,7 @@ export class LineTool extends ClickAndDragTool {
         const w = extended_canvas_bounding_rect.w;
         const h = extended_canvas_bounding_rect.h;
         this.extend_canvas(extended_canvas_bounding_rect);
-        context.strokeStyle = 'black'; // OD: for testing;
+        context.strokeStyle = 'red'; // OD: for testing;
         const flip = (to.x > this.drag_start.x) !== (to.y > this.drag_start.y)
         if (flip) {
             context.beginPath()

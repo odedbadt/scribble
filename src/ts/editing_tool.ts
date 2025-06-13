@@ -7,36 +7,62 @@ export abstract class EditingTool {
     canvas: HTMLCanvasElement | null = null;
     context: CanvasRenderingContext2D | null = null;
     canvas_bounds_signal: Signal<RectToRectMapping> | null = null;
+    zero: Vector2 | null = null
     safety = 0
     canvas_signal: Signal<HTMLCanvasElement> | null = null;
 
 
+
     init_canvas(canvas_signal: Signal<HTMLCanvasElement>,
         canvas_bounds_signal: Signal<RectToRectMapping>) {
-        this.canvas = document.createElement("canvas") as HTMLCanvasElement;
-        this.context = this.canvas.getContext('2d', {
+        this.canvas_bounds_signal = canvas_bounds_signal;
+        this.canvas_signal = canvas_signal;
+        if (this.canvas == null) {
+            if (document.getElementById('tool_canvas')) {
+                this.canvas = document.getElementById('tool_canvas')! as HTMLCanvasElement;
+            } else {
+                this.canvas = document.createElement("canvas") as HTMLCanvasElement;
+                // OD: for testing:             
+                this.canvas.setAttribute('id', 'tool_canvas');
+                document.getElementById('canvas-area')!.appendChild(this.canvas);
+            }
+        } else { // this.canvas != null, illegal state
+            throw new Error('init_canvas called twice');
+        }
+        this.context = this.canvas!.getContext('2d', {
             'willReadFrequently': true,
             alpha: true
         })!;
-        this.canvas.width = 200;
-        this.canvas.height = 200;
-        this.canvas_signal = canvas_signal;
-        //canvas_signal.value = this.canvas;
         // set completely arbitrary bounds (might be dropped)
-        this.canvas_bounds_signal = canvas_bounds_signal;
+        this.canvas!.width = 200;
+        this.canvas!.height = 200;
+        //canvas_signal.value = this.canvas;
         return this.canvas
     }
-    extend_canvas(bounds: Rect) {
+    extend_canvas(bounds: Rect, copy: boolean = true) {
         const w = this.canvas!.width;
         const h = this.canvas!.height;
         const ctx = this.canvas!.getContext('2d')!;
-        const src_image_data = ctx.getImageData(0, 0, w, h)
-        this.canvas!.width = bounds.w;
-        this.canvas!.height = bounds.h;
-        ctx.putImageData(src_image_data, -bounds.x, -bounds.y);
-        //this.canvas_bounds_signal!.value = { from: bounds, to: bounds };
+        if (copy) {
+            const src_image_data = ctx.getImageData(0, 0, w, h)
+            this.canvas!.width = bounds.w;
+            this.canvas!.height = bounds.h;
+            ctx.putImageData(src_image_data, -bounds.x, -bounds.y);
+        } else {
+            this.canvas!.width = bounds.w;
+            this.canvas!.height = bounds.h;
+        }
+        if (this.zero) {
+            this.zero = {
+                x: -bounds.x,
+                y: -bounds.y
+            };
+            //this.canvas_bounds_signal!.value = { from: bounds, to: bounds };
 
 
+        }
+        this.context!.fillStyle = 'rgba(0,0,0,0)';
+        this.context!.fillRect(0, 0, this.canvas!.width, this.canvas!.height);
     }
     select() {
         this.context!.clearRect(0, 0,

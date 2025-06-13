@@ -60,7 +60,7 @@ export function bounding_rect(v1: Vector2, v2: Vector2, margin: number = 0): Rec
     const top = Math.min(v1.y, v2.y) - margin;
     const right = Math.max(v1.x, v2.x) + margin;
     const bottom = Math.max(v1.y, v2.y) + margin;
-    return { x: left, y: top, w: right - left, h: bottom - top };
+    return { x: left, y: top, w: right - left + 1, h: bottom - top + 1 };
 
 }
 export function vfloor(v: Vector2) {

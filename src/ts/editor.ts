@@ -215,7 +215,6 @@ export class Editor {
         const th = tool_canvas.height;
         const pixel_from_rect = scale_rect(rect_to_rect_mapping.from, tw, th);
         const pixel_to_rect = rect_to_rect_mapping.to;
-        console.log("COMMIT", pixel_from_rect, rect_to_rect_mapping.to)
         const tool_image_data = tool_context.getImageData(pixel_from_rect.x, pixel_from_rect.y, pixel_from_rect.w, pixel_from_rect.h)
         const tool_data = tool_image_data.data;
         const document_image_data = this.document_context.getImageData(
@@ -227,10 +226,15 @@ export class Editor {
                 const base_offset = 4 * (y * pixel_from_rect.w + x);
                 if (tool_data[base_offset + 3] > 0) {
                     const opacity = tool_data[base_offset + 3] / 255
-                    document_data[base_offset + 0] = opacity * tool_data[base_offset + 0] + (1 - opacity) * document_data[base_offset + 0]
-                    document_data[base_offset + 1] = opacity * tool_data[base_offset + 1] + (1 - opacity) * document_data[base_offset + 1]
-                    document_data[base_offset + 2] = opacity * tool_data[base_offset + 2] + (1 - opacity) * document_data[base_offset + 2]
-                    document_data[base_offset + 3] = opacity * tool_data[base_offset + 3] + (1 - opacity) * document_data[base_offset + 3]
+                    document_data[base_offset + 0] = tool_data[base_offset + 0] / opacity
+                    document_data[base_offset + 1] = tool_data[base_offset + 1] / opacity
+                    document_data[base_offset + 2] = tool_data[base_offset + 2] / opacity
+                    document_data[base_offset + 3] = 255;//tool_data[base_offset + 3] / opacity
+
+                    // document_data[base_offset + 0] = opacity * tool_data[base_offset + 0] + (1 - opacity) * document_data[base_offset + 0]
+                    // document_data[base_offset + 1] = opacity * tool_data[base_offset + 1] + (1 - opacity) * document_data[base_offset + 1]
+                    // document_data[base_offset + 2] = opacity * tool_data[base_offset + 2] + (1 - opacity) * document_data[base_offset + 2]
+                    // document_data[base_offset + 3] = opacity * tool_data[base_offset + 3] + (1 - opacity) * document_data[base_offset + 3]
                 }
             }
         }

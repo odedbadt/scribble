@@ -350,6 +350,19 @@ export class MainApp {
         this.init_scroll();
     }
 }
+function test_signals() {
+    const s1: Signal<number> = signal(1);
+    effect(() => {
+        console.log('E', s1.value)
+    })
+    console.log('A')
+    s1.value = 1;
+    console.log('B')
+    s1.value = 2;
+    console.log('C')
+    s1.value = 3;
+    console.log('D')
+}
 export function app_ignite() {
     (window as any).app = new MainApp();
     (window as any).app.init();

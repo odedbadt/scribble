@@ -12,52 +12,45 @@ export class RectTool extends ClickAndDragTool {
         if (!this.drag_start) {
             return false;
         }
-
-
-        if (!document.getElementById('rect_canvas') && this.canvas != null) {
-            document.getElementById('canvas-area')!.appendChild(this.canvas); // OD: for testing
-            this.canvas.setAttribute('id', 'rect_canvas')
-        }
-        this.context!.clearRect(0, 0, this.canvas!.width, this.canvas!.height)
-        const margin = 5;
+        const canvas = this.canvas!;
+        const context = this.context!;
+        context.clearRect(0, 0, canvas.width, canvas.height)
+        const margin = 0;
         const canvas_bounding_rect = bounding_rect(this.drag_start, to);
         const extended_canvas_bounding_rect = bounding_rect(this.drag_start, to, margin);
         const w = extended_canvas_bounding_rect.w;
         const h = extended_canvas_bounding_rect.h;
-        this.extend_canvas(extended_canvas_bounding_rect);
-        this.context!.fillStyle = '0xFF0000FF'; // OD: for testing;
-        this.context!.fillRect(
+        this.extend_canvas(extended_canvas_bounding_rect, false);
+
+        context.fillStyle = 'green'; // OD: for testing;
+        context.fillRect(
             margin,
             margin,
             w - margin * 2,
             h - margin * 2);
-        this.context!.beginPath();
-        this.context!.moveTo(margin, margin);
-        this.context!.lineTo(w - margin, h - margin);
-        this.context!.moveTo(w - margin, margin);
-        this.context!.lineTo(margin, h - margin);
-        this.context!.moveTo(w / 2, margin);
-        this.context!.lineTo(margin, h / 2);
-        this.context!.moveTo(margin, margin);
-        this.context!.lineTo(w - margin, h / 2);
-        this.context!.moveTo(margin, margin);
-        this.context!.lineTo(w / 2, h - margin);
-        this.context!.stroke()
+        context.beginPath();
+        context.moveTo(margin, margin);
+        context.lineTo(w - margin, h - margin);
+        context.moveTo(w - margin, margin);
+        context.lineTo(margin, h - margin);
+        context.moveTo(w / 2, margin);
+        context.lineTo(margin, h / 2);
+        context.moveTo(margin, margin);
+        context.lineTo(w - margin, h / 2);
+        context.moveTo(margin, margin);
+        context.lineTo(w / 2, h - margin);
+        context.stroke()
         const from_rect = {
             x: margin / w,
             y: margin / h,
             w: 1 - 2 * margin / w,
             h: 1 - 2 * margin / h
         }
-        console.log('Drag', this.drag_start, to, '->', canvas_bounding_rect)
-        console.log('Will send: ', from_rect);
         this.canvas_bounds_signal!.value = {
             from: from_rect,
             to: canvas_bounding_rect
         }
-        console.log('Rect Sent')
         this.canvas_signal!.value = this.canvas!;
-        console.log('Canvas Sent')
         return true;
     }
 }
