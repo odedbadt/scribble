@@ -9,13 +9,11 @@ export class RectTool extends ClickAndDragTool {
         return false;
     }
     editing_drag(to: Vector2) {
-        if (!this.drag_start || this.canvas == null || this.context == null) {
-            return false;
+        if (this.drag_start == null) {
+            return
         }
-        const canvas = this.canvas;
-        const context = this.context;
+        const context = this.context!;
         const margin = 0;
-        const canvas_bounding_rect = bounding_rect(this.drag_start, to);
         const extended_canvas_bounding_rect = bounding_rect(this.drag_start, to, margin);
         const w = extended_canvas_bounding_rect.w;
         const h = extended_canvas_bounding_rect.h;
@@ -39,12 +37,7 @@ export class RectTool extends ClickAndDragTool {
         context.moveTo(margin, margin);
         context.lineTo(w / 2, h - margin);
         context.stroke()
-        const from_rect = {
-            x: margin / w,
-            y: margin / h,
-            w: 1 - 2 * margin / w,
-            h: 1 - 2 * margin / h
-        }
+
 
 
     }

@@ -2,7 +2,7 @@ import { UndoRedoBuffer } from "./undo_redo_buffer"
 import { EditingTool, NopTool } from './editing_tool'
 import { MainApp } from "./main_app";
 import { ScribbleTool } from "./scribble";
-// import { CircleTool } from "./circle";
+import { CircleTool } from "./circle";
 // import { ClearAllTool } from "./clearall";
 // import { Dropper } from "./dropper";
 // import { EraserTool } from "./eraser";
@@ -21,7 +21,7 @@ const tool_classes = new Map<string, new (...args: any[]) => EditingTool>
         ["rect", RectTool]
         , ["scribble", ScribbleTool]
         , ["line", LineTool]
-        // , ["circle", CircleTool]
+        , ["circle", CircleTool]
         // , ["dropper", Dropper]
         // , ["floodfill", Floodfill]
         // , ["eraser", EraserTool]

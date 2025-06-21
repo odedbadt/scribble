@@ -345,7 +345,7 @@ export class MainApp {
         //this.init_color_selector();
         this.init_buttons();
         this.forward_events_to_editor();
-        this.select_tool('scribble');
+        this.select_tool('circle');
         //this.init_view_canvas_size();
         this.init_scroll();
     }

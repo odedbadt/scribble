@@ -24,7 +24,9 @@ export abstract class ClickAndDragTool extends EditingTool {
         // nop, implemenet me
     }
     drag(at: Vector2): void {
-
+        if (!this.drag_start) {
+            return;
+        }
         // this.editor.app.tool_context.beginPath();
         this.editing_drag(vfloor(at));
         batch(() => {
