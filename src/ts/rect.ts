@@ -9,18 +9,17 @@ export class RectTool extends ClickAndDragTool {
         return false;
     }
     editing_drag(to: Vector2) {
-        if (!this.drag_start) {
+        if (!this.drag_start || this.canvas == null || this.context == null) {
             return false;
         }
-        const canvas = this.canvas!;
-        const context = this.context!;
-        context.clearRect(0, 0, canvas.width, canvas.height)
+        const canvas = this.canvas;
+        const context = this.context;
         const margin = 0;
         const canvas_bounding_rect = bounding_rect(this.drag_start, to);
         const extended_canvas_bounding_rect = bounding_rect(this.drag_start, to, margin);
         const w = extended_canvas_bounding_rect.w;
         const h = extended_canvas_bounding_rect.h;
-        this.extend_canvas(extended_canvas_bounding_rect, false);
+        this.extend_canvas_mapping(extended_canvas_bounding_rect, false);
 
         context.fillStyle = 'green'; // OD: for testing;
         context.fillRect(
@@ -46,11 +45,7 @@ export class RectTool extends ClickAndDragTool {
             w: 1 - 2 * margin / w,
             h: 1 - 2 * margin / h
         }
-        this.canvas_bounds_signal!.value = {
-            from: from_rect,
-            to: canvas_bounding_rect
-        }
-        this.canvas_signal!.value = this.canvas!;
-        return true;
+
+
     }
 }

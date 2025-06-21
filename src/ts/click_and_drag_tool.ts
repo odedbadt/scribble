@@ -2,7 +2,7 @@ import { EditingTool } from "./editing_tool"
 import { Editor } from "./editor";
 import { MainApp } from "./main_app";
 import { Vector2, unit_rect, vfloor } from "./types";
-import { signal, computed, effect } from "@preact/signals";
+import { signal, computed, effect, batch } from "@preact/signals";
 export abstract class ClickAndDragTool extends EditingTool {
     is_incremental: boolean = false;
     dirty: boolean = false;
@@ -12,28 +12,25 @@ export abstract class ClickAndDragTool extends EditingTool {
         this.start = this.start.bind(this);
         this.drag = this.drag.bind(this);
         this.stop = this.stop.bind(this);
-        this.dirty = false;
         this.drag_start = null;
     }
     select(): void {
     }
     start(at: Vector2, buttons: number): void {
         this.drag_start = vfloor(at);
-        this.dirty = this.editing_start();
+        this.editing_start();
     }
     editing_start() {
         // nop, implemenet me
-        return false;
     }
-    drag(at: Vector2): boolean {
+    drag(at: Vector2): void {
 
         // this.editor.app.tool_context.beginPath();
-        this.dirty = !!this.editing_drag(vfloor(at)) || this.dirty;
-        if (this.dirty) {
-
-        }
-        return this.dirty;
-
+        this.editing_drag(vfloor(at));
+        batch(() => {
+            this.canvas_bounds_mapping_signal!.value = this.canvas_bounds_mapping!;
+            this.canvas_signal!.value = this.canvas!;
+        })
     }
     hover(at: any): boolean {
         if (!this.context) {
@@ -49,7 +46,7 @@ export abstract class ClickAndDragTool extends EditingTool {
         // nop
         return false;
     }
-    editing_drag(at: Vector2): boolean {
+    editing_drag(at: Vector2) {
         throw new Error("Not fully implemented tool");
     }
     stop(at: Vector2): boolean {

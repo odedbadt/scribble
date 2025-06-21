@@ -11,13 +11,12 @@ export class LineTool extends ClickAndDragTool {
 
         const context = this.context!;
 
-        context.clearRect(0, 0, this.canvas!.width, this.canvas!.height)
         const margin = 5;
         const canvas_bounding_rect = bounding_rect(this.drag_start, to);
         const extended_canvas_bounding_rect = bounding_rect(this.drag_start, to, margin);
         const w = extended_canvas_bounding_rect.w;
         const h = extended_canvas_bounding_rect.h;
-        this.extend_canvas(extended_canvas_bounding_rect);
+        this.extend_canvas_mapping(extended_canvas_bounding_rect, false);
         context.strokeStyle = 'red'; // OD: for testing;
         const flip = (to.x > this.drag_start.x) !== (to.y > this.drag_start.y)
         if (flip) {
@@ -56,7 +55,7 @@ export class LineTool extends ClickAndDragTool {
         }
         console.log('Drag', this.drag_start, to, '->', canvas_bounding_rect)
         console.log('Will send: ', from_rect);
-        this.canvas_bounds_signal!.value = {
+        this.canvas_bounds_mapping_signal!.value = {
             from: from_rect,
             to: canvas_bounding_rect
         }
