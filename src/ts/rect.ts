@@ -8,10 +8,7 @@ export class RectTool extends ClickAndDragTool {
         // nop, implemenet me
         return false;
     }
-    editing_drag(to: Vector2) {
-        if (this.drag_start == null) {
-            return
-        }
+    editing_drag(from: Vector2, to: Vector2) {
         const context = this.context!;
         const margin = 0;
         const extended_canvas_bounding_rect = bounding_rect(this.drag_start, to, margin);

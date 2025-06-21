@@ -28,7 +28,7 @@ export abstract class ClickAndDragTool extends EditingTool {
             return;
         }
         // this.editor.app.tool_context.beginPath();
-        this.editing_drag(vfloor(at));
+        this.editing_drag(vfloor(this.drag_start), vfloor(at));
         batch(() => {
             this.canvas_bounds_mapping_signal!.value = this.canvas_bounds_mapping!;
             this.canvas_signal!.value = this.canvas!;
@@ -48,7 +48,7 @@ export abstract class ClickAndDragTool extends EditingTool {
         // nop
         return false;
     }
-    editing_drag(at: Vector2) {
+    editing_drag(from: Vector2, to: Vector2) {
         throw new Error("Not fully implemented tool");
     }
     stop(at: Vector2): boolean {
