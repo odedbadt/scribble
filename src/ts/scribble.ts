@@ -20,7 +20,7 @@ export class ScribbleTool extends ClickAndDragTool {
         const fy = Math.floor(this._prev.y - bounds.y)
         const cx = Math.floor(to.x - bounds.x)
         const cy = Math.floor(to.y - bounds.y)
-        const lw = 10;
+        const lw = settings.peek<number>('line_width');;
         const lwb = lw * 1.2;
         const new_bounds = rect_union(
             bounds, { x: cx - lwb, y: cy - lwb, w: lwb * 2, h: lwb * 2 }
@@ -35,7 +35,6 @@ export class ScribbleTool extends ClickAndDragTool {
         context.strokeStyle = color
         context.stroke()
         context.ellipse(cx, cy, lw / 2, lw / 2, 0, 0, Math.PI * 2)
-        // context.lineWidth = 0
         context.fillStyle = color;
         context.fill()
         this._prev = { ...to }

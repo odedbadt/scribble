@@ -11,7 +11,7 @@ export abstract class EditingTool {
 
     zero: Vector2 | null = null
     safety = 0
-    canvas_signal: Signal<HTMLCanvasElement> | null = null;
+    canvas_signal: Signal<HTMLCanvasElement | null> | null = null;
 
     init_canvas(canvas_signal: Signal<HTMLCanvasElement>,
         canvas_bounds_mapping_signal: Signal<RectToRectMapping>) {
@@ -69,7 +69,6 @@ export abstract class EditingTool {
         }
     }
     extend_canvas_mapping(to: Rect, copy: boolean = true) {
-        console.log(copy);
         if (this.canvas == null) {
             throw new Error('cannot extend without a canvas')
         }
@@ -97,18 +96,6 @@ export abstract class EditingTool {
             this.canvas.width = to.w;
             this.canvas.height = to.h;
         }
-        // const ratio = {
-        //     x: old_mapping.to.w / to.w, y:
-        //         old_mapping.to.h / to.h
-        // }
-        // this.canvas_bounds_mapping = {
-        //     to:to,
-        //     from: {x:to.x+(old_mapping.to.x-to.x)/to.w,
-        //     y:to.y+(old_mapping.to.y-to.y)/to.h,
-        //     w:old_mapping.from.w*old_mapping.to.w/to.w,
-        //     h:old_mapping.from.h*old_mapping.to.h/to.h      
-        // }
-        // }
         this.canvas_bounds_mapping = {
             to: to,
             from: {
@@ -124,7 +111,10 @@ export abstract class EditingTool {
     }
     abstract start(at: Vector2, buttons: number): void;
     abstract drag(at: Vector2): void;
-    abstract stop(at: Vector2): void;
+    stop(at: Vector2): boolean {
+        this.canvas_signal!.value = null;
+        return true;
+    }
     abstract hover(at: Vector2): void;
 
 }
@@ -137,7 +127,8 @@ export class NopTool extends EditingTool {
     }
     drag(at: Vector2) {
     }
-    stop(at: Vector2) {
+    stop(at: Vector2): boolean {
+        return false;
     }
     hover(at: Vector2) {
     }

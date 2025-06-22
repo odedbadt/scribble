@@ -34,7 +34,7 @@ export abstract class ClickAndDragTool extends EditingTool {
             this.canvas_signal!.value = this.canvas!;
         })
     }
-    hover(at: any): boolean {
+    hover(at: any) {
         if (!this.context) {
             return false;
         }
@@ -42,7 +42,6 @@ export abstract class ClickAndDragTool extends EditingTool {
         if (dirty) {
             return true;
         }
-        return false;
     }
     hover_action(at: any) {
         // nop
@@ -52,19 +51,11 @@ export abstract class ClickAndDragTool extends EditingTool {
         throw new Error("Not fully implemented tool");
     }
     stop(at: Vector2): boolean {
-        this.dirty = !!this.editing_stop(at) || this.dirty;
-        if (this.dirty) {
-
-            //this.editor.undo_redo_buffer.push(this.app.document_context!.getImageData(0, 0, this.w, this.h));
-            //this.editor.tool_to_document()
-            this.dirty = false;
-            return true
-        }
+        this.editing_stop(at);
         this.drag_start = null;
-        return false;
+        return true;
     }
-    editing_stop(at: Vector2): boolean {
+    editing_stop(at: Vector2) {
         // nop, implemenet me
-        return false
     }
 }

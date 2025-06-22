@@ -1,0 +1,47 @@
+import { ClickAndDragTool } from "./click_and_drag_tool"
+import { Editor } from "./editor";
+import { settings } from "./settings_registry";
+import { pop } from "./state_registry";
+import { Vector2, unit_rect } from "./types";
+export class CursorSize extends ClickAndDragTool {
+    editing_start() {
+        // if (!this.staging_context) {
+        //     return false;
+        // }
+        // this.staging_context.fillStyle = this.app.settings.fore_color;
+        // this.staging_context.strokeStyle = this.app.settings.fore_color;
+        // this.staging_context.lineWidth = this.app.settings.line_width;
+        // this.staging_context.lineCap = 'round';
+        // return false;
+    }
+    start(at: Vector2, buttons: number): boolean {
+        settings.set('line_width', 0.5);
+        super.start(at, buttons)
+        return false
+    }
+    editing_drag(from: Vector2, to: Vector2) {
+
+        const margin = 0
+        const r = Math.sqrt((to.x - from.x) * (to.x - from.x) +
+            (to.y - from.y) * (to.y - from.y));
+        const rb = r * 1.05;
+        const extended_canvas_bounding_rect = { x: from.x - rb, y: from.y - rb, w: rb * 2, h: rb * 2 }
+        this.extend_canvas_mapping(extended_canvas_bounding_rect, false);
+        this.context!.beginPath();
+        this.context!.fillStyle = 'red'
+        this.context!.strokeStyle = 'black'
+        this.context!.ellipse(rb, rb, r, r, 0, 0, Math.PI * 2);
+        this.context!.fill();
+        this.context!.stroke();
+        settings.set('line_width', 2 * r);
+    }
+    hover(at: Vector2): boolean {
+        return false
+    }
+    stop(at: Vector2): boolean {
+        super.stop(at);
+        this.canvas_signal!.value = null;
+        pop('selected_tool_name')
+        return false;
+    }
+}

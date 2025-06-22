@@ -56,7 +56,7 @@ export class ScribRenderer {
         camera.lookAt(0, 0, 0);
         return camera;
     }
-    build_scene(overlay_texture: CanvasTexture, bounds_mapping: RectToRectMapping): Scene {
+    build_scene(overlay_texture: CanvasTexture | null, bounds_mapping: RectToRectMapping): Scene {
         // Scene and orthographic camera
         const scene = new Scene();
         const document_texture = new CanvasTexture(
@@ -79,59 +79,65 @@ export class ScribRenderer {
 
         document_rectangle.position.set(this.document_canvas.width * 0.5,
             this.document_canvas.width * 0.5, -5);
-        const overlay_material = new ShaderMaterial({
-            uniforms: {
-                uTexture: { value: overlay_texture },
-            },
-            vertexShader: VERTEX_SHADER_CODE,
-            fragmentShader: FRAGMENT_SHADER_CODE,
-            transparent: true
-        });
-        overlay_texture.minFilter = NearestFilter;
-        overlay_texture.magFilter = NearestFilter;
-        overlay_texture.needsUpdate = true;
-        overlay_material.side = DoubleSide;
         document_material.side = DoubleSide;
-        const rect_mapping: RectToRectMapping = bounds_mapping;
-        const from_rect: Rect = rect_mapping.from;
-        const to_rect: Rect = rect_mapping.to;
 
-        const overlay_geometry = new PlaneGeometry(to_rect.w, to_rect.h);
-        // Map the UVs so that (0,0) on the plane maps to (0,0) on the texture,
-        // and (w1,h1) on the plane maps to (w2,h2) on the texture.
+        if (overlay_texture != null) {
+            const overlay_material = new ShaderMaterial({
+                uniforms: {
+                    uTexture: { value: overlay_texture },
+                },
+                vertexShader: VERTEX_SHADER_CODE,
+                fragmentShader: FRAGMENT_SHADER_CODE,
+                transparent: true
+            });
+            overlay_texture.minFilter = NearestFilter;
+            overlay_texture.magFilter = NearestFilter;
+            overlay_texture.needsUpdate = true;
+            overlay_material.side = DoubleSide;
+            const rect_mapping: RectToRectMapping = bounds_mapping;
+            const from_rect: Rect = rect_mapping.from;
+            const to_rect: Rect = rect_mapping.to;
 
-
-        const newUVs = new Float32Array([
-            rleft(from_rect), rbottom(from_rect),   // bottom left
-            rright(from_rect), rbottom(from_rect),    // bottom right
-            rleft(from_rect), rtop(from_rect),    // top left
-            rright(from_rect), rtop(from_rect)     // top right
-        ]);
-        //console.log(rleft(from_rect), rtop(from_rect));
-
-        //console.log(Array.from(newUVs, (x): string => x.toFixed(2)));
-
-        overlay_geometry.attributes.uv.array.set(newUVs);
-        overlay_geometry.attributes.uv.needsUpdate = true;
-        //        console.log(from_rect, newUVs2);
-        //       overlay_geometry.attributes.uv.array.set(newUVs2);
-        //overlay_geometry.attributes.uv.needsUpdate = true;
-
-        const overlay_rectangle = new Mesh(overlay_geometry,
-            overlay_material);
+            const overlay_geometry = new PlaneGeometry(to_rect.w, to_rect.h);
+            // Map the UVs so that (0,0) on the plane maps to (0,0) on the texture,
+            // and (w1,h1) on the plane maps to (w2,h2) on the texture.
 
 
-        //new MeshBasicMaterial({ color: 0xff00ff, side: DoubleSide }));
-        overlay_rectangle.position.set(
-            to_rect.x + to_rect.w / 2,
-            to_rect.y + to_rect.h / 2,
-            -2);
+            const newUVs = new Float32Array([
+                rleft(from_rect), rbottom(from_rect),   // bottom left
+                rright(from_rect), rbottom(from_rect),    // bottom right
+                rleft(from_rect), rtop(from_rect),    // top left
+                rright(from_rect), rtop(from_rect)     // top right
+            ]);
+            //console.log(rleft(from_rect), rtop(from_rect));
+
+            //console.log(Array.from(newUVs, (x): string => x.toFixed(2)));
+
+            overlay_geometry.attributes.uv.array.set(newUVs);
+            overlay_geometry.attributes.uv.needsUpdate = true;
+            //        console.log(from_rect, newUVs2);
+            //       overlay_geometry.attributes.uv.array.set(newUVs2);
+            //overlay_geometry.attributes.uv.needsUpdate = true;
+
+            const overlay_rectangle = new Mesh(overlay_geometry,
+                overlay_material);
+
+
+            //new MeshBasicMaterial({ color: 0xff00ff, side: DoubleSide }));
+            overlay_rectangle.position.set(
+                to_rect.x + to_rect.w / 2,
+                to_rect.y + to_rect.h / 2,
+                -2);
+            scene.add(document_rectangle);
+            scene.add(overlay_rectangle);
+        } else {
+            scene.add(document_rectangle);
+
+        }
         //overlay_material);
         //console.log(this.overlay_canvas_bounds_signal.value);
 
 
-        scene.add(document_rectangle);
-        scene.add(overlay_rectangle);
         return scene
 
 
@@ -143,20 +149,21 @@ export class ScribRenderer {
         });
         let scene: Scene | null = null;
         effect(() => {
-            console.log('Effect triggered');
             const overlay_canvas = this.overlay_canvas_signal.value;
             const bounds_mapping = this.overlay_canvas_bounds_signal.value;
-            console.log(overlay_canvas, bounds_mapping);
-            if (!overlay_canvas) {
-                return;
+
+            let scene;
+            let overlay_texture = null;
+            if (overlay_canvas != null) {
+                overlay_texture = new CanvasTexture(
+                    overlay_canvas);
+                overlay_texture.flipY = false;
+                overlay_texture.image = overlay_canvas;
+                overlay_texture.needsUpdate = true;
             }
-            const overlay_texture = new CanvasTexture(
-                overlay_canvas);
-            overlay_texture.flipY = false;
-            overlay_texture.image = overlay_canvas;
-            overlay_texture.needsUpdate = true;
             scene = this.build_scene(overlay_texture, bounds_mapping)
             renderer.render(scene, this.init_camera());
+
         });
 
         if (scene != null) {

@@ -9,12 +9,12 @@ import { EraserTool } from "./eraser";
 // import { Floodfill } from "./floodfill";
 import { LineTool } from "./line";
 import { RectTool } from "./rect";
-//import { CursorSize } from './cursor_size'
+import { CursorSize } from './cursor_size'
 //import { FillStyleToggler } from './styletogglers'
 //import { mandala } from "./mandala";
 import { unit_rect, Vector2, Rect, RectToRectMapping, scale_rect } from "./types"
 import { Signal, signal, computed, effect } from "@preact/signals";
-
+import { set } from "./state_registry"
 const v: new (...args: any[]) => EditingTool = RectTool
 const tool_classes = new Map<string, new (...args: any[]) => EditingTool>
     ([
@@ -26,7 +26,7 @@ const tool_classes = new Map<string, new (...args: any[]) => EditingTool>
         // , ["floodfill", Floodfill]
         , ["eraser", EraserTool]
         // , ["clearall", ClearAllTool]
-        // , ["cursor_size", CursorSize]
+        , ["cursor_size", CursorSize]
         // , ["fillstyle", FillStyleToggler]
         // , ["mandala", mandala]
     ])
@@ -81,8 +81,7 @@ export class Editor {
         }
     }
     select_tool(tool_name: string) {
-        this.previous_tool_name = this.current_tool_name;
-        this.current_tool_name = tool_name;
+        set('selected_tool_name', tool_name)
         const tool_class = tool_classes.get(tool_name);
         if (!tool_class) {
             return;
@@ -152,8 +151,10 @@ export class Editor {
         this.tool.hover(this.view_coords_to_doc_coords(
             { x: event.offsetX, y: event.offsetY })
         );
-        this.tool_to_document();
-        this.tool.stop();
+        if (this.tool.stop()) {
+            this.tool_to_document();
+
+        }
     }
     pointerin(event: MouseEvent) {
         if (!!event.buttons) {
