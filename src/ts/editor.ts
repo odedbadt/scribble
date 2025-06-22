@@ -5,7 +5,7 @@ import { ScribbleTool } from "./scribble";
 import { CircleTool } from "./circle";
 // import { ClearAllTool } from "./clearall";
 // import { Dropper } from "./dropper";
-// import { EraserTool } from "./eraser";
+import { EraserTool } from "./eraser";
 // import { Floodfill } from "./floodfill";
 import { LineTool } from "./line";
 import { RectTool } from "./rect";
@@ -24,7 +24,7 @@ const tool_classes = new Map<string, new (...args: any[]) => EditingTool>
         , ["circle", CircleTool]
         // , ["dropper", Dropper]
         // , ["floodfill", Floodfill]
-        // , ["eraser", EraserTool]
+        , ["eraser", EraserTool]
         // , ["clearall", ClearAllTool]
         // , ["cursor_size", CursorSize]
         // , ["fillstyle", FillStyleToggler]

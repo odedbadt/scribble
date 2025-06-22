@@ -1,11 +1,11 @@
 import { Editor } from "./editor"
 import { Palette } from './palette'
-import { ColorStack } from "./color_stack";
+//import { ColorStack } from "./color_stack";
 import { Rect, RectToRectMapping } from "./types";
 //import { GoogleDrive } from "./gdrive"
 import { Signal, signal, computed, effect } from "@preact/signals";
 import { ScribRenderer } from "./scrib_renderer";
-
+import { settings } from './settings_registry'
 function click_for_a_second(id: string, callback: Function) {
     const elem = document.getElementById(id);
     if (elem) {
@@ -31,7 +31,6 @@ export class MainApp {
     palette: Palette;
     tool_canvas_signal: any;
     tool_bounds_signal: any;
-    settings: { fore_color: string; back_color: string; line_width: number; filled: boolean; };
     view_port_signal: Signal<Rect>;
 
     constructor() {
@@ -61,12 +60,12 @@ export class MainApp {
             this.tool_bounds_signal);
 
         this.editor.init_
-        this.settings = {
+        settings.bulkSet({
             fore_color: 'rgba(255,0,0,255)',
             back_color: 'rgba(255,255,255,255)',
             line_width: 10,
             filled: true,
-        }
+        });
         this.init_canvases();
         this.scrib_renderer.init();
     }

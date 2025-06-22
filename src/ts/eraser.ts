@@ -4,7 +4,7 @@ import { settings } from "./settings_registry";
 import { Vector2 } from "./types";
 import { rect_union } from "./utils";
 
-export class ScribbleTool extends ClickAndDragTool {
+export class EraserTool extends ClickAndDragTool {
     private _prev: Vector2 | null = null;
     editing_drag(from: Vector2, to: Vector2) {
 
@@ -26,7 +26,7 @@ export class ScribbleTool extends ClickAndDragTool {
             bounds, { x: cx - lwb, y: cy - lwb, w: lwb * 2, h: lwb * 2 }
         );
         const from_bounds_px = {}
-        const color = settings.peek<string>('fore_color');
+        const color = settings.peek<string>('back_color');
         this.extend_canvas_mapping(new_bounds);
         context.lineWidth = lw;
         context.beginPath()

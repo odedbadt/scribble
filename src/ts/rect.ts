@@ -1,5 +1,6 @@
 import { ClickAndDragTool } from "./click_and_drag_tool"
 import { Editor } from "./editor";
+import { settings } from "./settings_registry";
 import { Vector2, bounding_rect } from "./types";
 
 
@@ -11,31 +12,17 @@ export class RectTool extends ClickAndDragTool {
     editing_drag(from: Vector2, to: Vector2) {
         const context = this.context!;
         const margin = 0;
-        const extended_canvas_bounding_rect = bounding_rect(this.drag_start, to, margin);
+        const extended_canvas_bounding_rect = bounding_rect(from, to, margin);
         const w = extended_canvas_bounding_rect.w;
         const h = extended_canvas_bounding_rect.h;
         this.extend_canvas_mapping(extended_canvas_bounding_rect, false);
-
-        context.fillStyle = 'green'; // OD: for testing;
+        const color = settings.peek<string>('fore_color');
+        context.fillStyle = color; // OD: for testing;
         context.fillRect(
             margin,
             margin,
             w - margin * 2,
             h - margin * 2);
-        context.beginPath();
-        context.moveTo(margin, margin);
-        context.lineTo(w - margin, h - margin);
-        context.moveTo(w - margin, margin);
-        context.lineTo(margin, h - margin);
-        context.moveTo(w / 2, margin);
-        context.lineTo(margin, h / 2);
-        context.moveTo(margin, margin);
-        context.lineTo(w - margin, h / 2);
-        context.moveTo(margin, margin);
-        context.lineTo(w / 2, h - margin);
-        context.stroke()
-
-
 
     }
 }
