@@ -14,7 +14,7 @@ import { CursorSize } from './cursor_size'
 //import { mandala } from "./mandala";
 import { unit_rect, Vector2, Rect, RectToRectMapping, scale_rect } from "./types"
 import { Signal, signal, computed, effect } from "@preact/signals";
-import { set } from "./state_registry"
+import { StateValue, state_registry } from "./state_registry"
 const v: new (...args: any[]) => EditingTool = RectTool
 const tool_classes = new Map<string, new (...args: any[]) => EditingTool>
     ([
@@ -81,7 +81,7 @@ export class Editor {
         }
     }
     select_tool(tool_name: string) {
-        set('selected_tool_name', tool_name)
+        //state_registry.set(StateValue.SelectedToolName, tool_name)
         const tool_class = tool_classes.get(tool_name);
         if (!tool_class) {
             return;

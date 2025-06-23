@@ -1,7 +1,7 @@
 import { ClickAndDragTool } from "./click_and_drag_tool"
 import { Editor } from "./editor";
 import { settings } from "./settings_registry";
-import { pop } from "./state_registry";
+import { state_registry, StateValue } from "./state_registry";
 import { Vector2, unit_rect } from "./types";
 export class CursorSize extends ClickAndDragTool {
     editing_start() {
@@ -41,7 +41,9 @@ export class CursorSize extends ClickAndDragTool {
     stop(at: Vector2): boolean {
         super.stop(at);
         this.canvas_signal!.value = null;
-        pop('selected_tool_name')
+        //const select_tool_signal = state_registry.use_signal<string>(StateValue.SelectedToolName, 'scribble');
+        //select_tool_signal.value = 'rect';
+        state_registry.pop(StateValue.SelectedToolName)
         return false;
     }
 }

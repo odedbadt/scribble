@@ -6,6 +6,7 @@ import { Rect, RectToRectMapping } from "./types";
 import { Signal, signal, computed, effect } from "@preact/signals";
 import { ScribRenderer } from "./scrib_renderer";
 import { settings } from './settings_registry'
+import { StateValue, state_registry } from "./state_registry";
 function click_for_a_second(id: string, callback: Function) {
     const elem = document.getElementById(id);
     if (elem) {
@@ -92,9 +93,7 @@ export class MainApp {
     }
 
 
-
-    select_tool(tool_name: string) {
-
+    _perform_select_tool(tool_name: string) {
         const button = document.getElementsByClassName(tool_name)[0];
         const button_list = document.getElementsByClassName('button');
         Array.from(button_list).forEach(other_button => {
@@ -102,6 +101,10 @@ export class MainApp {
         });
         button.classList.add('pressed')
         this.editor.select_tool(tool_name)
+    }
+    select_tool(tool_name: string) {
+        state_registry.set<string>(StateValue.SelectedToolName, tool_name);
+        this._perform_select_tool(tool_name);
     }
     // load_image(url: string) {
     //     const img = new Image();
@@ -188,6 +191,11 @@ export class MainApp {
                     this.select_tool(button_class_list[0])
                 })
             }
+
+        })
+        const select_tool_signal = state_registry.use_signal<string>(StateValue.SelectedToolName, 'scribble');
+        effect(() => {
+            this._perform_select_tool(select_tool_signal.value);
         })
         this.init_undo_redo_buttons()
         //this.init_load_save()
@@ -344,7 +352,7 @@ export class MainApp {
         //this.init_color_selector();
         this.init_buttons();
         this.forward_events_to_editor();
-        this.select_tool('circle');
+        //this.select_tool('circle');
         //this.init_view_canvas_size();
         this.init_scroll();
     }
@@ -368,4 +376,6 @@ export function app_ignite() {
 }
 
 window.addEventListener('load', app_ignite);
+
+
 
