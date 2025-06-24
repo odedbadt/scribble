@@ -5,7 +5,7 @@ import { Rect, RectToRectMapping } from "./types";
 //import { GoogleDrive } from "./gdrive"
 import { Signal, signal, computed, effect } from "@preact/signals";
 import { ScribRenderer } from "./scrib_renderer";
-import { settings } from './settings_registry'
+import { SettingName, settings } from './settings_registry'
 import { StateValue, state_registry } from "./state_registry";
 function click_for_a_second(id: string, callback: Function) {
     const elem = document.getElementById(id);
@@ -277,11 +277,11 @@ export class MainApp {
             event.preventDefault();
         });
         document.getElementById('color-selector-div-back')!!.addEventListener('click', () => {
-            //const tmp_back = this.settings.back_color;
-            //this.settings.back_color = this.settings.fore_color;
-            //this.settings.fore_color = tmp_back;
-            //document.getElementById('color-selector-div-fore')!.style.backgroundColor = this.settings.fore_color
-            //document.getElementById('color-selector-div-back')!.style.backgroundColor = this.settings.back_color
+            const tmp_back = settings.peek(SettingName.BackColor);
+            settings.set(SettingName.BackColor, settings.peek(SettingName.ForeColor));
+            settings.set(SettingName.ForeColor, tmp_back);
+            document.getElementById('color-selector-div-fore')!.style.backgroundColor = settings.peek(SettingName.ForeColor);
+            document.getElementById('color-selector-div-back')!.style.backgroundColor = settings.peek(SettingName.BackColor);
         })
     }
     clear_context(context: CanvasRenderingContext2D) {

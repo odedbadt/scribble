@@ -1,6 +1,6 @@
 import { ClickAndDragTool } from "./click_and_drag_tool"
 import { Editor } from "./editor";
-import { settings } from "./settings_registry";
+import { SettingName, settings } from "./settings_registry";
 import { state_registry, StateValue } from "./state_registry";
 import { Vector2, unit_rect } from "./types";
 export class CursorSize extends ClickAndDragTool {
@@ -15,7 +15,7 @@ export class CursorSize extends ClickAndDragTool {
         // return false;
     }
     start(at: Vector2, buttons: number): boolean {
-        settings.set('line_width', 0.5);
+        settings.set(SettingName.LineWidth, 0.5);
         super.start(at, buttons)
         return false
     }
@@ -33,7 +33,7 @@ export class CursorSize extends ClickAndDragTool {
         this.context!.ellipse(rb, rb, r, r, 0, 0, Math.PI * 2);
         this.context!.fill();
         this.context!.stroke();
-        settings.set('line_width', 2 * r);
+        settings.set(SettingName.LineWidth, 2 * r);
     }
     hover(at: Vector2): boolean {
         return false

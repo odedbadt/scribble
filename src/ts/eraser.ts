@@ -1,6 +1,6 @@
 import { ClickAndDragTool } from "./click_and_drag_tool"
 import { Editor } from "./editor";
-import { settings } from "./settings_registry";
+import { SettingName, settings } from "./settings_registry";
 import { Vector2 } from "./types";
 import { rect_union } from "./utils";
 
@@ -20,13 +20,13 @@ export class EraserTool extends ClickAndDragTool {
         const fy = Math.floor(this._prev.y - bounds.y)
         const cx = Math.floor(to.x - bounds.x)
         const cy = Math.floor(to.y - bounds.y)
-        const lw = settings.peek<number>('line_width');;
+        const lw = settings.peek<number>(SettingName.LineWidth);;
         const lwb = lw * 1.2;
         const new_bounds = rect_union(
             bounds, { x: cx - lwb, y: cy - lwb, w: lwb * 2, h: lwb * 2 }
         );
         const from_bounds_px = {}
-        const color = settings.peek<string>('back_color');
+        const color = settings.peek<string>(SettingName.BackColor);
         this.extend_canvas_mapping(new_bounds);
         context.lineWidth = lw;
         context.beginPath()

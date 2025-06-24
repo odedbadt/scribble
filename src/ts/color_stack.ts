@@ -1,5 +1,5 @@
 import { MainApp } from "./main_app";
-import { settings } from "./settings_registry";
+import { SettingName, settings } from "./settings_registry";
 import { dist2, dist2_to_set } from "./utils";
 
 export class ColorStack {
@@ -70,13 +70,11 @@ export class ColorStack {
         }
         const color_string = `rgba(${color[0]},${color[1]},${color[2]},255)`;
         if (is_fore) {
-            //this._app.settings.fore_color = color_string;
-            settings.set('fore_color', color_string);
+            settings.set(SettingName.ForeColor, color_string);
 
-            //this._app.view_context.strokeStyle = color_string;
             this._color_selector_div_fore.style.backgroundColor = color_string
         } else {
-            //this._app.settings.back_color = color_string;
+            settings.set(SettingName.BackColor, color_string);
             this._color_selector_div_back.style.backgroundColor = color_string
         }
     }

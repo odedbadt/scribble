@@ -1,20 +1,26 @@
 import { Signal, signal } from '@preact/signals';
 
+export enum SettingName {
+    ForeColor = 'fore_color',
+    BackColor = 'back_color',
+    LineWidth = 'line_width'
+}
+type GenericSettingName = SettingName | string
 class SettingsRegistry {
-    private store = new Map<string, Signal<any>>();
+    private store = new Map<GenericSettingName | string, Signal<any>>();
 
-    get<T = any>(key: string): Signal<T> {
+    get<T = any>(key: GenericSettingName): Signal<T> {
         if (!this.store.has(key)) {
             this.store.set(key, signal<T>(undefined as any));
         }
         return this.store.get(key)!;
     }
 
-    set<T = any>(key: string, value: T): void {
+    set<T = any>(key: GenericSettingName, value: T): void {
         this.get<T>(key).value = value;
     }
 
-    peek<T = any>(key: string): T {
+    peek<T = any>(key: GenericSettingName): T {
         return this.get<T>(key).value;
     }
 
@@ -28,22 +34,6 @@ class SettingsRegistry {
                 this.set(fullKey, value);
             }
         }
-    }
-
-    sub(prefix: string): SettingsRegistry {
-        return {
-            get: <T>(key: string) => this.get<T>(`${prefix}.${key}`),
-            set: <T>(key: string, value: T) => this.set<T>(`${prefix}.${key}`, value),
-            peek: <T>(key: string) => this.peek<T>(`${prefix}.${key}`),
-            bulkSet: (obj: Record<string, any>) => {
-                const prefixed: Record<string, any> = {};
-                for (const [k, v] of Object.entries(obj)) {
-                    prefixed[`${prefix}.${k}`] = v;
-                }
-                this.bulkSet(prefixed);
-            },
-            sub: (nestedPrefix: string) => this.sub(`${prefix}.${nestedPrefix}`),
-        } as SettingsRegistry;
     }
 }
 
