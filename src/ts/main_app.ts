@@ -1,6 +1,6 @@
 import { Editor } from "./editor"
 import { Palette } from './palette'
-//import { ColorStack } from "./color_stack";
+import { ColorStack } from "./color_stack";
 import { Rect, RectToRectMapping } from "./types";
 //import { GoogleDrive } from "./gdrive"
 import { Signal, signal, computed, effect } from "@preact/signals";
@@ -29,7 +29,10 @@ export class MainApp {
     view_canvas: HTMLCanvasElement;
     editor: Editor;
     // google_drive?: GoogleDrive;
+    color_stack: ColorStack;
     palette: Palette;
+    palette_hl_canvas: HTMLCanvasElement;
+    palette_sat_canvas: HTMLCanvasElement;
     tool_canvas_signal: any;
     tool_bounds_signal: any;
     view_port_signal: Signal<Rect>;
@@ -41,7 +44,13 @@ export class MainApp {
         this.palette = new Palette(
             document.getElementById('hl-selector-canvas')! as HTMLCanvasElement,
             document.getElementById('sat-selector-canvas')! as HTMLCanvasElement, [1, 0.5, 0.5]);
-
+        this.palette_hl_canvas = document.getElementById('hl-selector-canvas')! as HTMLCanvasElement
+        this.palette_sat_canvas = document.getElementById('sat-selector-canvas')! as HTMLCanvasElement
+        this.color_stack = new ColorStack(this, 8, 100, 10000,
+            document.getElementById('color-selector-div-fore')!,
+            document.getElementById('color-selector-div-back')!,
+            document.getElementsByClassName('color_stack_item')
+        )
         this.tool_canvas_signal = signal<HTMLCanvasElement>()
         this.tool_bounds_signal = signal<RectToRectMapping>(
             {
@@ -223,60 +232,58 @@ export class MainApp {
             this.editor.keydown(ev))
     }
 
-    // init_color_selector() {
-    //     let img = new Image();
-    //     img.src = "/palette.png";
-    //     this.palette_hl_canvas.width = this.palette_hl_canvas.offsetWidth;
-    //     this.palette_hl_canvas.height = this.palette_hl_canvas.offsetHeight;
-    //     this.palette_sat_canvas.width = this.palette_sat_canvas.offsetWidth;
-    //     this.palette_sat_canvas.height = this.palette_sat_canvas.offsetHeight;
-    //     this.palette.plot()
+    init_color_selector() {
+        this.palette_hl_canvas.width = this.palette_hl_canvas.offsetWidth;
+        this.palette_hl_canvas.height = this.palette_hl_canvas.offsetHeight;
+        this.palette_sat_canvas.width = this.palette_sat_canvas.offsetWidth;
+        this.palette_sat_canvas.height = this.palette_sat_canvas.offsetHeight;
+        this.palette.plot()
 
 
-    //     const palette = this.palette;
-    //     const hl_callback = (event: MouseEvent) => {
-    //         if (event.buttons == 0) {
-    //             return
-    //         }
-    //         event.preventDefault()
-    //         palette.hl_click(event.offsetX, event.offsetY);
-    //         const rgb_color = palette.get_rgb_color();
-    //         this.color_stack.select_color(rgb_color, !!(event.buttons & 1), true);
-    //     }
-    //     this.palette_hl_canvas.addEventListener('pointermove', hl_callback)
-    //     this.palette_hl_canvas.addEventListener('pointerup', hl_callback)
-    //     this.palette_hl_canvas.addEventListener('pointerdown', hl_callback)
-    //     this.palette_hl_canvas.addEventListener('click', hl_callback)
-    //     const sat_callback = (event: MouseEvent) => {
-    //         if (event.buttons == 0) {
-    //             return
-    //         }
-    //         event.preventDefault()
-    //         palette.sat_click(event.offsetX, event.offsetY);
-    //         const rgb_color = palette.get_rgb_color();
-    //         this.color_stack.select_color(rgb_color, !!(event.buttons & 1), true);
-    //     }
-    //     this.palette_sat_canvas.addEventListener('pointermove', sat_callback)
-    //     this.palette_sat_canvas.addEventListener('pointerdown', sat_callback)
-    //     this.palette_sat_canvas.addEventListener('pointerup', sat_callback)
-    //     this.palette_sat_canvas.addEventListener('click', sat_callback)
+        const palette = this.palette;
+        const hl_callback = (event: MouseEvent) => {
+            if (event.buttons == 0) {
+                return
+            }
+            event.preventDefault()
+            palette.hl_click(event.offsetX, event.offsetY);
+            const rgb_color = palette.get_rgb_color();
+            this.color_stack.select_color(rgb_color, !!(event.buttons & 1), true);
+        }
+        this.palette_hl_canvas.addEventListener('pointermove', hl_callback)
+        this.palette_hl_canvas.addEventListener('pointerup', hl_callback)
+        this.palette_hl_canvas.addEventListener('pointerdown', hl_callback)
+        this.palette_hl_canvas.addEventListener('click', hl_callback)
+        const sat_callback = (event: MouseEvent) => {
+            if (event.buttons == 0) {
+                return
+            }
+            event.preventDefault()
+            palette.sat_click(event.offsetX, event.offsetY);
+            const rgb_color = palette.get_rgb_color();
+            this.color_stack.select_color(rgb_color, !!(event.buttons & 1), true);
+        }
+        this.palette_sat_canvas.addEventListener('pointermove', sat_callback)
+        this.palette_sat_canvas.addEventListener('pointerdown', sat_callback)
+        this.palette_sat_canvas.addEventListener('pointerup', sat_callback)
+        this.palette_sat_canvas.addEventListener('click', sat_callback)
 
-    //     this.palette_sat_canvas.onpointermove = sat_callback
-    //     this.palette_sat_canvas.onpointerup = sat_callback
-    //     this.palette_hl_canvas.addEventListener('contextmenu', (event: MouseEvent) => {
-    //         event.preventDefault();
-    //     });
-    //     this.palette_sat_canvas.addEventListener('contextmenu', (event: MouseEvent) => {
-    //         event.preventDefault();
-    //     });
-    //     document.getElementById('color-selector-div-back')!!.addEventListener('click', () => {
-    //         const tmp_back = this.settings.back_color;
-    //         this.settings.back_color = this.settings.fore_color;
-    //         this.settings.fore_color = tmp_back;
-    //         document.getElementById('color-selector-div-fore')!.style.backgroundColor = this.settings.fore_color
-    //         document.getElementById('color-selector-div-back')!.style.backgroundColor = this.settings.back_color
-    //     })
-    // }
+        this.palette_sat_canvas.onpointermove = sat_callback
+        this.palette_sat_canvas.onpointerup = sat_callback
+        this.palette_hl_canvas.addEventListener('contextmenu', (event: MouseEvent) => {
+            event.preventDefault();
+        });
+        this.palette_sat_canvas.addEventListener('contextmenu', (event: MouseEvent) => {
+            event.preventDefault();
+        });
+        document.getElementById('color-selector-div-back')!!.addEventListener('click', () => {
+            //const tmp_back = this.settings.back_color;
+            //this.settings.back_color = this.settings.fore_color;
+            //this.settings.fore_color = tmp_back;
+            //document.getElementById('color-selector-div-fore')!.style.backgroundColor = this.settings.fore_color
+            //document.getElementById('color-selector-div-back')!.style.backgroundColor = this.settings.back_color
+        })
+    }
     clear_context(context: CanvasRenderingContext2D) {
         context.fillStyle = "rgba(255,255,255,255)"
         context.fillRect(0, 0, this.view_canvas.width, this.view_canvas.height);
@@ -349,7 +356,7 @@ export class MainApp {
         // forward pointer
         // bind pointer
 
-        //this.init_color_selector();
+        this.init_color_selector();
         this.init_buttons();
         this.forward_events_to_editor();
         //this.select_tool('circle');
