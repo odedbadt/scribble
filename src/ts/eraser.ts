@@ -2,7 +2,7 @@ import { ClickAndDragTool } from "./click_and_drag_tool"
 import { Editor } from "./editor";
 import { SettingName, settings } from "./settings_registry";
 import { Vector2 } from "./types";
-import { rect_union } from "./utils";
+import { extend_canvas_mapping, rect_union } from "./utils";
 
 export class EraserTool extends ClickAndDragTool {
     private _prev: Vector2 | null = null;
@@ -27,7 +27,7 @@ export class EraserTool extends ClickAndDragTool {
         );
         const from_bounds_px = {}
         const color = settings.peek<string>(SettingName.BackColor);
-        this.extend_canvas_mapping(new_bounds);
+        extend_canvas_mapping(this, new_bounds);
         context.lineWidth = lw;
         context.beginPath()
         context.moveTo(fx, fy)

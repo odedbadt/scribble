@@ -3,8 +3,8 @@ import { EditingTool, NopTool } from './editing_tool'
 import { MainApp } from "./main_app";
 import { ScribbleTool } from "./scribble";
 import { CircleTool } from "./circle";
-// import { ClearAllTool } from "./clearall";
-// import { Dropper } from "./dropper";
+import { ClearAllTool } from "./clearall";
+import { Dropper } from "./dropper";
 import { EraserTool } from "./eraser";
 // import { Floodfill } from "./floodfill";
 import { LineTool } from "./line";
@@ -13,6 +13,7 @@ import { CursorSize } from './cursor_size'
 //import { FillStyleToggler } from './styletogglers'
 //import { mandala } from "./mandala";
 import { unit_rect, Vector2, Rect, RectToRectMapping, scale_rect } from "./types"
+import { init_canvas, tool_to_document } from "./utils"
 import { Signal, signal, computed, effect } from "@preact/signals";
 import { StateValue, state_registry } from "./state_registry"
 const v: new (...args: any[]) => EditingTool = RectTool
@@ -22,10 +23,10 @@ const tool_classes = new Map<string, new (...args: any[]) => EditingTool>
         , ["scribble", ScribbleTool]
         , ["line", LineTool]
         , ["circle", CircleTool]
-        // , ["dropper", Dropper]
+        , ["dropper", Dropper]
         // , ["floodfill", Floodfill]
         , ["eraser", EraserTool]
-        // , ["clearall", ClearAllTool]
+        , ["clearall", ClearAllTool]
         , ["cursor_size", CursorSize]
         // , ["fillstyle", FillStyleToggler]
         // , ["mandala", mandala]
@@ -38,11 +39,11 @@ export class Editor {
     from: any;
     private _last_hover_spot: Vector2 | null;
     document_canvas: HTMLCanvasElement;
+    document_context: CanvasRenderingContext2D;
     tool_canvas_signal: Signal<HTMLCanvasElement>;
     tool_bounds_signal: Signal<RectToRectMapping>;
     view_port_signal: Signal<Rect>;
     init_: any;
-    document_context: CanvasRenderingContext2D;
     constructor(document_canvas: HTMLCanvasElement,
 
 
@@ -86,14 +87,18 @@ export class Editor {
         if (!tool_class) {
             return;
         }
-        this.tool = new tool_class(this);
-        this.tool.init_canvas(this.tool_canvas_signal, this.tool_bounds_signal);
+        this.tool = new tool_class();
+        this.tool.init_editor(this);
+
+        init_canvas(this.tool, this.tool_canvas_signal, this.tool_bounds_signal);
         //this.tool_canvas_signal.value = this.tool.canvas;
 
-        this.tool.select();
+        this.tool.context!.fillStyle = 'rgba(0,0,0,0)';
+        this.tool.context!.fillRect(0, 0, this.tool.canvas!.width, this.tool.canvas!.height);
         if (this._last_hover_spot) {
             this.tool.hover(this.view_coords_to_doc_coords(this._last_hover_spot));
         }
+        this.tool.select();
     }
     deselect_tool() {
         this.tool = null;
@@ -152,7 +157,6 @@ export class Editor {
             { x: event.offsetX, y: event.offsetY })
         );
         if (this.tool.stop()) {
-            this.tool_to_document();
 
         }
     }
@@ -210,38 +214,8 @@ export class Editor {
     }
     tool_to_document() {
         const tool_canvas = this.tool_canvas_signal.value!;
-        const tool_context = tool_canvas.getContext('2d',
-            { willReadFrequently: true })! as CanvasRenderingContext2D;
-        const rect_to_rect_mapping = this.tool_bounds_signal.value!
-        const tw = tool_canvas.width;
-        const th = tool_canvas.height;
-        const pixel_from_rect = scale_rect(rect_to_rect_mapping.from, tw, th);
-        const pixel_to_rect = rect_to_rect_mapping.to;
-        const tool_image_data = tool_context.getImageData(pixel_from_rect.x, pixel_from_rect.y, pixel_from_rect.w, pixel_from_rect.h)
-        const tool_data = tool_image_data.data;
-        const document_image_data = this.document_context.getImageData(
-            pixel_to_rect.x, pixel_to_rect.y,
-            pixel_to_rect.w, pixel_to_rect.h)
-        const document_data = document_image_data.data;
-        for (let y = 0; y < pixel_from_rect.h; ++y) {
-            for (let x = 0; x < pixel_from_rect.w; ++x) {
-                const base_offset = 4 * (y * pixel_from_rect.w + x);
-                if (tool_data[base_offset + 3] > 0) {
-                    const opacity = tool_data[base_offset + 3] / 255
-                    document_data[base_offset + 0] = tool_data[base_offset + 0] / opacity
-                    document_data[base_offset + 1] = tool_data[base_offset + 1] / opacity
-                    document_data[base_offset + 2] = tool_data[base_offset + 2] / opacity
-                    document_data[base_offset + 3] = 255;//tool_data[base_offset + 3] / opacity
-
-                    // document_data[base_offset + 0] = opacity * tool_data[base_offset + 0] + (1 - opacity) * document_data[base_offset + 0]
-                    // document_data[base_offset + 1] = opacity * tool_data[base_offset + 1] + (1 - opacity) * document_data[base_offset + 1]
-                    // document_data[base_offset + 2] = opacity * tool_data[base_offset + 2] + (1 - opacity) * document_data[base_offset + 2]
-                    // document_data[base_offset + 3] = opacity * tool_data[base_offset + 3] + (1 - opacity) * document_data[base_offset + 3]
-                }
-            }
-        }
-        this.document_context.putImageData(document_image_data,
-            pixel_to_rect.x, pixel_to_rect.y)
+        tool_to_document(tool_canvas,
+            this.tool_bounds_signal.value!, this.document_context);
     }
     tool_to_view() {
         // override_canvas_context(this.app.view_context, this.app.tool_canvas,

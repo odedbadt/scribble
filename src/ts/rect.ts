@@ -2,6 +2,7 @@ import { ClickAndDragTool } from "./click_and_drag_tool"
 import { Editor } from "./editor";
 import { settings } from "./settings_registry";
 import { Vector2, bounding_rect } from "./types";
+import { extend_canvas_mapping } from "./utils";
 
 
 export class RectTool extends ClickAndDragTool {
@@ -15,7 +16,7 @@ export class RectTool extends ClickAndDragTool {
         const extended_canvas_bounding_rect = bounding_rect(from, to, margin);
         const w = extended_canvas_bounding_rect.w;
         const h = extended_canvas_bounding_rect.h;
-        this.extend_canvas_mapping(extended_canvas_bounding_rect, false);
+        extend_canvas_mapping(this, extended_canvas_bounding_rect, false);
         const color = settings.peek<string>('fore_color');
         context.fillStyle = color; // OD: for testing;
         context.fillRect(

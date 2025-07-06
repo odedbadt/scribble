@@ -1,9 +1,6 @@
 import { signal, Signal } from '@preact/signals-core';
 export enum StateValue {
     SelectedToolName,
-    Down,
-    Left,
-    Right
 }
 type Entry<T> = {
     current: Signal<T>;

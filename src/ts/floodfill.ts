@@ -1,5 +1,6 @@
 import { ClickTool } from "./click_tool"
 import { Editor } from "./editor";
+import { settings, SettingName } from "./settings_registry";
 import { Vector2 } from "./types";
 import { parse_RGBA } from "./utils";
 
@@ -45,27 +46,19 @@ function _floodfill(read_context: CanvasRenderingContext2D, write_context: Canva
     write_context.putImageData(context_image_data, 0, 0);
 }
 export class Floodfill extends ClickTool {
-    drag(at: Vector2): boolean {
-        return false;
-        throw new Error("Method not implemented.");
+    drag(at: Vector2) {
     }
-    stop(at: Vector2): boolean {
-        return false;
-        throw new Error("Method not implemented.");
+    stop(at: Vector2) {
     }
-    constructor(editor: Editor) {
-        super(editor)
-        this.editor = editor;
-        this.app = editor.app;
-    }
+
     editing_start(at: Vector2) {
-        const replaced_color = this.app.document_context.getImageData(at.x, at.y, 1, 1).data;
-        const parsed_fore_color = parse_RGBA(this.app.settings.fore_color);
-        _floodfill(this.app.document_context, this.context, replaced_color, parsed_fore_color, at.x, at.y, this.w, this.h);
+        const replaced_color = this.document_context!.getImageData(at.x, at.y, 1, 1).data;
+        const color = settings.peek<string>(SettingName.ForeColor);
+        const parsed_fore_color = parse_RGBA(color);
+        //_floodfill(this.document_context!, this.context!, replaced_color, parsed_fore_color, at.x, at.y, this.w, this.h);
         return true
     }
-    hover(at: Vector2): boolean {
-        return false
+    hover(at: Vector2) {
     }
 
 

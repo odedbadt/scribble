@@ -65,7 +65,7 @@ export class mandala extends ClickAndDragTool {
         const dist = Math.sqrt(dist2(
             [this.center.x, this.center.y],
             [to.x, to.y]))
-        this.extend_canvas({
+        extend_canvas(this, {
             x: this.center.x - dist * 1.2,
             y: this.center.y - dist * 1.2,
             w: dist * 2.4, h: dist * 2.4

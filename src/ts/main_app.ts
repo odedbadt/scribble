@@ -10,7 +10,7 @@ import { StateValue, state_registry } from "./state_registry";
 function click_for_a_second(id: string, callback: Function) {
     const elem = document.getElementById(id);
     if (elem) {
-        elem.addEventListener('πlick', () => {
+        elem.addEventListener('click', () => {
             elem.classList.add('pressed')
             callback()
             window.setTimeout(() => {
@@ -283,6 +283,13 @@ export class MainApp {
             document.getElementById('color-selector-div-fore')!.style.backgroundColor = settings.peek(SettingName.ForeColor);
             document.getElementById('color-selector-div-back')!.style.backgroundColor = settings.peek(SettingName.BackColor);
         })
+        settings.get(SettingName.ForeColor).subscribe((color_string: string) => {
+            document.getElementById('color-selector-div-fore')!.style.backgroundColor = color_string;
+
+        });
+        settings.get(SettingName.BackColor).subscribe((color_string: string) => {
+            document.getElementById('color-selector-div-back')!.style.backgroundColor = color_string;
+        });
     }
     clear_context(context: CanvasRenderingContext2D) {
         context.fillStyle = "rgba(255,255,255,255)"
@@ -366,16 +373,19 @@ export class MainApp {
 }
 function test_signals() {
     const s1: Signal<number> = signal(1);
-    effect(() => {
-        console.log('E', s1.value)
+    s1.subscribe((v) => {
+        console.log('value:', v)
     })
-    console.log('A')
-    s1.value = 1;
-    console.log('B')
-    s1.value = 2;
-    console.log('C')
-    s1.value = 3;
-    console.log('D')
+    // effect(() => {
+    //     console.log('E', s1.value)
+    // })
+    // console.log('A')
+    // s1.value = 1;
+    // console.log('B')
+    // s1.value = 2;
+    // console.log('C')
+    // s1.value = 3;
+    // console.log('D')
 }
 export function app_ignite() {
     (window as any).app = new MainApp();

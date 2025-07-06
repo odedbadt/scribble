@@ -1,6 +1,7 @@
 import { ClickAndDragTool } from "./click_and_drag_tool"
 import { Editor } from "./editor";
 import { Vector2, bounding_rect } from "./types";
+import { extend_canvas_mapping } from "./utils";
 
 export class LineTool extends ClickAndDragTool {
 
@@ -16,7 +17,7 @@ export class LineTool extends ClickAndDragTool {
         const extended_canvas_bounding_rect = bounding_rect(from, to, margin);
         const w = extended_canvas_bounding_rect.w;
         const h = extended_canvas_bounding_rect.h;
-        this.extend_canvas_mapping(extended_canvas_bounding_rect, false);
+        extend_canvas_mapping(this, extended_canvas_bounding_rect, false);
         context.strokeStyle = 'red'; // OD: for testing;
         const flip = (to.x > from.x) !== (to.y > from.y)
         if (flip) {

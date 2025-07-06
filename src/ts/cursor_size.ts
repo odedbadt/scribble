@@ -3,6 +3,7 @@ import { Editor } from "./editor";
 import { SettingName, settings } from "./settings_registry";
 import { state_registry, StateValue } from "./state_registry";
 import { Vector2, unit_rect } from "./types";
+import { extend_canvas_mapping } from "./utils";
 export class CursorSize extends ClickAndDragTool {
     editing_start() {
         // if (!this.staging_context) {
@@ -26,7 +27,7 @@ export class CursorSize extends ClickAndDragTool {
             (to.y - from.y) * (to.y - from.y));
         const rb = r * 1.05;
         const extended_canvas_bounding_rect = { x: from.x - rb, y: from.y - rb, w: rb * 2, h: rb * 2 }
-        this.extend_canvas_mapping(extended_canvas_bounding_rect, false);
+        extend_canvas_mapping(this, extended_canvas_bounding_rect, false);
         this.context!.beginPath();
         this.context!.fillStyle = 'red'
         this.context!.strokeStyle = 'black'

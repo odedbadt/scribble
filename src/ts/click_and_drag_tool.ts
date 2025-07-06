@@ -3,6 +3,7 @@ import { Editor } from "./editor";
 import { MainApp } from "./main_app";
 import { Vector2, unit_rect, vfloor } from "./types";
 import { signal, computed, effect, batch } from "@preact/signals";
+import { tool_to_document } from "./utils";
 export abstract class ClickAndDragTool extends EditingTool {
     is_incremental: boolean = false;
     dirty: boolean = false;
@@ -50,10 +51,14 @@ export abstract class ClickAndDragTool extends EditingTool {
     editing_drag(from: Vector2, to: Vector2) {
         throw new Error("Not fully implemented tool");
     }
-    stop(at: Vector2): boolean {
+    stop(at: Vector2) {
+        if (this.document_context == null) {
+            throw new Error("Cannot stop tool if editor is not full initialized")
+        }
         this.editing_stop(at);
         this.drag_start = null;
-        return true;
+        tool_to_document(this.canvas!,
+            this.canvas_bounds_mapping_signal!.value, this.document_context);
     }
     editing_stop(at: Vector2) {
         // nop, implemenet me
