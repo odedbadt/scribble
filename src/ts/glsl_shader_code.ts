@@ -10,10 +10,6 @@ varying vec2 vUv;
 uniform sampler2D uTexture;
 void main() {
   vec4 rgba = texture2D(uTexture, vUv);
-  if (rgba[3] > 0.0) {
-    gl_FragColor = vec4(rgba[0],rgba[1],rgba[2],1.0)/rgba[3];
-  } else {
-    gl_FragColor = rgba;
-  }
+  gl_FragColor = rgba;
 }
 `

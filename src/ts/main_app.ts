@@ -203,8 +203,8 @@ export class MainApp {
 
         })
         const select_tool_signal = state_registry.use_signal<string>(StateValue.SelectedToolName, 'scribble');
-        effect(() => {
-            this._perform_select_tool(select_tool_signal.value);
+        select_tool_signal.subscribe((tool_name) => {
+            this._perform_select_tool(tool_name);
         })
         this.init_undo_redo_buttons()
         //this.init_load_save()

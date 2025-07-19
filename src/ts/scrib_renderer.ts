@@ -88,7 +88,7 @@ export class ScribRenderer {
                 },
                 vertexShader: VERTEX_SHADER_CODE,
                 fragmentShader: FRAGMENT_SHADER_CODE,
-                transparent: true
+                transparent: false
             });
             overlay_texture.minFilter = NearestFilter;
             overlay_texture.magFilter = NearestFilter;
@@ -111,7 +111,7 @@ export class ScribRenderer {
             ]);
             //console.log(rleft(from_rect), rtop(from_rect));
 
-            //console.log(Array.from(newUVs, (x): string => x.toFixed(2)));
+            console.log(Array.from(newUVs, (x): string => x.toFixed(2)));
 
             overlay_geometry.attributes.uv.array.set(newUVs);
             overlay_geometry.attributes.uv.needsUpdate = true;
@@ -119,11 +119,11 @@ export class ScribRenderer {
             //       overlay_geometry.attributes.uv.array.set(newUVs2);
             //overlay_geometry.attributes.uv.needsUpdate = true;
 
+            const flat_material = new MeshBasicMaterial({ color: 0xff00ff, side: DoubleSide });
             const overlay_rectangle = new Mesh(overlay_geometry,
                 overlay_material);
 
 
-            //new MeshBasicMaterial({ color: 0xff00ff, side: DoubleSide }));
             overlay_rectangle.position.set(
                 to_rect.x + to_rect.w / 2,
                 to_rect.y + to_rect.h / 2,

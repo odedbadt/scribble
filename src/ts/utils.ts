@@ -253,7 +253,7 @@ export function tool_to_document(tool_canvas: HTMLCanvasElement,
         }
     }
     document_context.putImageData(document_image_data,
-        pixel_to_rect.x, pixel_to_rect.y)
+        pixel_to_rect.x, pixel_to_rect.y);
 }
 
 export function init_canvas(tool: EditingTool, canvas_signal: Signal<HTMLCanvasElement>,
@@ -302,6 +302,7 @@ export function document_canvas_to_tool_canvas(canvas: HTMLCanvasElement, canvas
         x: ((v.x - to.x) / to.w + from.x) * cw,
         y: ((v.y - to.y) / to.h + from.y) * ch
     }
+
 }
 export function extend_canvas_mapping(tool: EditingTool,
     to: Rect, copy: boolean = true): void {
@@ -337,5 +338,4 @@ export function extend_canvas_mapping(tool: EditingTool,
     }
     tool.context!.fillStyle = 'rgba(0,0,0,0)';
     tool.context!.fillRect(0, 0, tool.canvas.width, tool.canvas.height);
-    tool.canvas_bounds_mapping_signal!.value = tool.canvas_bounds_mapping;
 }

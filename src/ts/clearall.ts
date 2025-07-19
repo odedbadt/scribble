@@ -18,8 +18,7 @@ export class ClearAllTool extends EditingTool {
         const color = settings.peek<string>(SettingName.BackColor);
         this.context!.fillStyle = color;
         this.context!.fillRect(0, 0, w, h);
-        tool_to_document(this.canvas!,
-            this.canvas_bounds_mapping_signal!.value!, this.document_context!);
+        this.stop({ x: 0, y: 0 });
 
     }
     start(at: Vector2, buttons: number): boolean {
@@ -28,8 +27,15 @@ export class ClearAllTool extends EditingTool {
     drag(at: Vector2): boolean {
         throw new Error("Method not implemented.");
     }
-    stop(at: Vector2): boolean {
-        throw new Error("Method not implemented.");
+    stop(at: Vector2) {
+        if (this.document_context == null) {
+            throw new Error("Cannot stop tool if editor is not full initialized")
+        }
+        tool_to_document(this.canvas!,
+            this.canvas_bounds_mapping_signal!.value, this.document_context);
+        console.log('A');
+        this.canvas_bounds_mapping_signal!.value = this.canvas_bounds_mapping_signal!.value;
+        console.log('B');
     }
     select_action() {
 

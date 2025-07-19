@@ -156,9 +156,7 @@ export class Editor {
         this.tool.hover(this.view_coords_to_doc_coords(
             { x: event.offsetX, y: event.offsetY })
         );
-        if (this.tool.stop()) {
-
-        }
+        this.tool.stop();
     }
     pointerin(event: MouseEvent) {
         if (!!event.buttons) {

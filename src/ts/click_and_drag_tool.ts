@@ -59,6 +59,8 @@ export abstract class ClickAndDragTool extends EditingTool {
         this.drag_start = null;
         tool_to_document(this.canvas!,
             this.canvas_bounds_mapping_signal!.value, this.document_context);
+        this.canvas_bounds_mapping_signal!.value = this.canvas_bounds_mapping_signal!.value;
+        this.canvas_signal!.value = this.canvas;
     }
     editing_stop(at: Vector2) {
         // nop, implemenet me
