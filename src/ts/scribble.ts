@@ -40,7 +40,9 @@ export class ScribbleTool extends ClickAndDragTool {
     }
     editing_start() {
         // nop, implemenet me
-        return false;
+    }
+    editing_stop() {
+        this._prev = null;
     }
 
 }

@@ -29,10 +29,8 @@ export class CursorSize extends ClickAndDragTool {
         const extended_canvas_bounding_rect = { x: from.x - rb, y: from.y - rb, w: rb * 2, h: rb * 2 }
         extend_canvas_mapping(this, extended_canvas_bounding_rect, false);
         this.context!.beginPath();
-        this.context!.fillStyle = 'red'
         this.context!.strokeStyle = 'black'
         this.context!.ellipse(rb, rb, r, r, 0, 0, Math.PI * 2);
-        this.context!.fill();
         this.context!.stroke();
         settings.set(SettingName.LineWidth, 2 * r);
     }
