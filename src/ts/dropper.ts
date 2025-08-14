@@ -1,11 +1,12 @@
 import { ClickTool } from "./click_tool"
+import { EditingTool } from "./editing_tool";
 import { Editor } from "./editor";
 import { SettingName, settings } from "./settings_registry";
 import { state_registry, StateValue } from "./state_registry";
 import { Vector2 } from "./types";
-export class Dropper extends ClickTool {
+export class Dropper extends EditingTool {
 
-    editing_start(at: Vector2, buttons: number) {
+    start(at: Vector2, buttons: number) {
         if (this.document_context == null) {
             throw new Error("Cannot edit if editor is not full initialized")
         }
@@ -17,6 +18,12 @@ export class Dropper extends ClickTool {
 
     hover(at: Vector2): boolean {
         return false
+    }
+    select() {
+
+    }
+    drag(at: Vector2) {
+
     }
     stop(at: Vector2): boolean {
         super.stop(at);

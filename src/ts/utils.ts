@@ -221,7 +221,8 @@ export function disposeScene(scene: Scene) {
 
 export function tool_to_document(tool_canvas: HTMLCanvasElement,
     rect_to_rect_mapping: RectToRectMapping,
-    document_context: CanvasRenderingContext2D) {
+    document_context: CanvasRenderingContext2D,
+    layer_color?: Uint8ClampedArray | undefined) {
     const tool_context = tool_canvas.getContext('2d',
         { willReadFrequently: true })! as CanvasRenderingContext2D;
     const tw = tool_canvas.width;
@@ -240,10 +241,17 @@ export function tool_to_document(tool_canvas: HTMLCanvasElement,
             const base_offset = 4 * (y * pixel_from_rect.w + x);
             if (tool_data[base_offset + 3] > 0) {
                 const opacity = tool_data[base_offset + 3] / 255
-                document_data[base_offset + 0] = tool_data[base_offset + 0] / opacity
-                document_data[base_offset + 1] = tool_data[base_offset + 1] / opacity
-                document_data[base_offset + 2] = tool_data[base_offset + 2] / opacity
-                document_data[base_offset + 3] = 255;//tool_data[base_offset + 3] / opacity
+                if (layer_color) {
+                    document_data[base_offset + 0] = layer_color[0]
+                    document_data[base_offset + 1] = layer_color[1]
+                    document_data[base_offset + 2] = layer_color[2]
+                    document_data[base_offset + 3] = 255;
+                } else {
+                    document_data[base_offset + 0] = tool_data[base_offset + 0] / opacity
+                    document_data[base_offset + 1] = tool_data[base_offset + 1] / opacity
+                    document_data[base_offset + 2] = tool_data[base_offset + 2] / opacity
+                    document_data[base_offset + 3] = 255;//tool_data[base_offset + 3] / opacity
+                }
 
                 // document_data[base_offset + 0] = opacity * tool_data[base_offset + 0] + (1 - opacity) * document_data[base_offset + 0]
                 // document_data[base_offset + 1] = opacity * tool_data[base_offset + 1] + (1 - opacity) * document_data[base_offset + 1]

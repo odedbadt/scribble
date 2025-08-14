@@ -6,7 +6,7 @@ import { CircleTool } from "./circle";
 import { ClearAllTool } from "./clearall";
 import { Dropper } from "./dropper";
 import { EraserTool } from "./eraser";
-// import { Floodfill } from "./floodfill";
+import { Floodfill } from "./floodfill";
 import { LineTool } from "./line";
 import { RectTool } from "./rect";
 import { CursorSize } from './cursor_size'
@@ -24,7 +24,7 @@ const tool_classes = new Map<string, new (...args: any[]) => EditingTool>
         , ["line", LineTool]
         , ["circle", CircleTool]
         , ["dropper", Dropper]
-        // , ["floodfill", Floodfill]
+        , ["floodfill", Floodfill]
         , ["eraser", EraserTool]
         , ["clearall", ClearAllTool]
         , ["cursor_size", CursorSize]
@@ -63,10 +63,10 @@ export class Editor {
     }
     view_coords_to_doc_coords(view_coords: Vector2): Vector2 {
         return {
-            x: (view_coords.x - this.view_port_signal.value.x) /
-                this.view_port_signal.value.w * this.document_canvas.width,
-            y: (view_coords.y - this.view_port_signal.value.y) /
-                this.view_port_signal.value.h * this.document_canvas.height
+            x: Math.floor((view_coords.x - this.view_port_signal.value.x) /
+                this.view_port_signal.value.w * this.document_canvas.width),
+            y: Math.floor((view_coords.y - this.view_port_signal.value.y) /
+                this.view_port_signal.value.h * this.document_canvas.height)
         }
     }
     view_port_px(): Rect {
@@ -153,10 +153,9 @@ export class Editor {
     }
 
     pointerup(event: MouseEvent) {
-        this.tool.hover(this.view_coords_to_doc_coords(
-            { x: event.offsetX, y: event.offsetY })
-        );
-        this.tool.stop();
+        const at = this.view_coords_to_doc_coords({ x: event.offsetX, y: event.offsetY });
+        this.tool.hover(at);
+        this.tool.stop(at);
     }
     pointerin(event: MouseEvent) {
         if (!!event.buttons) {

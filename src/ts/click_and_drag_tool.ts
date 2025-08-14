@@ -3,7 +3,8 @@ import { Editor } from "./editor";
 import { MainApp } from "./main_app";
 import { Vector2, unit_rect, vfloor } from "./types";
 import { signal, computed, effect, batch } from "@preact/signals";
-import { tool_to_document } from "./utils";
+import { parse_RGBA, tool_to_document } from "./utils";
+import { settings, SettingName } from "./settings_registry";
 export abstract class ClickAndDragTool extends EditingTool {
     is_incremental: boolean = false;
     dirty: boolean = false;
@@ -57,10 +58,14 @@ export abstract class ClickAndDragTool extends EditingTool {
         }
         this.editing_stop(at);
         this.drag_start = null;
+        const color = settings.peek<string>(SettingName.ForeColor);
+        const color_array = parse_RGBA(color)
         tool_to_document(this.canvas!,
-            this.canvas_bounds_mapping_signal!.value, this.document_context);
-        this.canvas_bounds_mapping_signal!.value = this.canvas_bounds_mapping_signal!.value;
-        this.canvas_signal!.value = this.canvas;
+            this.canvas_bounds_mapping_signal!.value, this.document_context, color_array);
+        batch(() => {
+            this.canvas_bounds_mapping_signal!.value = this.canvas_bounds_mapping_signal!.value;
+            this.canvas_signal!.value = this.canvas;
+        });
     }
     editing_stop(at: Vector2) {
         // nop, implemenet me
