@@ -45,4 +45,8 @@ export class CursorSize extends ClickAndDragTool {
         state_registry.pop(StateValue.SelectedToolName)
         return false;
     }
+    editing_stop(at: Vector2) {
+        console.log('WAAA')
+    }
+
 }

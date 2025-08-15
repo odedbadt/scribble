@@ -35,6 +35,8 @@ export abstract class ClickAndDragTool extends EditingTool {
             this.canvas_bounds_mapping_signal!.value = this.canvas_bounds_mapping!;
             this.canvas_signal!.value = this.canvas!;
         })
+        this.commit_to_document()
+
     }
     hover(at: any) {
         if (!this.context) {
@@ -52,22 +54,25 @@ export abstract class ClickAndDragTool extends EditingTool {
     editing_drag(from: Vector2, to: Vector2) {
         throw new Error("Not fully implemented tool");
     }
-    stop(at: Vector2) {
+    commit_to_document() {
         if (this.document_context == null) {
             throw new Error("Cannot stop tool if editor is not full initialized")
         }
-        this.editing_stop(at);
-        this.drag_start = null;
         const color = settings.peek<string>(SettingName.ForeColor);
         const color_array = parse_RGBA(color)
         tool_to_document(this.canvas!,
             this.canvas_bounds_mapping_signal!.value, this.document_context, color_array);
+
+    }
+    stop(at: Vector2) {
+        this.editing_stop(at);
+        this.drag_start = null;
         batch(() => {
             this.canvas_bounds_mapping_signal!.value = this.canvas_bounds_mapping_signal!.value;
             this.canvas_signal!.value = this.canvas;
         });
     }
     editing_stop(at: Vector2) {
-        // nop, implemenet me
+        this.commit_to_document()
     }
 }
