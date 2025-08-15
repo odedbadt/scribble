@@ -4,7 +4,7 @@ import { EditingTool } from "./editing_tool";
 import { Editor } from "./editor";
 import { settings, SettingName } from "./settings_registry";
 import { Vector2, bounding_rect } from "./types";
-import { extend_canvas_mapping, parse_RGBA } from "./utils";
+import { extend_canvas_mapping, parse_RGBA, tool_to_document } from "./utils";
 import { batch } from "@preact/signals";
 
 function _equal_colors(c1: Uint8ClampedArray, c2: Uint8ClampedArray): boolean {
@@ -73,6 +73,10 @@ export class Floodfill extends ClickTool {
             at.y,
             w,
             h);
+        tool_to_document(this.canvas!,
+            this.canvas_bounds_mapping!,
+            this.document_context!, parsed_fore_color);
+
         batch(() => {
             this.canvas_bounds_mapping_signal!.value = this.canvas_bounds_mapping!;
             this.canvas_signal!.value = this.canvas!;
