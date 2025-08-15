@@ -75,7 +75,7 @@ export class Floodfill extends ClickTool {
             h);
         tool_to_document(this.canvas!,
             this.canvas_bounds_mapping!,
-            this.document_context!, parsed_fore_color);
+            this.document_context!);
 
         batch(() => {
             this.canvas_bounds_mapping_signal!.value = this.canvas_bounds_mapping!;
