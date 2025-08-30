@@ -20,9 +20,14 @@ export abstract class ClickAndDragTool extends EditingTool {
     }
     start(at: Vector2, buttons: number): void {
         this.drag_start = vfloor(at);
-        this.editing_start();
+        this.editing_start(at, buttons);
+        batch(() => {
+            this.canvas_bounds_mapping_signal!.value = this.canvas_bounds_mapping!;
+            this.canvas_signal!.value = this.canvas!;
+        })
+        //this.commit_to_document()
     }
-    editing_start() {
+    editing_start(at: Vector2, buttons: number) {
         // nop, implemenet me
     }
     drag(at: Vector2): void {
@@ -35,7 +40,7 @@ export abstract class ClickAndDragTool extends EditingTool {
             this.canvas_bounds_mapping_signal!.value = this.canvas_bounds_mapping!;
             this.canvas_signal!.value = this.canvas!;
         })
-        this.commit_to_document()
+        //this.commit_to_document()
 
     }
     hover(at: any) {
@@ -54,11 +59,13 @@ export abstract class ClickAndDragTool extends EditingTool {
     editing_drag(from: Vector2, to: Vector2) {
         throw new Error("Not fully implemented tool");
     }
-    commit_to_document() {
+    commit_to_document(color: string | null = null) {
         if (this.document_context == null) {
             throw new Error("Cannot stop tool if editor is not full initialized")
         }
-        const color = settings.peek<string>(SettingName.ForeColor);
+        if (color == null) {
+            color = settings.peek<string>(SettingName.ForeColor);
+        }
         const color_array = parse_RGBA(color)
         tool_to_document(this.canvas!,
             this.canvas_bounds_mapping_signal!.value, this.document_context, color_array);
@@ -71,6 +78,7 @@ export abstract class ClickAndDragTool extends EditingTool {
             this.canvas_bounds_mapping_signal!.value = this.canvas_bounds_mapping_signal!.value;
             this.canvas_signal!.value = this.canvas;
         });
+        this.canvas_bounds_mapping = null;
     }
     editing_stop(at: Vector2) {
         this.commit_to_document()

@@ -46,7 +46,9 @@ export class CursorSize extends ClickAndDragTool {
         return false;
     }
     editing_stop(at: Vector2) {
-        console.log('WAAA')
+    }
+    commit_to_document() {
+
     }
 
 }
