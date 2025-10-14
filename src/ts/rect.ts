@@ -10,6 +10,7 @@ export class RectTool extends ClickAndDragTool {
         const context = this.context!;
         const margin = 0;
         const extended_canvas_bounding_rect = bounding_rect(from, to, margin);
+        this.extend_canvas_mapping(extended_canvas_bounding_rect, false);
         const w = extended_canvas_bounding_rect.w;
         const h = extended_canvas_bounding_rect.h;
         const color = settings.peek<string>(SettingName.ForeColor);
@@ -19,6 +20,7 @@ export class RectTool extends ClickAndDragTool {
             margin,
             w - margin * 2,
             h - margin * 2);
+        this.publish_signals();
 
     }
 }
