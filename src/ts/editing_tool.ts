@@ -1,7 +1,7 @@
 import { Editor } from "./editor"
 import { MainApp } from "./main_app";
 import { Rect, Vector2, RectToRectMapping } from "./types";
-import { Signal, signal, computed, effect } from "@preact/signals";
+import { Signal, signal, computed, effect, batch } from "@preact/signals";
 
 export abstract class EditingTool {
     canvas: HTMLCanvasElement | null = null;
@@ -17,6 +17,22 @@ export abstract class EditingTool {
 
     constructor() {
 
+    }
+    publish_signals() {
+        // if (this.canvas_bounds_mapping) {
+        //     const to: Rect = this.canvas_bounds_mapping.to;
+        //     this.context!.save()
+        //     this.context!.lineWidth = 1;
+        //     this.context!.fillStyle = 'grey';
+        //     this.context!.beginPath()
+        //     this.context!.fillRect(0, 0, to.w, to.h);
+        //     this.context!.fill()
+        //     this.context!.restore()
+        // }
+        batch(() => {
+            this.canvas_bounds_mapping_signal!.value = this.canvas_bounds_mapping!;
+            this.canvas_signal!.value = this.canvas;
+        })
     }
     init_editor(editor: Editor) {
         this.document_context = editor.document_context;

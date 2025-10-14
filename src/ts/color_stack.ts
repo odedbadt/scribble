@@ -40,7 +40,7 @@ export class ColorStack {
         for (let j = 0; j < slots.length; ++j) {
             const slot: HTMLElement = slots[j] as HTMLElement
             if (j < l) {
-                const color = this._stack.at(l - 1 - j)
+                const color = this._stack[l - 1 - j]
                 if (color == undefined) {
                     continue;
                 }

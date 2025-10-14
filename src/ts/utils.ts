@@ -173,12 +173,30 @@ export function translate_rect(r: Rect, shift: Vector2) {
         h: r.h
     }
 }
-export function rect_union(r1: Rect, r2: Rect) {
-    const left = Math.min(r1.x, r2.x);
-    const top = Math.min(r1.y, r2.y);
-    const right = Math.max(r1.x + r1.w, r2.x + r2.w);
-    const bottom = Math.max(r1.y + r1.h, r2.y + r2.h);
+export function rect_union(r1: Rect, r2: Rect, margin: number = 0) {
+    if (r1 == null) {
+        return r2;
+    }
+    if (r2 == null) {
+        return r1;
+    }
+    const left = Math.max(0, Math.min(r1.x, r2.x) - margin);
+    const top = Math.max(0, Math.min(r1.y, r2.y) - margin);
+    const right = Math.max(r1.x + r1.w, r2.x + r2.w) + margin;
+    const bottom = Math.max(r1.y + r1.h, r2.y + r2.h) + margin;
     return { x: left, y: top, w: right - left, h: bottom - top }
+}
+export function rect_sum(r1: Rect, r2: Rect) {
+    // Mikowsky sum of two rectangles
+    const left = r1.x - r2.w;
+    const top = r1.y - r2.h;
+    return { x: left, y: top, w: r1.w + r2.w, h: r1.h + r2.h }
+}
+export function extend_rect(r: Rect, margin: number) {
+    // Mikowsky sum of two rectangles
+    const left = r.x - margin;
+    const top = r.y - margin;
+    return { x: left, y: top, w: r.w + margin * 2, h: r.h + margin * 2 }
 }
 export function disposeScene(scene: Scene) {
     // Loop through all objects in the scene
@@ -287,6 +305,7 @@ export function init_canvas(tool: EditingTool, canvas_signal: Signal<HTMLCanvasE
     // set completely arbitrary bounds (might be dropped)
     tool.canvas!.width = 1;
     tool.canvas!.height = 1;
+
     //canvas_signal.value = tool.canvas;
     return tool.canvas
 }
@@ -300,6 +319,12 @@ export function tool_canvas_to_document_canvas(canvas: HTMLCanvasElement, canvas
         y: (v.y / ch - from.y) * to.h + to.y
     }
 }
+export function clear_canvas(canvas: HTMLCanvasElement) {
+    const context: CanvasRenderingContext2D = canvas.getContext('2d')!;
+    context.fillStyle = 'rgba(0,0,0,0)';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+
+}
 export function document_canvas_to_tool_canvas(canvas: HTMLCanvasElement, canvas_bounds_mapping: RectToRectMapping, v: Vector2): Vector2 {
 
     const from: Rect = canvas_bounds_mapping.from;
@@ -311,39 +336,4 @@ export function document_canvas_to_tool_canvas(canvas: HTMLCanvasElement, canvas
         y: ((v.y - to.y) / to.h + from.y) * ch
     }
 
-}
-export function extend_canvas_mapping(tool: EditingTool,
-    to: Rect, copy: boolean = true): void {
-    if (tool.canvas == null || tool.context == null) {
-        throw new Error('cannot extend without a canvas')
-    }
-    if (tool.canvas_bounds_mapping == null) {
-        tool.canvas_bounds_mapping = {
-            from: { x: 0, y: 0, w: 1, h: 1 },
-            to: { ...to }
-        }
-    }
-    const prev_mapping = tool.canvas_bounds_mapping;
-    const w = tool.canvas.width;
-    const h = tool.canvas.height;
-    const ctx = tool.canvas!.getContext('2d')!;
-    if (copy) {
-        const src_image_data = ctx.getImageData(0, 0, w, h)
-        tool.canvas.width = to.w;
-        tool.canvas.height = to.h;
-        ctx.putImageData(src_image_data,
-            prev_mapping.from.x * prev_mapping.from.w,
-            prev_mapping.from.y * prev_mapping.from.h);
-    } else {
-        tool.canvas.width = to.w;
-        tool.canvas.height = to.h;
-    }
-    tool.canvas_bounds_mapping = {
-        to: to,
-        from: {
-            x: 0, y: 0, w: 1, h: 1
-        }
-    }
-    tool.context!.fillStyle = 'rgba(0,0,0,0)';
-    tool.context!.fillRect(0, 0, tool.canvas.width, tool.canvas.height);
 }

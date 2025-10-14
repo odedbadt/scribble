@@ -1,16 +1,15 @@
 import { EditingTool } from "./editing_tool"
 import { Editor } from "./editor";
 import { MainApp } from "./main_app";
-import { Vector2, unit_rect, vfloor } from "./types";
-import { signal, computed, effect, batch } from "@preact/signals";
-import { parse_RGBA, tool_to_document } from "./utils";
+import { Rect, Vector2, RectToRectMapping, unit_rect, vfloor } from "./types";
+
+import { signal, computed, effect } from "@preact/signals";
+import { parse_RGBA, tool_to_document, clear_canvas, rect_union, extend_rect } from "./utils";
 import { settings, SettingName } from "./settings_registry";
 export abstract class ClickAndDragTool extends EditingTool {
-    is_incremental: boolean = false;
     dirty: boolean = false;
     drag_start: Vector2 | null = null;
     init() {
-        this.is_incremental = false;
         this.start = this.start.bind(this);
         this.drag = this.drag.bind(this);
         this.stop = this.stop.bind(this);
@@ -18,30 +17,56 @@ export abstract class ClickAndDragTool extends EditingTool {
     }
     select(): void {
     }
+    extend_canvas_mapping(to_include: Vector2 | Rect, copy: boolean = true, margin: number = 0): void {
+        if (this.canvas == null || this.context == null) {
+            throw new Error('cannot extend without a canvas')
+        }
+        const rect_to_include: Rect = { w: 1, h: 1, ...to_include };
+        const prev_mapping: RectToRectMapping | null = this.canvas_bounds_mapping
+        if (prev_mapping == null) {
+            this.canvas_bounds_mapping = {
+                from: { x: 0, y: 0, w: 1, h: 1 },
+                to: rect_to_include
+            }
+        } else {
+            const next_to = rect_union(prev_mapping.to, rect_to_include, margin);
+            const w = this.canvas.width;
+            const h = this.canvas.height;
+            const ctx = this.canvas.getContext('2d')!;
+            if (copy) {
+                const src_image_data = ctx.getImageData(0, 0, w, h)
+                this.canvas.width = next_to.w;
+                this.canvas.height = next_to.h;
+                ctx.putImageData(src_image_data,
+                    -(next_to.x - prev_mapping.to.x),
+                    -(next_to.y - prev_mapping.to.y))
+            } else {
+                this.canvas.width = next_to.w;
+                this.canvas.height = next_to.h;
+            }
+            this.canvas_bounds_mapping = {
+                to: next_to,
+                from: {
+                    x: 0, y: 0, w: 1, h: 1
+                }
+            }
+        }
+        clear_canvas(this.canvas!)
+    }
     start(at: Vector2, buttons: number): void {
         this.drag_start = vfloor(at);
-        this.editing_start(at, buttons);
-        batch(() => {
-            this.canvas_bounds_mapping_signal!.value = this.canvas_bounds_mapping!;
-            this.canvas_signal!.value = this.canvas!;
-        })
-        //this.commit_to_document()
+
+        this.extend_canvas_mapping(at);
     }
-    editing_start(at: Vector2, buttons: number) {
+    editing_start() {
         // nop, implemenet me
     }
     drag(at: Vector2): void {
         if (!this.drag_start) {
             return;
         }
-        // this.editor.app.tool_context.beginPath();
         this.editing_drag(vfloor(this.drag_start), vfloor(at));
-        batch(() => {
-            this.canvas_bounds_mapping_signal!.value = this.canvas_bounds_mapping!;
-            this.canvas_signal!.value = this.canvas!;
-        })
-        //this.commit_to_document()
-
+        this.publish_signals();
     }
     hover(at: any) {
         if (!this.context) {
@@ -72,15 +97,10 @@ export abstract class ClickAndDragTool extends EditingTool {
 
     }
     stop(at: Vector2) {
-        this.editing_stop(at);
+        this.commit_to_document()
         this.drag_start = null;
-        batch(() => {
-            this.canvas_bounds_mapping_signal!.value = this.canvas_bounds_mapping_signal!.value;
-            this.canvas_signal!.value = this.canvas;
-        });
+        this.publish_signals();
         this.canvas_bounds_mapping = null;
     }
-    editing_stop(at: Vector2) {
-        this.commit_to_document()
-    }
+
 }

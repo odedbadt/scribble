@@ -1,4 +1,3 @@
-import { batch } from "@preact/signals";
 import { EditingTool } from "./editing_tool"
 import { Editor } from "./editor";
 import { settings, SettingName } from "./settings_registry";
@@ -24,10 +23,7 @@ export abstract class ClickTool extends EditingTool {
         const color_array = parse_RGBA(color)
         tool_to_document(this.canvas!,
             this.canvas_bounds_mapping_signal!.value, this.document_context, color_array);
-        batch(() => {
-            this.canvas_bounds_mapping_signal!.value = this.canvas_bounds_mapping_signal!.value;
-            this.canvas_signal!.value = this.canvas;
-        });
+        this.publish_signals();
     }
     editing_stop(at: Vector2) {
         // nop, implemenet me

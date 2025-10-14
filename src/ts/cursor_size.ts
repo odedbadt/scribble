@@ -3,22 +3,9 @@ import { Editor } from "./editor";
 import { SettingName, settings } from "./settings_registry";
 import { state_registry, StateValue } from "./state_registry";
 import { Vector2, unit_rect } from "./types";
-import { extend_canvas_mapping } from "./utils";
 export class CursorSize extends ClickAndDragTool {
-    editing_start() {
-        // if (!this.staging_context) {
-        //     return false;
-        // }
-        // this.staging_context.fillStyle = this.app.settings.fore_color;
-        // this.staging_context.strokeStyle = this.app.settings.fore_color;
-        // this.staging_context.lineWidth = this.app.settings.line_width;
-        // this.staging_context.lineCap = 'round';
-        // return false;
-    }
-    start(at: Vector2, buttons: number): boolean {
+    start(at: Vector2, buttons: number) {
         settings.set(SettingName.LineWidth, 0.5);
-        super.start(at, buttons)
-        return false
     }
     editing_drag(from: Vector2, to: Vector2) {
 
@@ -27,7 +14,6 @@ export class CursorSize extends ClickAndDragTool {
             (to.y - from.y) * (to.y - from.y));
         const rb = r * 1.05;
         const extended_canvas_bounding_rect = { x: from.x - rb, y: from.y - rb, w: rb * 2, h: rb * 2 }
-        extend_canvas_mapping(this, extended_canvas_bounding_rect, false);
         this.context!.beginPath();
         this.context!.strokeStyle = 'black'
         this.context!.ellipse(rb, rb, r, r, 0, 0, Math.PI * 2);

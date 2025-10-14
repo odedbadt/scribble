@@ -2,8 +2,7 @@ import { EditingTool } from "./editing_tool";
 import { Editor } from "./editor";
 import { SettingName, settings } from "./settings_registry";
 import { RectToRectMapping, Vector2 } from "./types";
-import { extend_canvas_mapping, tool_to_document } from "./utils";
-import { batch } from "@preact/signals";
+import { tool_to_document } from "./utils";
 
 export class ClearAllTool extends EditingTool {
 
@@ -13,7 +12,10 @@ export class ClearAllTool extends EditingTool {
         }
         const dw = this.document_canvas.clientWidth;
         const dh = this.document_canvas.clientHeight;
-        extend_canvas_mapping(this, { x: 0, y: 0, w: dw, h: dh });
+        this.canvas_bounds_mapping = {
+            from: { x: 0, y: 0, w: 1, h: 1 },
+            to: { x: 0, y: 0, w: dw, h: dh }
+        }
         const w = this.canvas!.clientWidth;
         const h = this.canvas!.clientHeight;
         const color = settings.peek<string>(SettingName.BackColor);
@@ -26,10 +28,7 @@ export class ClearAllTool extends EditingTool {
         }
         tool_to_document(this.canvas!,
             rect_mapping, this.document_context!);
-        batch(() => {
-            this.canvas_bounds_mapping_signal!.value = rect_mapping;
-            this.canvas_signal!.value = this.canvas!;
-        })
+        this.publish_signals();
     }
     start(at: Vector2, buttons: number): boolean {
         throw new Error("Method not implemented.");

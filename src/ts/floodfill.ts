@@ -4,8 +4,7 @@ import { EditingTool } from "./editing_tool";
 import { Editor } from "./editor";
 import { settings, SettingName } from "./settings_registry";
 import { Vector2, bounding_rect } from "./types";
-import { extend_canvas_mapping, parse_RGBA, tool_to_document } from "./utils";
-import { batch } from "@preact/signals";
+import { parse_RGBA, tool_to_document } from "./utils";
 
 function _equal_colors(c1: Uint8ClampedArray, c2: Uint8ClampedArray): boolean {
     return c1[0] == c2[0] &&
@@ -60,8 +59,6 @@ export class Floodfill extends ClickTool {
     start(at: Vector2) {
         const w = this.document_canvas!.width;
         const h = this.document_canvas!.height;
-        extend_canvas_mapping(this,
-            { x: 0, y: 0, w: w, h: h }, false);
         const replaced_color = this.document_context!.getImageData(at.x, at.y, 1, 1).data;
         const color = settings.peek<string>(SettingName.ForeColor);
         const parsed_fore_color = parse_RGBA(color);
@@ -77,10 +74,7 @@ export class Floodfill extends ClickTool {
             this.canvas_bounds_mapping!,
             this.document_context!);
 
-        batch(() => {
-            this.canvas_bounds_mapping_signal!.value = this.canvas_bounds_mapping!;
-            this.canvas_signal!.value = this.canvas!;
-        })
+        this.publish_signals();
         //this.canvas_signal!.value = null;
     }
     hover(at: Vector2) {
