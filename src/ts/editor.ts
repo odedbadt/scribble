@@ -58,7 +58,9 @@ export class Editor {
         this.undo_redo_buffer = new UndoRedoBuffer(100);
         this.tool = new NopTool();
         this.document_canvas = document_canvas
-        this.document_context = this.document_canvas.getContext('2d', { willReadFrequently: true, texImage3d: false }) as CanvasRenderingContext2D;
+        this.document_context = this.document_canvas.getContext('2d', { willReadFrequently: true }) as CanvasRenderingContext2D;
+        // Disable anti-aliasing/smoothing for pixel-perfect rendering
+        this.document_context.imageSmoothingEnabled = false;
         this._last_hover_spot = null;
     }
     view_coords_to_doc_coords(view_coords: Vector2): Vector2 {

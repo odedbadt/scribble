@@ -62,6 +62,9 @@ export class ScribRenderer {
         const document_texture = new CanvasTexture(
             this.document_canvas);
         document_texture.flipY = false;
+        // Use nearest-neighbor filtering for pixel-perfect rendering
+        document_texture.minFilter = NearestFilter;
+        document_texture.magFilter = NearestFilter;
         const document_material = new ShaderMaterial({
             uniforms: {
                 uTexture: { value: document_texture },
@@ -143,7 +146,7 @@ export class ScribRenderer {
     }
     init_render_loop() {
         const renderer = new WebGLRenderer({
-            antialias: true,
+            antialias: false, // Disable for pixel-perfect rendering
             canvas: this.view_canvas
         });
         let scene: Scene | null = null;
@@ -157,6 +160,9 @@ export class ScribRenderer {
                 overlay_texture = new CanvasTexture(
                     overlay_canvas);
                 overlay_texture.flipY = false;
+                // Use nearest-neighbor filtering for pixel-perfect rendering
+                overlay_texture.minFilter = NearestFilter;
+                overlay_texture.magFilter = NearestFilter;
                 overlay_texture.image = overlay_canvas;
                 overlay_texture.needsUpdate = true;
             }

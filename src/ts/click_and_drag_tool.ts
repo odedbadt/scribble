@@ -55,11 +55,11 @@ export abstract class ClickAndDragTool extends EditingTool {
     }
     start(at: Vector2, buttons: number): void {
         this.drag_start = vfloor(at);
-
         this.extend_canvas_mapping(at);
+        this.editing_start();
     }
     editing_start() {
-        // nop, implemenet me
+        // nop, implement me
     }
     drag(at: Vector2): void {
         if (!this.drag_start) {

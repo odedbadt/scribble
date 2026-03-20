@@ -202,7 +202,7 @@ export class MainApp {
             }
 
         })
-        const select_tool_signal = state_registry.use_signal<string>(StateValue.SelectedToolName, 'scribble');
+        const select_tool_signal = state_registry.use_signal<string>(StateValue.SelectedToolName, 'rect');
         select_tool_signal.subscribe((tool_name) => {
             this._perform_select_tool(tool_name);
         })

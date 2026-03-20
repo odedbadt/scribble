@@ -1,16 +1,22 @@
-import { ClickAndDragTool } from "./click_and_drag_tool"
-import { Editor } from "./editor";
 import { ScribbleTool } from "./scribble";
 import { SettingName, settings } from "./settings_registry";
-import { Vector2 } from "./types";
+import { RGBA } from "./pixel_utils";
 
 export class EraserTool extends ScribbleTool {
+    // Eraser uses white (or could use background color)
+    private _eraser_color: RGBA = [255, 255, 255, 255];
 
     constructor() {
         super();
-        this._stroke_color = settings.peek<string>(SettingName.LineWidth);
+        this._stroke_color = this._eraser_color;
     }
+
+    editing_start() {
+        this._stroke_color = this._eraser_color;
+    }
+
     editing_stop() {
-        this.commit_to_document(this._stroke_color)
+        // Commit with eraser color
+        this.commit_to_document('rgba(255, 255, 255, 255)');
     }
 }

@@ -302,6 +302,8 @@ export function init_canvas(tool: EditingTool, canvas_signal: Signal<HTMLCanvasE
         'willReadFrequently': true,
         alpha: true
     })!;
+    // Disable anti-aliasing/smoothing for pixel-perfect rendering
+    tool.context.imageSmoothingEnabled = false;
     // set completely arbitrary bounds (might be dropped)
     tool.canvas!.width = 1;
     tool.canvas!.height = 1;
