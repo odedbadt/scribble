@@ -99,8 +99,12 @@ export abstract class ClickAndDragTool extends EditingTool {
     stop(at: Vector2) {
         this.commit_to_document()
         this.drag_start = null;
-        this.publish_signals();
         this.canvas_bounds_mapping = null;
+        // Reset canvas to 1×1 so old stroke content doesn't bleed into the next stroke
+        this.canvas!.width = 1;
+        this.canvas!.height = 1;
+        // Hide overlay
+        this.canvas_signal!.value = null;
     }
 
 }

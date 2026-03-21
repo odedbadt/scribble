@@ -146,34 +146,72 @@ export class ScribRenderer {
     }
     init_render_loop() {
         const renderer = new WebGLRenderer({
-            antialias: false, // Disable for pixel-perfect rendering
+            antialias: false,
             canvas: this.view_canvas
         });
-        let scene: Scene | null = null;
+
+        // Document mesh — created once, texture updated in-place each frame
+        const docTexture = new CanvasTexture(this.document_canvas);
+        docTexture.flipY = false;
+        docTexture.minFilter = NearestFilter;
+        docTexture.magFilter = NearestFilter;
+        const docMaterial = new ShaderMaterial({
+            uniforms: { uTexture: { value: docTexture } },
+            vertexShader: VERTEX_SHADER_CODE,
+            fragmentShader: FRAGMENT_SHADER_CODE,
+            side: DoubleSide,
+        });
+        const docGeometry = new PlaneGeometry(this.document_canvas.width, this.document_canvas.height);
+        const docMesh = new Mesh(docGeometry, docMaterial);
+        docMesh.position.set(this.document_canvas.width * 0.5, this.document_canvas.height * 0.5, -5);
+
+        // Overlay mesh — geometry/material/mesh reused; texture recreated each frame
+        const overlayMaterial = new ShaderMaterial({
+            uniforms: { uTexture: { value: null } },
+            vertexShader: VERTEX_SHADER_CODE,
+            fragmentShader: FRAGMENT_SHADER_CODE,
+            transparent: true,
+            side: DoubleSide,
+        });
+        const overlayGeometry = new PlaneGeometry(1, 1);
+        const overlayMesh = new Mesh(overlayGeometry, overlayMaterial);
+        overlayMesh.visible = false;
+
+        const scene = new Scene();
+        scene.add(docMesh);
+        scene.add(overlayMesh);
+
         effect(() => {
             const overlay_canvas = this.overlay_canvas_signal.value;
             const bounds_mapping = this.overlay_canvas_bounds_signal.value;
 
-            let scene;
-            let overlay_texture = null;
-            if (overlay_canvas != null) {
-                overlay_texture = new CanvasTexture(
-                    overlay_canvas);
-                overlay_texture.flipY = false;
-                // Use nearest-neighbor filtering for pixel-perfect rendering
-                overlay_texture.minFilter = NearestFilter;
-                overlay_texture.magFilter = NearestFilter;
-                overlay_texture.image = overlay_canvas;
-                overlay_texture.needsUpdate = true;
+            docTexture.needsUpdate = true;
+
+            // Dispose previous overlay texture to avoid leaking GPU memory
+            if (overlayMaterial.uniforms.uTexture.value) {
+                overlayMaterial.uniforms.uTexture.value.dispose();
+                overlayMaterial.uniforms.uTexture.value = null;
             }
-            scene = this.build_scene(overlay_texture, bounds_mapping)
+
+            if (overlay_canvas != null) {
+                const to_rect = bounds_mapping.to;
+
+                // Fresh texture from current canvas state — always picks up correct dimensions
+                const overlayTexture = new CanvasTexture(overlay_canvas);
+                overlayTexture.flipY = false;
+                overlayTexture.minFilter = NearestFilter;
+                overlayTexture.magFilter = NearestFilter;
+                overlayMaterial.uniforms.uTexture.value = overlayTexture;
+
+                overlayMesh.scale.set(to_rect.w, to_rect.h, 1);
+                overlayMesh.position.set(to_rect.x + to_rect.w / 2, to_rect.y + to_rect.h / 2, -2);
+                overlayMesh.visible = true;
+            } else {
+                overlayMesh.visible = false;
+            }
+
             renderer.render(scene, this.init_camera());
-
         });
-
-        if (scene != null) {
-            disposeScene(scene);
-        }
     }
 
 }
