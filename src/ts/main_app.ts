@@ -63,6 +63,7 @@ export class MainApp {
                 this.document_canvas.width, h: this.document_canvas.height
         })
         this.editor = new Editor(this.document_canvas,
+            this.view_canvas,
             this.tool_canvas_signal,
             this.tool_bounds_signal,
             this.view_port_signal);
@@ -93,8 +94,13 @@ export class MainApp {
 
     //     }
     init_canvases() {
-        const w = this.document_canvas.width;
-        const h = this.document_canvas.height;
+        const w = this.view_canvas.clientWidth;
+        const h = this.view_canvas.clientHeight;
+        this.view_canvas.width = w;
+        this.view_canvas.height = h;
+        this.document_canvas.width = w;
+        this.document_canvas.height = h;
+        this.view_port_signal.value = { x: 0, y: 0, w, h };
         this.document_context.clearRect(0, 0, w, h);
 
 

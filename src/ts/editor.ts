@@ -40,35 +40,34 @@ export class Editor {
     private _last_hover_spot: Vector2 | null;
     document_canvas: HTMLCanvasElement;
     document_context: CanvasRenderingContext2D;
+    view_canvas: HTMLCanvasElement;
     tool_canvas_signal: Signal<HTMLCanvasElement>;
     tool_bounds_signal: Signal<RectToRectMapping>;
     view_port_signal: Signal<Rect>;
     init_: any;
     constructor(document_canvas: HTMLCanvasElement,
-
-
+        view_canvas: HTMLCanvasElement,
         tool_canvas_signal: Signal<HTMLCanvasElement>,
         tool_bounds_signal: Signal<RectToRectMapping>,
         view_port_signal: Signal<Rect>
-
     ) {
         this.tool_canvas_signal = tool_canvas_signal;
         this.tool_bounds_signal = tool_bounds_signal;
         this.view_port_signal = view_port_signal;
         this.undo_redo_buffer = new UndoRedoBuffer(100);
         this.tool = new NopTool();
-        this.document_canvas = document_canvas
+        this.document_canvas = document_canvas;
+        this.view_canvas = view_canvas;
         this.document_context = this.document_canvas.getContext('2d', { willReadFrequently: true }) as CanvasRenderingContext2D;
         // Disable anti-aliasing/smoothing for pixel-perfect rendering
         this.document_context.imageSmoothingEnabled = false;
         this._last_hover_spot = null;
     }
     view_coords_to_doc_coords(view_coords: Vector2): Vector2 {
+        const vp = this.view_port_signal.value;
         return {
-            x: Math.floor((view_coords.x - this.view_port_signal.value.x) /
-                this.view_port_signal.value.w * this.document_canvas.width),
-            y: Math.floor((view_coords.y - this.view_port_signal.value.y) /
-                this.view_port_signal.value.h * this.document_canvas.height)
+            x: Math.floor(vp.x + view_coords.x / this.view_canvas.clientWidth * vp.w),
+            y: Math.floor(vp.y + view_coords.y / this.view_canvas.clientHeight * vp.h)
         }
     }
     view_port_px(): Rect {

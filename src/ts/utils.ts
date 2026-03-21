@@ -291,9 +291,9 @@ export function init_canvas(tool: EditingTool, canvas_signal: Signal<HTMLCanvasE
             tool.canvas = document.getElementById('tool_canvas')! as HTMLCanvasElement;
         } else {
             tool.canvas = document.createElement("canvas") as HTMLCanvasElement;
-            // OD: for testing:             
+            // OD: for testing:
             tool.canvas.setAttribute('id', 'tool_canvas');
-            document.getElementById('canvas-area')!.appendChild(tool.canvas);
+            document.getElementById('debug-tool-canvas-slot')!.appendChild(tool.canvas);
         }
     } else { // tool.canvas != null, illegal state
         throw new Error('init_canvas called twice');

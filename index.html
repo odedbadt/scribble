@@ -44,10 +44,23 @@
 
 
         <div id="colorswap" class="button">Swap colors</div>
+        <div id="debug_button" class="button debug-btn" onclick="document.getElementById('debug-modal').style.display='flex'">Debug</div>
     </div>
     <div id="canvas-area">
         <canvas id="view-canvas" width="300" height="300"></canvas>
-        <canvas id="document-canvas" width="300" height="300"></canvas>
+    </div>
+
+    <div id="debug-modal" style="display:none">
+        <div id="debug-modal-inner">
+            <div id="debug-modal-header">
+                <span>Debug Canvases</span>
+                <button onclick="document.getElementById('debug-modal').style.display='none'">✕</button>
+            </div>
+            <div id="debug-canvases">
+                <div><div class="debug-label">document-canvas</div><canvas id="document-canvas" width="300" height="300"></canvas></div>
+                <div><div class="debug-label">tool-canvas</div><div id="debug-tool-canvas-slot"></div></div>
+            </div>
+        </div>
     </div>
     <div id="right-toolbar">
         <!-- 1 -->

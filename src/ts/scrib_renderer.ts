@@ -81,7 +81,7 @@ export class ScribRenderer {
             document_material);
 
         document_rectangle.position.set(this.document_canvas.width * 0.5,
-            this.document_canvas.width * 0.5, -5);
+            this.document_canvas.height * 0.5, -5);
         document_material.side = DoubleSide;
 
         if (overlay_texture != null) {
