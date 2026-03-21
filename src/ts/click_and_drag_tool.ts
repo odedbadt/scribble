@@ -103,6 +103,7 @@ export abstract class ClickAndDragTool extends EditingTool {
         this.canvas!.height = 1;
         // Hide overlay
         this.canvas_signal!.value = null;
+        this.push_undo_snapshot?.();
     }
 
 }

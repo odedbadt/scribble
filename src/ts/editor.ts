@@ -125,27 +125,25 @@ export class Editor {
         // this.tmp_tool_to_view();
 
     }
+    push_undo_snapshot() {
+        const imageData = this.document_context.getImageData(
+            0, 0, this.document_canvas.width, this.document_canvas.height
+        );
+        this.undo_redo_buffer.push(imageData);
+    }
     undo() {
-        // this.art_to_staging();
-        // //OD: fix this.app.tool_context.clearRect(0, 0, this._art_canvas_bounding_rect.w, this._art_canvas_bounding_rect.h);
-        // const undone_image_data = this.undo_redo_buffer.undo();
-        // this.app.clear_art_canvas();
-        // if (undone_image_data) {
-        //     this.document_context.putImageData(undone_image_data, 0, 0);
-        // }
-        // this.art_to_view();
-        // this.art_to_staging();
+        const snapshot = this.undo_redo_buffer.undo();
+        if (snapshot) {
+            this.document_context.putImageData(snapshot, 0, 0);
+            this.document_dirty_signal.value++;
+        }
     }
     redo() {
-        // const redone_image_data = this.undo_redo_buffer.redo();
-        // if (redone_image_data) {
-        //     this.app.staging_context.clearRect(0, 0, this._art_canvas_bounding_rect.w, this._art_canvas_bounding_rect.h);
-        //     this.app.tool_context.clearRect(0, 0, this._art_canvas_bounding_rect.w, this._art_canvas_bounding_rect.h);
-        //     this.app.clear_art_canvas();
-        //     this.document_context.putImageData(redone_image_data, 0, 0);
-        //     this.art_to_view();
-        //     this.art_to_staging();
-        // }
+        const snapshot = this.undo_redo_buffer.redo();
+        if (snapshot) {
+            this.document_context.putImageData(snapshot, 0, 0);
+            this.document_dirty_signal.value++;
+        }
     }
     keydown(event: KeyboardEvent) {
         if (event.code == 'KeyU') {

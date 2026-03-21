@@ -12,6 +12,7 @@ export class ClearAllTool extends EditingTool {
         this.document_context.fillStyle = color;
         this.document_context.fillRect(0, 0, this.document_canvas.width, this.document_canvas.height);
         this.document_dirty_signal!.value++;
+        this.push_undo_snapshot?.();
     }
     start(at: Vector2, buttons: number) {}
     drag(at: Vector2) {}

@@ -61,5 +61,6 @@ export class Floodfill extends ClickTool {
             _floodfill(this.document_context!, replaced_color, fill_color, pos.x, pos.y, w, h);
         }
         this.document_dirty_signal!.value++;
+        this.push_undo_snapshot?.();
     }
 }

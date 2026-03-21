@@ -83,6 +83,7 @@ export class MainApp {
             filled: true,
         });
         this.init_canvases();
+        this.editor.push_undo_snapshot(); // save initial blank state
         this.scrib_renderer.init();
     }
 
