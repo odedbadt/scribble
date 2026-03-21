@@ -2,6 +2,7 @@ import { ClickTool } from "./click_tool"
 import { settings, SettingName } from "./settings_registry";
 import { Vector2 } from "./types";
 import { parse_RGBA } from "./utils";
+import { mandala_mode } from "./mandala_mode";
 
 function _equal_colors(c1: Uint8ClampedArray, c2: Uint8ClampedArray): boolean {
     return c1[0] == c2[0] &&
@@ -46,13 +47,19 @@ export class Floodfill extends ClickTool {
     start(at: Vector2) {
         const w = this.document_canvas!.width;
         const h = this.document_canvas!.height;
-        const replaced_color = this.document_context!.getImageData(Math.floor(at.x), Math.floor(at.y), 1, 1).data;
-        const color = settings.peek<string>(SettingName.ForeColor);
-        const fill_color = parse_RGBA(color);
+        const fill_color = parse_RGBA(settings.peek<string>(SettingName.ForeColor));
 
-        if (_equal_colors(replaced_color, fill_color)) return;
+        const positions = mandala_mode.enabled
+            ? mandala_mode.get_point_transforms(at, { x: w / 2, y: h / 2 })
+            : [at];
 
-        _floodfill(this.document_context!, replaced_color, fill_color, at.x, at.y, w, h);
+        for (const pos of positions) {
+            const replaced_color = this.document_context!.getImageData(
+                Math.floor(pos.x), Math.floor(pos.y), 1, 1
+            ).data;
+            if (_equal_colors(replaced_color, fill_color)) continue;
+            _floodfill(this.document_context!, replaced_color, fill_color, pos.x, pos.y, w, h);
+        }
         this.document_dirty_signal!.value++;
     }
 }

@@ -331,3 +331,40 @@ body {
 #file_input {
     display: none;
 }
+#mandala-panel {
+    display: none;
+    grid-column: span 2;
+    grid-row: span 2;
+    background: rgb(210, 210, 200);
+    padding: 6px 4px;
+    font-family: monospace;
+    font-size: 11px;
+    box-sizing: border-box;
+}
+
+#mandala-panel.visible {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+}
+
+.mandala-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.mandala-ctrl-btn {
+    background: rgb(220, 220, 209);
+    box-shadow: inset 0px 2px 3px rgb(151, 151, 140), inset 0px -2px 3px rgb(112, 112, 103);
+    border: none;
+    cursor: pointer;
+    font-family: monospace;
+    font-size: 12px;
+    padding: 1px 5px;
+    min-width: 18px;
+}
+
+.mandala-ctrl-btn.pressed {
+    box-shadow: inset 0px -2px 3px rgb(151, 151, 140), inset 0px 2px 3px rgb(112, 112, 103);
+}

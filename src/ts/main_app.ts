@@ -7,6 +7,7 @@ import { Signal, signal, computed, effect } from "@preact/signals";
 import { ScribRenderer } from "./scrib_renderer";
 import { SettingName, settings } from './settings_registry'
 import { StateValue, state_registry } from "./state_registry";
+import { mandala_mode } from "./mandala_mode";
 function click_for_a_second(id: string, callback: Function) {
     const elem = document.getElementById(id);
     if (elem) {
@@ -116,7 +117,10 @@ export class MainApp {
         const button = document.getElementsByClassName(tool_name)[0];
         const button_list = document.getElementsByClassName('button');
         Array.from(button_list).forEach(other_button => {
-            other_button.classList.remove('pressed')
+            // Mandala is a mode toggle — don't clear it when switching tools
+            if (!other_button.classList.contains('mandala')) {
+                other_button.classList.remove('pressed');
+            }
         });
         button.classList.add('pressed')
         this.editor.select_tool(tool_name)
@@ -202,15 +206,40 @@ export class MainApp {
 
     init_buttons() {
 
+        // Mandala button: toggle mode, independent of tool selection
+        const mandala_button = document.getElementsByClassName('mandala')[0] as HTMLElement;
+        const mandala_panel = document.getElementById('mandala-panel')!;
+        const mandala_n_val = document.getElementById('mandala-n-val')!;
+        const mandala_mirror_btn = document.getElementById('mandala-mirror')!;
+
+        mandala_button.addEventListener('click', () => {
+            mandala_mode.enabled = !mandala_mode.enabled;
+            mandala_button.classList.toggle('pressed', mandala_mode.enabled);
+            mandala_panel.classList.toggle('visible', mandala_mode.enabled);
+        });
+
+        document.getElementById('mandala-n-minus')!.addEventListener('click', () => {
+            mandala_mode.n = Math.max(1, mandala_mode.n - 1);
+            mandala_n_val.textContent = String(mandala_mode.n);
+        });
+        document.getElementById('mandala-n-plus')!.addEventListener('click', () => {
+            mandala_mode.n = Math.min(32, mandala_mode.n + 1);
+            mandala_n_val.textContent = String(mandala_mode.n);
+        });
+        document.getElementById('mandala-mirror')!.addEventListener('click', () => {
+            mandala_mode.mirror = !mandala_mode.mirror;
+            mandala_mirror_btn.textContent = mandala_mode.mirror ? 'on' : 'off';
+            mandala_mirror_btn.classList.toggle('pressed', mandala_mode.mirror);
+        });
+
         const button_list = document.getElementsByClassName('button');
         Array.from(button_list).forEach(button => {
             const button_class_list = button.classList;
-            if (button_class_list[0] != 'button') {
+            if (button_class_list[0] != 'button' && button_class_list[0] != 'mandala') {
                 button.addEventListener('click', event => {
                     this.select_tool(button_class_list[0])
                 })
             }
-
         })
         const select_tool_signal = state_registry.use_signal<string>(StateValue.SelectedToolName, 'rect');
         select_tool_signal.subscribe((tool_name) => {

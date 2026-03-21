@@ -3,6 +3,7 @@ import { Editor } from "./editor";
 import { SettingName, settings } from "./settings_registry";
 import { Vector2, bounding_rect } from "./types";
 import { drawLine, drawThickLine, drawFilledCircle, parseColor, RGBA } from "./pixel_utils";
+import { mandala_mode } from "./mandala_mode";
 
 export class ScribbleTool extends ClickAndDragTool {
     private _prev: Vector2 | null = null;
@@ -21,34 +22,44 @@ export class ScribbleTool extends ClickAndDragTool {
     editing_drag(from: Vector2, to: Vector2) {
         const lw = settings.peek<number>(SettingName.LineWidth);
         const radius = Math.floor(lw / 2);
-        this.extend_canvas_mapping(to, true, radius + 1);
-        const context = this.context!;
-        const canvas = this.canvas!;
+        const prev = this._prev ?? to;
+        this._prev = { ...to };
 
-        if (this._prev == null) {
-            this._prev = { x: to.x, y: to.y }
+        let line_pairs: Array<{ from: Vector2, to: Vector2 }>;
+        if (mandala_mode.enabled) {
+            const center: Vector2 = {
+                x: this.document_canvas!.width / 2,
+                y: this.document_canvas!.height / 2
+            };
+            line_pairs = mandala_mode.get_line_transforms(prev, to, center);
+            // Extend canvas to cover the full document so all rotated points fit
+            this.extend_canvas_mapping(
+                { x: 0, y: 0, w: this.document_canvas!.width, h: this.document_canvas!.height },
+                true
+            );
+        } else {
+            line_pairs = [{ from: prev, to }];
+            this.extend_canvas_mapping(to, true, radius + 1);
         }
 
+        const context = this.context!;
+        const canvas = this.canvas!;
         const bounds = this.canvas_bounds_mapping!.to;
-        const fx = Math.floor(this._prev.x - bounds.x);
-        const fy = Math.floor(this._prev.y - bounds.y);
-        const cx = Math.floor(to.x - bounds.x);
-        const cy = Math.floor(to.y - bounds.y);
-
-        // Get image data and draw using pixel-perfect algorithms
         const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
 
-        if (radius <= 0) {
-            // For 1px brush, just draw a line
-            drawLine(imageData, fx, fy, cx, cy, this._stroke_color);
-        } else {
-            // For thicker brushes, draw thick line
-            drawThickLine(imageData, fx, fy, cx, cy, radius, this._stroke_color);
+        for (const pair of line_pairs) {
+            const fx = Math.floor(pair.from.x - bounds.x);
+            const fy = Math.floor(pair.from.y - bounds.y);
+            const cx = Math.floor(pair.to.x - bounds.x);
+            const cy = Math.floor(pair.to.y - bounds.y);
+            if (radius <= 0) {
+                drawLine(imageData, fx, fy, cx, cy, this._stroke_color);
+            } else {
+                drawThickLine(imageData, fx, fy, cx, cy, radius, this._stroke_color);
+            }
         }
 
         context.putImageData(imageData, 0, 0);
-
-        this._prev = { ...to }
         this.publish_signals();
     }
 

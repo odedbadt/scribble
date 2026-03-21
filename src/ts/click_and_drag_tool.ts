@@ -28,30 +28,28 @@ export abstract class ClickAndDragTool extends EditingTool {
                 from: { x: 0, y: 0, w: 1, h: 1 },
                 to: rect_to_include
             }
+            clear_canvas(this.canvas!);
         } else {
             const next_to = rect_union(prev_mapping.to, rect_to_include, margin);
-            const w = this.canvas.width;
-            const h = this.canvas.height;
             const ctx = this.canvas.getContext('2d')!;
             if (copy) {
-                const src_image_data = ctx.getImageData(0, 0, w, h)
+                const src_image_data = ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
                 this.canvas.width = next_to.w;
                 this.canvas.height = next_to.h;
                 ctx.putImageData(src_image_data,
                     -(next_to.x - prev_mapping.to.x),
-                    -(next_to.y - prev_mapping.to.y))
+                    -(next_to.y - prev_mapping.to.y));
+                // Do NOT clear — preserve existing strokes
             } else {
                 this.canvas.width = next_to.w;
                 this.canvas.height = next_to.h;
+                clear_canvas(this.canvas!);
             }
             this.canvas_bounds_mapping = {
                 to: next_to,
-                from: {
-                    x: 0, y: 0, w: 1, h: 1
-                }
+                from: { x: 0, y: 0, w: 1, h: 1 }
             }
         }
-        clear_canvas(this.canvas!)
     }
     start(at: Vector2, buttons: number): void {
         this.drag_start = vfloor(at);
