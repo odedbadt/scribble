@@ -47,6 +47,7 @@ export abstract class EditingTool {
         this.canvas_signal!.value = null;
     }
     abstract hover(at: Vector2): void;
+    pointer_leave(): void {}
 
 }
 export class NopTool extends EditingTool {

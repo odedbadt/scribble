@@ -168,7 +168,8 @@ export class Editor {
     }
     pointerleave(event: MouseEvent) {
         // this.app.tool_tmp_context.clearRect(0, 0, this._art_canvas_bounding_rect.w, this._art_canvas_bounding_rect.h);
-        this._last_hover_spot = null
+        this._last_hover_spot = null;
+        this.tool.pointer_leave();
     }
     staging_to_art() {
         // override_canvas_context(this.document_context, this.app.staging_canvas,
