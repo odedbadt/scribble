@@ -130,70 +130,48 @@ export class MainApp {
         state_registry.set<string>(StateValue.SelectedToolName, tool_name);
         this._perform_select_tool(tool_name);
     }
-    // load_image(url: string) {
-    //     const img = new Image();
-
-    //     img.addEventListener('load', () => {
-    //         // Clear canvas and draw the image
-    //         this.document_canvas.width = img.naturalWidth;
-    //         this.document_canvas.height = img.naturalHeight;
-    //         // a = w / h
-    //         const view_canvas_aspect = this.view_canvas.clientWidth / this.view_canvas.clientHeight;
-    //         const view_port_w = Math.min(img.naturalWidth, img.naturalHeight * view_canvas_aspect) / 2
-    //         this.view_port_signal.value = {
-    //             'x': 0, 'y': 0, 'w': view_port_w,
-    //             'h': view_port_w / view_canvas_aspect
-    //         };
-
-    //         this.document_context.drawImage(img, 0, 0, this.document_canvas.width, this.document_canvas.height);
-    //     });
-    //     img.src = url;
-    // }
-    // init_load_save() {
-    //     click_for_a_second('save_button', () => {
-    //         // Generate a PNG from the canvas
-    //         this.document_canvas.toBlob((blob) => {
-    //             if (!blob) {
-    //                 alert('invalid choice, not saving')
-    //                 return
-    //             }
-
-    //             const link = document.createElement('a');
-    //             link.href = URL.createObjectURL(blob);
-    //             link.download = 'image.png';  // Set the file name for download
-    //             link.click();
-    //         }, 'image/png');
-    //     });
-    //     const file_input = document.getElementById('file_input')! as HTMLInputElement
-    //     file_input.addEventListener('change', (event: Event) => {
-    //         const input = event.target as HTMLInputElement;
-
-    //         if (input
-    //             && input.files
-    //             && input.files.length > 0
-    //             && input.files[0]
-    //             && input.files[0].type === 'image/png') {
-    //             const file = input.files[0];
-    //             const reader = new FileReader();
-
-    //             reader.onload = (e) => {
-    //                 if (e.target) {
-    //                     this.load_image(e.target.result as string)
-    //                 }
-    //             };
-    //             reader.readAsDataURL(file);
-    //         } else {
-    //             alert("Please select a valid PNG file.");
-    //         }
-    //         file_input.value = '';
-    //     });
-    //     document.getElementById('load_button')!.addEventListener('click', () => {
-    //         file_input.click()
-    //     });
-    //     // document.getElementById('gdrive_button')!.addEventListener('click', () => {
-    //     //     this.google_drive.open_picker(this.load_image.bind(this));//(s:string) => {console.log(s)});
-    //     // });
-    // }
+    load_image(url: string) {
+        const img = new Image();
+        img.addEventListener('load', () => {
+            this.document_canvas.width = img.naturalWidth;
+            this.document_canvas.height = img.naturalHeight;
+            const aspect = img.naturalWidth / img.naturalHeight;
+            this.view_port_signal.value = { x: 0, y: 0, w: img.naturalWidth, h: img.naturalHeight };
+            this.document_context.drawImage(img, 0, 0);
+            this.document_dirty_signal.value++;
+            this.editor.push_undo_snapshot();
+        });
+        img.src = url;
+    }
+    init_load_save() {
+        document.getElementById('save_button')!.addEventListener('click', async () => {
+            const blob = await new Promise<Blob | null>(resolve =>
+                this.document_canvas.toBlob(resolve, 'image/png'));
+            if (!blob) return;
+            const handle = await (window as any).showSaveFilePicker({
+                suggestedName: 'image.png',
+                types: [{ description: 'PNG image', accept: { 'image/png': ['.png'] } }],
+            });
+            const writable = await handle.createWritable();
+            await writable.write(blob);
+            await writable.close();
+        });
+        const file_input = document.getElementById('file_input')! as HTMLInputElement;
+        file_input.addEventListener('change', (event: Event) => {
+            const input = event.target as HTMLInputElement;
+            if (input?.files?.[0]?.type === 'image/png') {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    if (e.target) this.load_image(e.target.result as string);
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+            file_input.value = '';
+        });
+        document.getElementById('load_button')!.addEventListener('click', () => {
+            file_input.click();
+        });
+    }
     init_undo_redo_buttons() {
         click_for_a_second('undo_button', () => {
             this.editor.undo()
@@ -247,7 +225,7 @@ export class MainApp {
             this._perform_select_tool(tool_name);
         })
         this.init_undo_redo_buttons()
-        //this.init_load_save()
+        this.init_load_save()
     }
     forward_events_to_editor() {
         // canvas
