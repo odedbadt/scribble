@@ -2,7 +2,6 @@ import { ClickTool } from "./click_tool"
 import { settings, SettingName } from "./settings_registry";
 import { Vector2 } from "./types";
 import { parse_RGBA } from "./utils";
-import { batch } from "@preact/signals";
 
 function _equal_colors(c1: Uint8ClampedArray, c2: Uint8ClampedArray): boolean {
     return c1[0] == c2[0] &&
@@ -54,9 +53,6 @@ export class Floodfill extends ClickTool {
         if (_equal_colors(replaced_color, fill_color)) return;
 
         _floodfill(this.document_context!, replaced_color, fill_color, at.x, at.y, w, h);
-
-        batch(() => {
-            this.canvas_signal!.value = null;
-        });
+        this.document_dirty_signal!.value++;
     }
 }

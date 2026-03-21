@@ -44,16 +44,19 @@ export class Editor {
     tool_canvas_signal: Signal<HTMLCanvasElement>;
     tool_bounds_signal: Signal<RectToRectMapping>;
     view_port_signal: Signal<Rect>;
+    document_dirty_signal: Signal<number>;
     init_: any;
     constructor(document_canvas: HTMLCanvasElement,
         view_canvas: HTMLCanvasElement,
         tool_canvas_signal: Signal<HTMLCanvasElement>,
         tool_bounds_signal: Signal<RectToRectMapping>,
-        view_port_signal: Signal<Rect>
+        view_port_signal: Signal<Rect>,
+        document_dirty_signal: Signal<number>
     ) {
         this.tool_canvas_signal = tool_canvas_signal;
         this.tool_bounds_signal = tool_bounds_signal;
         this.view_port_signal = view_port_signal;
+        this.document_dirty_signal = document_dirty_signal;
         this.undo_redo_buffer = new UndoRedoBuffer(100);
         this.tool = new NopTool();
         this.document_canvas = document_canvas;

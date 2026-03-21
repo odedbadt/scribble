@@ -13,8 +13,10 @@ export class ScribRenderer {
     view_canvas: HTMLCanvasElement;
     overlay_canvas_signal: Signal<HTMLCanvasElement>;
     overlay_canvas_bounds_signal: Signal<RectToRectMapping>;
+    document_dirty_signal: Signal<number>;
     constructor(overlay_canvas_signal: Signal<HTMLCanvasElement>,
-        overlay_canvas_bounds_signal: Signal<RectToRectMapping>) {
+        overlay_canvas_bounds_signal: Signal<RectToRectMapping>,
+        document_dirty_signal: Signal<number>) {
         this.document_canvas = document.getElementById('document-canvas')! as HTMLCanvasElement;
         this.view_canvas = document.getElementById('view-canvas')! as HTMLCanvasElement;
         this.document_context = this.document_canvas.getContext('2d', { willReadFrequently: true, texImage3d: false }) as CanvasRenderingContext2D;
@@ -22,6 +24,7 @@ export class ScribRenderer {
         this.document_context.globalCompositeOperation = 'source-over';
         this.overlay_canvas_signal = overlay_canvas_signal;
         this.overlay_canvas_bounds_signal = overlay_canvas_bounds_signal;
+        this.document_dirty_signal = document_dirty_signal;
 
     }
     init() {
@@ -184,6 +187,7 @@ export class ScribRenderer {
         effect(() => {
             const overlay_canvas = this.overlay_canvas_signal.value;
             const bounds_mapping = this.overlay_canvas_bounds_signal.value;
+            this.document_dirty_signal.value; // subscribe so document-only changes trigger re-render
 
             docTexture.needsUpdate = true;
 

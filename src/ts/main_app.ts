@@ -35,6 +35,7 @@ export class MainApp {
     palette_sat_canvas: HTMLCanvasElement;
     tool_canvas_signal: any;
     tool_bounds_signal: any;
+    document_dirty_signal: Signal<number>;
     view_port_signal: Signal<Rect>;
 
     constructor() {
@@ -52,6 +53,7 @@ export class MainApp {
             document.getElementsByClassName('color_stack_item')
         )
         this.tool_canvas_signal = signal<HTMLCanvasElement>()
+        this.document_dirty_signal = signal<number>(0)
         this.tool_bounds_signal = signal<RectToRectMapping>(
             {
                 from: { x: 0, y: 0, w: 200, h: 200 },
@@ -66,9 +68,11 @@ export class MainApp {
             this.view_canvas,
             this.tool_canvas_signal,
             this.tool_bounds_signal,
-            this.view_port_signal);
+            this.view_port_signal,
+            this.document_dirty_signal);
         this.scrib_renderer = new ScribRenderer(this.tool_canvas_signal,
-            this.tool_bounds_signal);
+            this.tool_bounds_signal,
+            this.document_dirty_signal);
 
         this.editor.init_
         settings.bulkSet({
