@@ -145,8 +145,18 @@ export class MainApp {
     }
     init_load_save() {
         document.getElementById('save_button')!.addEventListener('click', async () => {
+            // Read pixels via getImageData to avoid Chrome GPU-transfer issue
+            // (document_canvas is used as a WebGL texture, which can cause toBlob to return empty)
+            const w = this.document_canvas.width;
+            const h = this.document_canvas.height;
+            const imageData = this.document_context.getImageData(0, 0, w, h);
+            const offscreen = document.createElement('canvas');
+            offscreen.width = w;
+            offscreen.height = h;
+            const ctx = offscreen.getContext('2d')!;
+            ctx.putImageData(imageData, 0, 0);
             const blob = await new Promise<Blob | null>(resolve =>
-                this.document_canvas.toBlob(resolve, 'image/png'));
+                offscreen.toBlob(resolve, 'image/png'));
             if (!blob) return;
             const handle = await (window as any).showSaveFilePicker({
                 suggestedName: 'image.png',

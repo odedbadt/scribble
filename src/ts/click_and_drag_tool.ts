@@ -86,16 +86,20 @@ export abstract class ClickAndDragTool extends EditingTool {
         if (this.document_context == null) {
             throw new Error("Cannot stop tool if editor is not full initialized")
         }
+        if (!this.canvas_bounds_mapping) {
+            return;
+        }
         if (color == null) {
             color = settings.peek<string>(SettingName.ForeColor);
         }
         const color_array = parse_RGBA(color)
         tool_to_document(this.canvas!,
-            this.canvas_bounds_mapping_signal!.value, this.document_context, color_array);
+            this.canvas_bounds_mapping, this.document_context, color_array);
 
     }
     stop(at: Vector2) {
         this.commit_to_document()
+        this.document_dirty_signal!.value++;
         this.drag_start = null;
         this.canvas_bounds_mapping = null;
         // Reset canvas to 1×1 so old stroke content doesn't bleed into the next stroke

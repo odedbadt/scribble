@@ -153,20 +153,26 @@ export class ScribRenderer {
             canvas: this.view_canvas
         });
 
-        // Document mesh — created once, texture updated in-place each frame
-        const docTexture = new CanvasTexture(this.document_canvas);
-        docTexture.flipY = false;
-        docTexture.minFilter = NearestFilter;
-        docTexture.magFilter = NearestFilter;
+        // Document mesh — texture and geometry recreated when canvas dimensions change
+        let docTexW = this.document_canvas.width;
+        let docTexH = this.document_canvas.height;
+        const makeDocTexture = () => {
+            const t = new CanvasTexture(this.document_canvas);
+            t.flipY = false;
+            t.minFilter = NearestFilter;
+            t.magFilter = NearestFilter;
+            return t;
+        };
+        let docTexture = makeDocTexture();
         const docMaterial = new ShaderMaterial({
             uniforms: { uTexture: { value: docTexture } },
             vertexShader: VERTEX_SHADER_CODE,
             fragmentShader: FRAGMENT_SHADER_CODE,
             side: DoubleSide,
         });
-        const docGeometry = new PlaneGeometry(this.document_canvas.width, this.document_canvas.height);
+        let docGeometry = new PlaneGeometry(docTexW, docTexH);
         const docMesh = new Mesh(docGeometry, docMaterial);
-        docMesh.position.set(this.document_canvas.width * 0.5, this.document_canvas.height * 0.5, -5);
+        docMesh.position.set(docTexW * 0.5, docTexH * 0.5, -5);
 
         // Overlay mesh — geometry/material/mesh reused; texture recreated each frame
         const overlayMaterial = new ShaderMaterial({
@@ -188,6 +194,19 @@ export class ScribRenderer {
             const overlay_canvas = this.overlay_canvas_signal.value;
             const bounds_mapping = this.overlay_canvas_bounds_signal.value;
             this.document_dirty_signal.value; // subscribe so document-only changes trigger re-render
+
+            // Recreate texture and geometry if canvas was resized (e.g. after image load)
+            if (this.document_canvas.width !== docTexW || this.document_canvas.height !== docTexH) {
+                docTexW = this.document_canvas.width;
+                docTexH = this.document_canvas.height;
+                docTexture.dispose();
+                docTexture = makeDocTexture();
+                docMaterial.uniforms.uTexture.value = docTexture;
+                docGeometry.dispose();
+                docGeometry = new PlaneGeometry(docTexW, docTexH);
+                docMesh.geometry = docGeometry;
+                docMesh.position.set(docTexW * 0.5, docTexH * 0.5, -5);
+            }
 
             docTexture.needsUpdate = true;
 
