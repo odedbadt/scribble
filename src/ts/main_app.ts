@@ -73,7 +73,8 @@ export class MainApp {
             this.document_dirty_signal);
         this.scrib_renderer = new ScribRenderer(this.tool_canvas_signal,
             this.tool_bounds_signal,
-            this.document_dirty_signal);
+            this.document_dirty_signal,
+            this.view_port_signal);
 
         this.editor.init_
         settings.bulkSet({
@@ -343,7 +344,8 @@ export class MainApp {
     }
     init_scroll() {
         this.view_canvas.addEventListener('wheel', (event) => {
-            event.preventDefault()
+            event.preventDefault();
+
             // Get the modifiers pressed
             const ctrl_key = event.ctrlKey;
 
@@ -353,36 +355,30 @@ export class MainApp {
 
 
             // Perform actions based on modifiers and scroll direction
+            const vp = this.view_port_signal.value;
+            const doc_w = this.document_canvas.width;
+            const doc_h = this.document_canvas.height;
+            const clamp_pos = (x: number, y: number, w: number, h: number) => ({
+                x: Math.max(0, Math.min(x, doc_w - w)),
+                y: Math.max(0, Math.min(y, doc_h - h)),
+                w,
+                h,
+            });
             if (ctrl_key) {
-                // Zoom:;
-                // view_port.h, w changes
-                // cursor in before and in after change has to be contant
-                const art_x_before_zoom = this.view_port_signal.value.x + event.offsetX /
-                    this.view_canvas.clientWidth * this.view_port_signal.value.w;
-                /* equations:
-                // view_port_x_before + cursor_x*view_port_w_before / view_canvas_w = 
-                // view_port_x_after + cursor_x*view_port_w_after  / view_canvas_w
-                // view_port_y_before + cursor_x*view_port_h_before / view_canvas_h = 
-                // view_port_y_after + cursor_x*view_port_h_after  / view_canvas_h
-                // thus:
-                // view_port_y_after = view_port_y_before + cursor_y*(view_port_h_before-view_port_h_after) / view_canvas_h
-                // view_port_x_after = view_port_x_before + cursor_x*(view_port_w_before-view_port_w_after) / view_canvas_w
-                // view_port_y_after = view_port_y_before + cursor_y*deltaY/ view_canvas_h
-                // view_port_x_after = view_port_y_after*aspect;
-                */
-
-                const aspect = this.view_port_signal.value.w / this.view_port_signal.value.h;
+                const aspect = vp.w / vp.h;
                 const ratio_h = Math.exp(deltaY / 1000);
-                const delta_h = this.view_port_signal.value.h * (ratio_h - 1)
-                this.view_port_signal.value.y = this.view_port_signal.value.y - event.offsetY * delta_h / this.view_canvas.clientHeight;
-                this.view_port_signal.value.x = this.view_port_signal.value.x - event.offsetX * delta_h * aspect / this.view_canvas.clientWidth;
-                this.view_port_signal.value.h = Math.max(1, this.view_port_signal.value.h * ratio_h)
-                this.view_port_signal.value.w = this.view_port_signal.value.h * aspect;
+                const new_h = Math.max(1, Math.min(vp.h * ratio_h, doc_h));
+                const new_w = new_h * aspect;
+                const delta_h = vp.h * (ratio_h - 1);
+                const raw_x = vp.x - event.offsetX * delta_h * aspect / this.view_canvas.clientWidth;
+                const raw_y = vp.y - event.offsetY * delta_h / this.view_canvas.clientHeight;
+                this.view_port_signal.value = clamp_pos(raw_x, raw_y, new_w, new_h);
             } else {
-                this.view_port_signal.value.y = Math.max(0, this.view_port_signal.value.y + deltaY / this.view_canvas.clientHeight * 100)
-                this.view_port_signal.value.x = Math.max(0, this.view_port_signal.value.x + deltaX / this.view_canvas.clientWidth * 100)
+                const raw_x = vp.x + deltaX / this.view_canvas.clientWidth * vp.w;
+                const raw_y = vp.y + deltaY / this.view_canvas.clientHeight * vp.h;
+                this.view_port_signal.value = clamp_pos(raw_x, raw_y, vp.w, vp.h);
             }
-        });
+        }, { passive: false });
     }
     init() {
         // clear

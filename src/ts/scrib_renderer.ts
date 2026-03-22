@@ -14,9 +14,11 @@ export class ScribRenderer {
     overlay_canvas_signal: Signal<HTMLCanvasElement>;
     overlay_canvas_bounds_signal: Signal<RectToRectMapping>;
     document_dirty_signal: Signal<number>;
+    view_port_signal: Signal<Rect>;
     constructor(overlay_canvas_signal: Signal<HTMLCanvasElement>,
         overlay_canvas_bounds_signal: Signal<RectToRectMapping>,
-        document_dirty_signal: Signal<number>) {
+        document_dirty_signal: Signal<number>,
+        view_port_signal: Signal<Rect>) {
         this.document_canvas = document.getElementById('document-canvas')! as HTMLCanvasElement;
         this.view_canvas = document.getElementById('view-canvas')! as HTMLCanvasElement;
         this.document_context = this.document_canvas.getContext('2d', { willReadFrequently: true, texImage3d: false }) as CanvasRenderingContext2D;
@@ -25,35 +27,20 @@ export class ScribRenderer {
         this.overlay_canvas_signal = overlay_canvas_signal;
         this.overlay_canvas_bounds_signal = overlay_canvas_bounds_signal;
         this.document_dirty_signal = document_dirty_signal;
-
+        this.view_port_signal = view_port_signal;
     }
     init() {
-        this.init_camera();
         this.init_render_loop();
     }
 
-    init_camera(): Camera {
-        // const aspect = this.view_canvas.clientWidth / this.view_canvas.clientHeight;
-        // const camera = new OrthographicCamera(
-        //     -w, // left
-        //     w,  // right
-        //     -h,           // top
-        //     h,          // bottom
-        //     0,                  // near
-        //     10                    // far
-        // );
-        // camera.position.z = 1;
-        // return camera
-        const aspect = 1;
-        const w = this.view_canvas.width;
-        const h = this.view_canvas.height;
+    init_camera(vp: Rect): Camera {
         const camera = new OrthographicCamera(
-            0, // left
-            w,  // right
-            0,           // top
-            h,          // bottom
-            0,                  // near
-            10                    // far
+            vp.x,         // left
+            vp.x + vp.w,  // right
+            vp.y,         // top
+            vp.y + vp.h,  // bottom
+            0,
+            10
         );
         camera.position.set(0, 0, 1);
         camera.lookAt(0, 0, 0);
@@ -194,6 +181,7 @@ export class ScribRenderer {
             const overlay_canvas = this.overlay_canvas_signal.value;
             const bounds_mapping = this.overlay_canvas_bounds_signal.value;
             this.document_dirty_signal.value; // subscribe so document-only changes trigger re-render
+            const vp = this.view_port_signal.value;
 
             // Recreate texture and geometry if canvas was resized (e.g. after image load)
             if (this.document_canvas.width !== docTexW || this.document_canvas.height !== docTexH) {
@@ -233,7 +221,7 @@ export class ScribRenderer {
                 overlayMesh.visible = false;
             }
 
-            renderer.render(scene, this.init_camera());
+            renderer.render(scene, this.init_camera(vp));
         });
     }
 
