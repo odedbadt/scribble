@@ -63,7 +63,6 @@ export class ColorStack {
                     this._stack.shift();
                 }
             } else if (this._stack.length > 0) {
-                console.log(color, this._stack[this._stack.length - 1], dist2(color, this._stack[this._stack.length - 1]), dist2_to_set(color, this._stack))
 
             }
             this.refresh_color_stack()
