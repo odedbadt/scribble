@@ -3,6 +3,7 @@ import { settings, SettingName } from "./settings_registry";
 import { Vector2 } from "./types";
 import { parse_RGBA } from "./utils";
 import { mandala_mode } from "./mandala_mode";
+import { drawFilledCircle, parseColor } from "./pixel_utils";
 
 function _equal_colors(c1: Uint8ClampedArray, c2: Uint8ClampedArray): boolean {
     return c1[0] == c2[0] &&
@@ -42,7 +43,51 @@ export class Floodfill extends ClickTool {
     drag(at: Vector2) {}
     stop(at: Vector2) {}
     select() {}
-    hover(at: Vector2) {}
+
+    hover(at: Vector2) {
+        if (!this.context) return;
+        const color = parseColor(settings.peek<string>(SettingName.ForeColor));
+        const ctx = this.context!;
+        const radius = 2;
+
+        if (mandala_mode.enabled && this.document_canvas) {
+            const center = { x: this.document_canvas.width / 2, y: this.document_canvas.height / 2 };
+            const docW = this.document_canvas.width;
+            const docH = this.document_canvas.height;
+            this.canvas!.width = docW;
+            this.canvas!.height = docH;
+            this.canvas_bounds_mapping = {
+                from: { x: 0, y: 0, w: 1, h: 1 },
+                to: { x: 0, y: 0, w: docW, h: docH },
+            };
+            const imageData = ctx.getImageData(0, 0, docW, docH);
+            for (const pt of mandala_mode.get_point_transforms(at, center)) {
+                drawFilledCircle(imageData, Math.round(pt.x), Math.round(pt.y), radius, color);
+            }
+            ctx.putImageData(imageData, 0, 0);
+        } else {
+            const margin = 1;
+            const half = radius + margin;
+            const size = half * 2 + 1;
+            this.canvas!.width = size;
+            this.canvas!.height = size;
+            this.canvas_bounds_mapping = {
+                from: { x: 0, y: 0, w: 1, h: 1 },
+                to: { x: at.x - half, y: at.y - half, w: size, h: size },
+            };
+            const imageData = ctx.getImageData(0, 0, size, size);
+            drawFilledCircle(imageData, half, half, radius, color);
+            ctx.putImageData(imageData, 0, 0);
+        }
+        this.publish_signals();
+    }
+
+    pointer_leave() {
+        this.canvas_bounds_mapping = null;
+        this.canvas!.width = 1;
+        this.canvas!.height = 1;
+        this.canvas_signal!.value = null;
+    }
 
     start(at: Vector2) {
         const w = this.document_canvas!.width;
