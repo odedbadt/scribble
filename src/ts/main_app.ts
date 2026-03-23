@@ -214,6 +214,7 @@ export class MainApp {
         mandala_button.addEventListener('click', () => {
             mandala_mode.enabled = !mandala_mode.enabled;
             if (!mandala_mode.enabled) {
+                anchor_manager.set_mandala_center(-1);
                 mandala_mode.center = null;
                 this.editor.tool.pointer_leave?.();
             }
@@ -277,7 +278,7 @@ export class MainApp {
                 if (this.editor[method]) {
                     this.editor[method](ev);
                 }
-                if (ename === 'pointermove' || ename === 'pointerleave') {
+                if (ename === 'pointermove' || ename === 'pointerleave' || ename === 'pointerdown') {
                     this._redraw_anchor_canvas();
                 }
             })
@@ -391,24 +392,11 @@ export class MainApp {
 
     init_anchor_button() {
         const btn = document.getElementById('anchor-btn')!;
-        let dragging = false;
-
-        btn.addEventListener('pointerdown', (e: PointerEvent) => {
-            e.preventDefault();
-            dragging = true;
-            btn.setPointerCapture(e.pointerId);
-        });
-
-        btn.addEventListener('pointerup', (e: PointerEvent) => {
-            if (!dragging) return;
-            dragging = false;
-            const canvas_area = document.getElementById('canvas-area')!;
-            const rect = canvas_area.getBoundingClientRect();
-            const view_x = e.clientX - rect.left;
-            const view_y = e.clientY - rect.top;
-            if (view_x >= 0 && view_y >= 0 && view_x <= rect.width && view_y <= rect.height) {
-                const doc_pt = this.editor.view_coords_to_doc_coords({ x: view_x, y: view_y });
-                anchor_manager.add(doc_pt);
+        btn.addEventListener('click', () => {
+            this.editor.anchor_edit_mode = !this.editor.anchor_edit_mode;
+            btn.classList.toggle('pressed', this.editor.anchor_edit_mode);
+            if (!this.editor.anchor_edit_mode) {
+                this.editor.tool.pointer_leave();
             }
         });
     }

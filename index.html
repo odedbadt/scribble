@@ -36,7 +36,8 @@
 
 
         <div id="colorswap" class="button">Swap colors</div>
-        <div id="debug_button" class="button debug-btn" onclick="document.getElementById('debug-modal').style.display='flex'">Debug</div>
+        <div id="debug_button" class="button debug-btn"
+            onclick="document.getElementById('debug-modal').style.display='flex'">Debug</div>
     </div>
     <div id="canvas-area">
         <canvas id="view-canvas" width="300" height="300"></canvas>
@@ -49,8 +50,14 @@
                 <button onclick="document.getElementById('debug-modal').style.display='none'">✕</button>
             </div>
             <div id="debug-canvases">
-                <div><div class="debug-label">document-canvas</div><canvas id="document-canvas" width="300" height="300"></canvas></div>
-                <div><div class="debug-label">tool-canvas</div><div id="debug-tool-canvas-slot"></div></div>
+                <div>
+                    <div class="debug-label">document-canvas</div><canvas id="document-canvas" width="300"
+                        height="300"></canvas>
+                </div>
+                <div>
+                    <div class="debug-label">tool-canvas</div>
+                    <div id="debug-tool-canvas-slot"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -70,40 +77,24 @@
             </div>
         </div>
         <!-- anchor -->
-        <div id="anchor-btn" class="anchor button" title="Drag to canvas to place anchor; right-click anchor to remove">⚓</div>
-        <!-- 1 -->
+        <div id="anchor-btn" class="anchor button" title="Toggle anchor edit mode">⚓</div>
+        <!-- fillstyle -->
         <div class="fillstyle filled button"></div>
 
-        <!-- 2 -->
-        <div class="button"></div>
-
-
-        <!-- 4 -->
         <div class="color_stack_item button"></div>
-
-        <!-- 5 -->
         <div class="color_stack_item button"></div>
-
-        <!-- 6 -->
+        <div class="color_stack_item button"></div>
+        <div class="color_stack_item button"></div>
+        <div class="color_stack_item button"></div>
+        <div class="color_stack_item button"></div>
+        <div class="color_stack_item button"></div>
         <div class="color_stack_item button"></div>
 
-        <!-- 7 -->
-        <div class="color_stack_item button"></div>
-        <!-- 8 -->
-        <div class="color_stack_item button"></div>
-
-        <!-- 9 -->
-        <div class="color_stack_item button"></div>
-
-        <!-- 10 -->
-        <div class="color_stack_item button"></div>
-        <div class="color_stack_item button"></div>
         <canvas id="hl-selector-canvas" width="50" height="200"></canvas>
         <canvas id="sat-selector-canvas" width="50" height="100"></canvas>
         <div id="color-selector-div-back">
             <div id="color-selector-div-fore"></div>
         </div>
-
     </div>
     <input type="file" id="file_input" accept="image/png" />
 </body>

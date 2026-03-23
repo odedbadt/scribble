@@ -71,5 +71,6 @@ export class ScribbleTool extends ClickAndDragTool {
 
     pointer_leave() {
         this._prev = null;
+        super.pointer_leave();
     }
 }

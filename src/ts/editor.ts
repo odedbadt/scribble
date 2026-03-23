@@ -43,6 +43,8 @@ export class Editor {
     private _last_hover_spot: Vector2 | null;
     _last_doc_pos: Vector2 | null = null;
     private _dragging_anchor_idx: number = -1;
+    placing_anchor: boolean = false;
+    anchor_edit_mode: boolean = false;
     document_canvas: HTMLCanvasElement;
     document_context: CanvasRenderingContext2D;
     view_canvas: HTMLCanvasElement;
@@ -124,19 +126,26 @@ export class Editor {
         const radius = this.snap_radius_doc();
         // Right-click removes nearest anchor
         if (event.button === 2) {
-            anchor_manager.remove_nearest(raw, radius);
+            const { was_center } = anchor_manager.remove_nearest(raw, radius);
+            if (was_center) mandala_mode.center = null;
             return;
         }
-        // Left-click near anchor: drag it instead of drawing
-        const idx = anchor_manager.nearest_idx(raw, radius);
-        if (idx >= 0) {
-            this._dragging_anchor_idx = idx;
+        // Anchor edit mode: drag existing or place new; never start a draw stroke
+        if (this.anchor_edit_mode) {
+            const idx = anchor_manager.nearest_idx(raw, radius);
+            if (idx >= 0) {
+                this._dragging_anchor_idx = idx;
+                this.tool.pointer_leave();
+            } else {
+                anchor_manager.add(raw);
+            }
             return;
         }
         const { pt: at } = anchor_manager.snap(raw, radius);
         if (mandala_mode.enabled && mandala_mode.center === null) {
+            const idx = anchor_manager.add(at);
+            anchor_manager.set_mandala_center(idx);
             mandala_mode.center = at;
-            this.show_center_overlay();
             return;
         }
         this.tool.start(at, event.buttons);
@@ -145,9 +154,17 @@ export class Editor {
         this._last_hover_spot = { x: event.offsetX, y: event.offsetY }
         const raw = this.view_coords_to_doc_coords({ x: event.offsetX, y: event.offsetY });
         this._last_doc_pos = raw;
-        // Dragging an anchor
+        // Dragging an existing anchor — just move it, no tool cursor
         if (this._dragging_anchor_idx >= 0) {
             anchor_manager.move(this._dragging_anchor_idx, raw);
+            if (this._dragging_anchor_idx === anchor_manager.mandala_center_idx) {
+                mandala_mode.center = anchor_manager.get_mandala_center();
+            }
+            return;
+        }
+        // Placing a new anchor from the toolbar button — show anchor dot, not draw cursor
+        if (this.placing_anchor || this.anchor_edit_mode) {
+            this._show_anchor_placement_cursor(raw);
             return;
         }
         const { pt: at } = anchor_manager.snap(raw, this.snap_radius_doc());
@@ -183,6 +200,32 @@ export class Editor {
             setPixel(imageData, i, arm, color);
             setPixel(imageData, arm, i, color);
         }
+        ctx.putImageData(imageData, 0, 0);
+        this.tool.publish_signals();
+    }
+
+    private _show_anchor_placement_cursor(at: Vector2) {
+        const arm = 5;
+        const size = arm * 2 + 1;
+        this.tool.canvas!.width = size;
+        this.tool.canvas!.height = size;
+        this.tool.canvas_bounds_mapping = {
+            from: { x: 0, y: 0, w: 1, h: 1 },
+            to: { x: at.x - arm, y: at.y - arm, w: size, h: size },
+        };
+        const ctx = this.tool.context!;
+        const imageData = ctx.getImageData(0, 0, size, size);
+        // Draw a small ring at the centre of the canvas (same style as anchor dots)
+        const color: RGBA = [0, 100, 220, 200];
+        for (let dy = -arm; dy <= arm; dy++) {
+            for (let dx = -arm; dx <= arm; dx++) {
+                const d = Math.sqrt(dx * dx + dy * dy);
+                if (d >= arm - 0.6 && d <= arm + 0.6) {
+                    setPixel(imageData, arm + dx, arm + dy, color);
+                }
+            }
+        }
+        setPixel(imageData, arm, arm, color);
         ctx.putImageData(imageData, 0, 0);
         this.tool.publish_signals();
     }
@@ -243,14 +286,13 @@ export class Editor {
             this._dragging_anchor_idx = -1;
             return;
         }
+        if (this.anchor_edit_mode) {
+            return;
+        }
         const raw = this.view_coords_to_doc_coords({ x: event.offsetX, y: event.offsetY });
         const { pt: at } = anchor_manager.snap(raw, this.snap_radius_doc());
         this.tool.stop(at);
-        if (mandala_mode.enabled && mandala_mode.center) {
-            this.show_center_overlay();
-        } else {
-            this.tool.hover(at);
-        }
+        this.tool.hover(at);
     }
     pointerin(event: MouseEvent) {
         if (!!event.buttons) {
