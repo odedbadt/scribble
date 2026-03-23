@@ -37,7 +37,12 @@ export class CursorSize extends ClickAndDragTool {
     }
 
     stop(at: Vector2) {
+        const start = this.drag_start;
         super.stop(at);
+        // Single click (no drag) → 1px
+        if (start && at.x === start.x && at.y === start.y) {
+            settings.set(SettingName.LineWidth, 1);
+        }
         state_registry.pop(StateValue.SelectedToolName);
     }
 
