@@ -6,6 +6,7 @@ import { Rect, Vector2, RectToRectMapping, unit_rect, vfloor } from "./types";
 import { signal, computed, effect } from "@preact/signals";
 import { parse_RGBA, tool_to_document, clear_canvas, rect_union, extend_rect } from "./utils";
 import { settings, SettingName } from "./settings_registry";
+import { drawFilledCircle, parseColor } from "./pixel_utils";
 export abstract class ClickAndDragTool extends EditingTool {
     dirty: boolean = false;
     drag_start: Vector2 | null = null;
@@ -66,18 +67,38 @@ export abstract class ClickAndDragTool extends EditingTool {
         this.editing_drag(vfloor(this.drag_start), vfloor(at));
         this.publish_signals();
     }
-    hover(at: any) {
-        if (!this.context) {
+    hover(at: Vector2) {
+        if (!this.context || this.drag_start) {
             return false;
         }
-        const dirty = this.hover_action(at);
-        if (dirty) {
-            return true;
-        }
+        this.hover_action(at);
     }
-    hover_action(at: any) {
-        // nop
-        return false;
+    hover_action(at: Vector2) {
+        const lw = settings.peek<number>(SettingName.LineWidth);
+        const radius = Math.floor(lw / 2);
+        const margin = 1;
+        const half = radius + margin;
+        const size = half * 2 + 1;
+
+        this.canvas!.width = size;
+        this.canvas!.height = size;
+        this.canvas_bounds_mapping = {
+            from: { x: 0, y: 0, w: 1, h: 1 },
+            to: { x: at.x - half, y: at.y - half, w: size, h: size },
+        };
+
+        const ctx = this.context!;
+        const imageData = ctx.getImageData(0, 0, size, size);
+        const color = parseColor(settings.peek<string>(SettingName.ForeColor));
+        drawFilledCircle(imageData, half, half, radius, color);
+        ctx.putImageData(imageData, 0, 0);
+        this.publish_signals();
+    }
+    pointer_leave() {
+        this.canvas_bounds_mapping = null;
+        this.canvas!.width = 1;
+        this.canvas!.height = 1;
+        this.canvas_signal!.value = null;
     }
     editing_drag(from: Vector2, to: Vector2) {
         throw new Error("Not fully implemented tool");
