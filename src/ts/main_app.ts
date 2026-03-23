@@ -8,6 +8,7 @@ import { ScribRenderer } from "./scrib_renderer";
 import { SettingName, settings } from './settings_registry'
 import { StateValue, state_registry } from "./state_registry";
 import { mandala_mode } from "./mandala_mode";
+import { anchor_manager } from "./anchor_manager";
 function click_for_a_second(id: string, callback: Function) {
     const elem = document.getElementById(id);
     if (elem) {
@@ -23,7 +24,9 @@ function click_for_a_second(id: string, callback: Function) {
 }
 export class MainApp {
     public overlay_canvas_signal = signal<CanvasRenderingContext2D>();
-    private scrib_renderer: ScribRenderer
+    private scrib_renderer: ScribRenderer;
+    private anchor_canvas_signal = signal<HTMLCanvasElement>(null as any);
+    private _anchor_canvas: HTMLCanvasElement = document.createElement('canvas');
     document_canvas: HTMLCanvasElement;
     document_context: CanvasRenderingContext2D;
 
@@ -74,7 +77,11 @@ export class MainApp {
         this.scrib_renderer = new ScribRenderer(this.tool_canvas_signal,
             this.tool_bounds_signal,
             this.document_dirty_signal,
-            this.view_port_signal);
+            this.view_port_signal,
+            this.anchor_canvas_signal);
+
+        // Re-render anchor overlay whenever anchors change
+        anchor_manager.dirty.subscribe(() => this._redraw_anchor_canvas());
 
         this.editor.init_
         settings.bulkSet({
@@ -270,6 +277,9 @@ export class MainApp {
                 if (this.editor[method]) {
                     this.editor[method](ev);
                 }
+                if (ename === 'pointermove' || ename === 'pointerleave') {
+                    this._redraw_anchor_canvas();
+                }
             })
         }
         )
@@ -363,6 +373,46 @@ export class MainApp {
         })
 
     }
+    _redraw_anchor_canvas() {
+        const docW = this.document_canvas.width;
+        const docH = this.document_canvas.height;
+        const c = this._anchor_canvas;
+        c.width = docW;
+        c.height = docH;
+        const ctx = c.getContext('2d')!;
+        ctx.clearRect(0, 0, docW, docH);
+        const imageData = ctx.getImageData(0, 0, docW, docH);
+        const snap_r = this.editor.snap_radius_doc();
+        const dot_r = this.editor.snap_radius_doc() * (5 / 14); // DOT_RADIUS_SCREEN_PX / SNAP_RADIUS_SCREEN_PX
+        anchor_manager.draw_onto(imageData, this.editor._last_doc_pos, snap_r, dot_r);
+        ctx.putImageData(imageData, 0, 0);
+        this.anchor_canvas_signal.value = anchor_manager.anchors.length > 0 ? c : undefined as any;
+    }
+
+    init_anchor_button() {
+        const btn = document.getElementById('anchor-btn')!;
+        let dragging = false;
+
+        btn.addEventListener('pointerdown', (e: PointerEvent) => {
+            e.preventDefault();
+            dragging = true;
+            btn.setPointerCapture(e.pointerId);
+        });
+
+        btn.addEventListener('pointerup', (e: PointerEvent) => {
+            if (!dragging) return;
+            dragging = false;
+            const canvas_area = document.getElementById('canvas-area')!;
+            const rect = canvas_area.getBoundingClientRect();
+            const view_x = e.clientX - rect.left;
+            const view_y = e.clientY - rect.top;
+            if (view_x >= 0 && view_y >= 0 && view_x <= rect.width && view_y <= rect.height) {
+                const doc_pt = this.editor.view_coords_to_doc_coords({ x: view_x, y: view_y });
+                anchor_manager.add(doc_pt);
+            }
+        });
+    }
+
     init_scroll() {
         this.view_canvas.addEventListener('wheel', (event) => {
             event.preventDefault();
@@ -405,6 +455,7 @@ export class MainApp {
 
         this.init_color_selector();
         this.init_buttons();
+        this.init_anchor_button();
         this.forward_events_to_editor();
         //this.select_tool('circle');
         //this.init_view_canvas_size();

@@ -18,6 +18,7 @@ import { Signal, signal, computed, effect } from "@preact/signals";
 import { StateValue, state_registry } from "./state_registry"
 import { mandala_mode } from "./mandala_mode"
 import { setPixel, RGBA } from "./pixel_utils"
+import { anchor_manager, SNAP_RADIUS_SCREEN_PX } from "./anchor_manager"
 const v: new (...args: any[]) => EditingTool = RectTool
 const tool_classes = new Map<string, new (...args: any[]) => EditingTool>
     ([
@@ -40,6 +41,8 @@ export class Editor {
     current_tool_name: any;
     from: any;
     private _last_hover_spot: Vector2 | null;
+    _last_doc_pos: Vector2 | null = null;
+    private _dragging_anchor_idx: number = -1;
     document_canvas: HTMLCanvasElement;
     document_context: CanvasRenderingContext2D;
     view_canvas: HTMLCanvasElement;
@@ -74,6 +77,12 @@ export class Editor {
             x: Math.floor(vp.x + view_coords.x / this.view_canvas.clientWidth * vp.w),
             y: Math.floor(vp.y + view_coords.y / this.view_canvas.clientHeight * vp.h)
         }
+    }
+
+    // Snap radius in document pixels, based on screen-pixel constant and current zoom
+    snap_radius_doc(): number {
+        const vp = this.view_port_signal.value;
+        return SNAP_RADIUS_SCREEN_PX * (vp.w / this.view_canvas.clientWidth);
     }
     view_port_px(): Rect {
         const top_left_px = this.view_coords_to_doc_coords({
@@ -111,7 +120,20 @@ export class Editor {
     }
     pointerdown(event: MouseEvent) {
         event.preventDefault();
-        const at = this.view_coords_to_doc_coords({ x: event.offsetX, y: event.offsetY });
+        const raw = this.view_coords_to_doc_coords({ x: event.offsetX, y: event.offsetY });
+        const radius = this.snap_radius_doc();
+        // Right-click removes nearest anchor
+        if (event.button === 2) {
+            anchor_manager.remove_nearest(raw, radius);
+            return;
+        }
+        // Left-click near anchor: drag it instead of drawing
+        const idx = anchor_manager.nearest_idx(raw, radius);
+        if (idx >= 0) {
+            this._dragging_anchor_idx = idx;
+            return;
+        }
+        const { pt: at } = anchor_manager.snap(raw, radius);
         if (mandala_mode.enabled && mandala_mode.center === null) {
             mandala_mode.center = at;
             this.show_center_overlay();
@@ -121,7 +143,14 @@ export class Editor {
     }
     pointermove(event: MouseEvent) {
         this._last_hover_spot = { x: event.offsetX, y: event.offsetY }
-        const at = this.view_coords_to_doc_coords({ x: event.offsetX, y: event.offsetY });
+        const raw = this.view_coords_to_doc_coords({ x: event.offsetX, y: event.offsetY });
+        this._last_doc_pos = raw;
+        // Dragging an anchor
+        if (this._dragging_anchor_idx >= 0) {
+            anchor_manager.move(this._dragging_anchor_idx, raw);
+            return;
+        }
+        const { pt: at } = anchor_manager.snap(raw, this.snap_radius_doc());
         if (mandala_mode.enabled && mandala_mode.center === null) {
             if (!event.buttons) this._show_center_placement_cursor(at);
             return;
@@ -210,7 +239,12 @@ export class Editor {
     }
 
     pointerup(event: MouseEvent) {
-        const at = this.view_coords_to_doc_coords({ x: event.offsetX, y: event.offsetY });
+        if (this._dragging_anchor_idx >= 0) {
+            this._dragging_anchor_idx = -1;
+            return;
+        }
+        const raw = this.view_coords_to_doc_coords({ x: event.offsetX, y: event.offsetY });
+        const { pt: at } = anchor_manager.snap(raw, this.snap_radius_doc());
         this.tool.stop(at);
         if (mandala_mode.enabled && mandala_mode.center) {
             this.show_center_overlay();
@@ -224,8 +258,9 @@ export class Editor {
         //this.pointerup(event);
     }
     pointerleave(event: MouseEvent) {
-        // this.app.tool_tmp_context.clearRect(0, 0, this._art_canvas_bounding_rect.w, this._art_canvas_bounding_rect.h);
         this._last_hover_spot = null;
+        this._last_doc_pos = null;
+        this._dragging_anchor_idx = -1;
         this.tool.pointer_leave();
     }
     staging_to_art() {

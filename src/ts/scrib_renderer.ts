@@ -15,10 +15,12 @@ export class ScribRenderer {
     overlay_canvas_bounds_signal: Signal<RectToRectMapping>;
     document_dirty_signal: Signal<number>;
     view_port_signal: Signal<Rect>;
+    anchor_canvas_signal: Signal<HTMLCanvasElement>;
     constructor(overlay_canvas_signal: Signal<HTMLCanvasElement>,
         overlay_canvas_bounds_signal: Signal<RectToRectMapping>,
         document_dirty_signal: Signal<number>,
-        view_port_signal: Signal<Rect>) {
+        view_port_signal: Signal<Rect>,
+        anchor_canvas_signal: Signal<HTMLCanvasElement>) {
         this.document_canvas = document.getElementById('document-canvas')! as HTMLCanvasElement;
         this.view_canvas = document.getElementById('view-canvas')! as HTMLCanvasElement;
         this.document_context = this.document_canvas.getContext('2d', { willReadFrequently: true, texImage3d: false }) as CanvasRenderingContext2D;
@@ -28,6 +30,7 @@ export class ScribRenderer {
         this.overlay_canvas_bounds_signal = overlay_canvas_bounds_signal;
         this.document_dirty_signal = document_dirty_signal;
         this.view_port_signal = view_port_signal;
+        this.anchor_canvas_signal = anchor_canvas_signal;
     }
     init() {
         this.init_render_loop();
@@ -174,8 +177,20 @@ export class ScribRenderer {
         const overlayMesh = new Mesh(overlayGeometry, overlayMaterial);
         overlayMesh.visible = false;
 
+        // Anchor overlay mesh — full-document-sized, persists across strokes
+        const anchorMaterial = new ShaderMaterial({
+            uniforms: { uTexture: { value: null } },
+            vertexShader: VERTEX_SHADER_CODE,
+            fragmentShader: FRAGMENT_SHADER_CODE,
+            transparent: true,
+            side: DoubleSide,
+        });
+        const anchorMesh = new Mesh(new PlaneGeometry(1, 1), anchorMaterial);
+        anchorMesh.visible = false;
+
         const scene = new Scene();
         scene.add(docMesh);
+        scene.add(anchorMesh);
         scene.add(overlayMesh);
 
         effect(() => {
@@ -183,6 +198,25 @@ export class ScribRenderer {
             const bounds_mapping = this.overlay_canvas_bounds_signal.value;
             this.document_dirty_signal.value; // subscribe so document-only changes trigger re-render
             const vp = this.view_port_signal.value;
+            const anchor_canvas = this.anchor_canvas_signal.value;
+
+            // Update anchor mesh
+            if (anchorMaterial.uniforms.uTexture.value) {
+                anchorMaterial.uniforms.uTexture.value.dispose();
+                anchorMaterial.uniforms.uTexture.value = null;
+            }
+            if (anchor_canvas != null) {
+                const at = new CanvasTexture(anchor_canvas);
+                at.flipY = false;
+                at.minFilter = NearestFilter;
+                at.magFilter = NearestFilter;
+                anchorMaterial.uniforms.uTexture.value = at;
+                anchorMesh.scale.set(anchor_canvas.width, anchor_canvas.height, 1);
+                anchorMesh.position.set(anchor_canvas.width / 2, anchor_canvas.height / 2, -3);
+                anchorMesh.visible = true;
+            } else {
+                anchorMesh.visible = false;
+            }
 
             // Recreate texture and geometry if canvas was resized (e.g. after image load)
             if (this.document_canvas.width !== docTexW || this.document_canvas.height !== docTexH) {
