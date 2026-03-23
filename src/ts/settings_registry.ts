@@ -3,7 +3,8 @@ import { Signal, signal } from '@preact/signals';
 export enum SettingName {
     ForeColor = 'fore_color',
     BackColor = 'back_color',
-    LineWidth = 'line_width'
+    LineWidth = 'line_width',
+    Filled = 'filled'
 }
 type GenericSettingName = SettingName | string
 class SettingsRegistry {

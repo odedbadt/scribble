@@ -222,10 +222,19 @@ export class MainApp {
             mandala_mirror_btn.classList.toggle('pressed', mandala_mode.mirror);
         });
 
+        const fillstyle_button = document.getElementsByClassName('fillstyle')[0] as HTMLElement;
+        const fillable_buttons = document.getElementsByClassName('fillable');
+        fillstyle_button.addEventListener('click', () => {
+            const filled = !settings.peek<boolean>(SettingName.Filled);
+            settings.set(SettingName.Filled, filled);
+            fillstyle_button.classList.toggle('filled', filled);
+            Array.from(fillable_buttons).forEach(btn => btn.classList.toggle('filled', filled));
+        });
+
         const button_list = document.getElementsByClassName('button');
         Array.from(button_list).forEach(button => {
             const button_class_list = button.classList;
-            if (button_class_list[0] != 'button' && button_class_list[0] != 'mandala') {
+            if (button_class_list[0] != 'button' && button_class_list[0] != 'mandala' && button_class_list[0] != 'fillstyle') {
                 button.addEventListener('click', event => {
                     this.select_tool(button_class_list[0])
                 })
