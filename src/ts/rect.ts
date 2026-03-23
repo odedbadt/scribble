@@ -23,15 +23,15 @@ export class RectTool extends ClickAndDragTool {
         const context = this.context!;
         const canvas = this.canvas!;
 
-        const extended_canvas_bounding_rect = bounding_rect(from, to);
-        this.extend_canvas_mapping(extended_canvas_bounding_rect, false);
+        const br = bounding_rect(from, to);
+        const w = Math.floor(br.w);
+        const h = Math.floor(br.h);
 
-        const bounds = this.canvas_bounds_mapping!.to;
-        const w = Math.floor(extended_canvas_bounding_rect.w);
-        const h = Math.floor(extended_canvas_bounding_rect.h);
+        canvas.width = w;
+        canvas.height = h;
+        this.canvas_bounds_mapping = { from: { x: 0, y: 0, w: 1, h: 1 }, to: br };
 
-        // Get image data and draw using pixel-perfect algorithms
-        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+        const imageData = context.getImageData(0, 0, w, h);
 
         if (this._fill) {
             drawFilledRect(imageData, 0, 0, w, h, this._stroke_color);

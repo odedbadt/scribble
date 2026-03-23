@@ -27,22 +27,17 @@ export class CircleTool extends ClickAndDragTool {
 
         const margin = 2;
         const rb = r + margin;
-        const extended_canvas_bounding_rect = {
-            x: from.x - rb,
-            y: from.y - rb,
-            w: rb * 2,
-            h: rb * 2
-        };
-
-        this.extend_canvas_mapping(extended_canvas_bounding_rect, false);
+        const br = { x: from.x - rb, y: from.y - rb, w: rb * 2, h: rb * 2 };
 
         const context = this.context!;
         const canvas = this.canvas!;
 
-        // Center in local canvas coordinates (canvas origin may be clamped to 0)
-        const bounds = this.canvas_bounds_mapping!.to;
-        const cx = from.x - bounds.x;
-        const cy = from.y - bounds.y;
+        canvas.width = br.w;
+        canvas.height = br.h;
+        this.canvas_bounds_mapping = { from: { x: 0, y: 0, w: 1, h: 1 }, to: br };
+
+        const cx = rb;
+        const cy = rb;
 
         // Get image data and draw using pixel-perfect algorithms
         const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
