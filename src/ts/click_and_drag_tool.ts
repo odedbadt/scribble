@@ -6,7 +6,8 @@ import { Rect, Vector2, RectToRectMapping, unit_rect, vfloor } from "./types";
 import { signal, computed, effect } from "@preact/signals";
 import { parse_RGBA, tool_to_document, clear_canvas, rect_union, extend_rect } from "./utils";
 import { settings, SettingName } from "./settings_registry";
-import { drawFilledCircle, parseColor } from "./pixel_utils";
+import { drawFilledCircle, parseColor, RGBA } from "./pixel_utils";
+import { mandala_mode } from "./mandala_mode";
 export abstract class ClickAndDragTool extends EditingTool {
     dirty: boolean = false;
     drag_start: Vector2 | null = null;
@@ -73,25 +74,47 @@ export abstract class ClickAndDragTool extends EditingTool {
         }
         this.hover_action(at);
     }
+    hover_color(): RGBA {
+        return parseColor(settings.peek<string>(SettingName.ForeColor));
+    }
     hover_action(at: Vector2) {
         const lw = settings.peek<number>(SettingName.LineWidth);
         const radius = Math.floor(lw / 2);
-        const margin = 1;
-        const half = radius + margin;
-        const size = half * 2 + 1;
-
-        this.canvas!.width = size;
-        this.canvas!.height = size;
-        this.canvas_bounds_mapping = {
-            from: { x: 0, y: 0, w: 1, h: 1 },
-            to: { x: at.x - half, y: at.y - half, w: size, h: size },
-        };
-
+        const color = this.hover_color();
         const ctx = this.context!;
-        const imageData = ctx.getImageData(0, 0, size, size);
-        const color = parseColor(settings.peek<string>(SettingName.ForeColor));
-        drawFilledCircle(imageData, half, half, radius, color);
-        ctx.putImageData(imageData, 0, 0);
+
+        if (mandala_mode.enabled && this.document_canvas) {
+            const center = {
+                x: this.document_canvas.width / 2,
+                y: this.document_canvas.height / 2,
+            };
+            const docW = this.document_canvas.width;
+            const docH = this.document_canvas.height;
+            this.canvas!.width = docW;
+            this.canvas!.height = docH;
+            this.canvas_bounds_mapping = {
+                from: { x: 0, y: 0, w: 1, h: 1 },
+                to: { x: 0, y: 0, w: docW, h: docH },
+            };
+            const imageData = ctx.getImageData(0, 0, docW, docH);
+            for (const pt of mandala_mode.get_point_transforms(at, center)) {
+                drawFilledCircle(imageData, Math.round(pt.x), Math.round(pt.y), radius, color);
+            }
+            ctx.putImageData(imageData, 0, 0);
+        } else {
+            const margin = 1;
+            const half = radius + margin;
+            const size = half * 2 + 1;
+            this.canvas!.width = size;
+            this.canvas!.height = size;
+            this.canvas_bounds_mapping = {
+                from: { x: 0, y: 0, w: 1, h: 1 },
+                to: { x: at.x - half, y: at.y - half, w: size, h: size },
+            };
+            const imageData = ctx.getImageData(0, 0, size, size);
+            drawFilledCircle(imageData, half, half, radius, color);
+            ctx.putImageData(imageData, 0, 0);
+        }
         this.publish_signals();
     }
     pointer_leave() {

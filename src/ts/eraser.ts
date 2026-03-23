@@ -9,11 +9,14 @@ export class EraserTool extends ScribbleTool {
     }
 
     editing_start() {
-        const colorStr = settings.peek<string>(SettingName.BackColor);
-        this._stroke_color = parseColor(colorStr);
+        this._stroke_color = parseColor(settings.peek<string>(SettingName.BackColor));
     }
 
     commit_to_document(_color: string | null = null) {
         super.commit_to_document(settings.peek<string>(SettingName.BackColor));
+    }
+
+    hover_color(): RGBA {
+        return parseColor(settings.peek<string>(SettingName.BackColor));
     }
 }
