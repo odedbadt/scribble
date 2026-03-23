@@ -6,7 +6,7 @@ import { drawLine, drawThickLine, drawFilledCircle, parseColor, RGBA } from "./p
 import { mandala_mode } from "./mandala_mode";
 
 export class ScribbleTool extends ClickAndDragTool {
-    private _prev: Vector2 | null = null;
+    protected _prev: Vector2 | null = null;
     protected _stroke_color: RGBA;
 
     constructor() {
@@ -18,6 +18,7 @@ export class ScribbleTool extends ClickAndDragTool {
         const colorStr = settings.peek<string>(SettingName.ForeColor);
         this._stroke_color = parseColor(colorStr);
         this._prev = null;
+        this.editing_drag(this.drag_start!, this.drag_start!);
     }
 
     editing_drag(from: Vector2, to: Vector2) {

@@ -29,7 +29,7 @@ export class CircleTool extends ClickAndDragTool {
         const context = this.context!;
         const canvas = this.canvas!;
         const lw = settings.peek<number>(SettingName.LineWidth);
-        const thickness = Math.max(1, Math.floor(lw / 2));
+        const thickness = Math.max(1, lw);
 
         const drawAt = (imageData: ImageData, cx: number, cy: number) => {
             if (this._fill) {

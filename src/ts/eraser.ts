@@ -10,6 +10,8 @@ export class EraserTool extends ScribbleTool {
 
     editing_start() {
         this._stroke_color = parseColor(settings.peek<string>(SettingName.BackColor));
+        this._prev = null;
+        this.editing_drag(this.drag_start!, this.drag_start!);
     }
 
     commit_to_document(_color: string | null = null) {
