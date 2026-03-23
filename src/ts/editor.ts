@@ -124,11 +124,11 @@ export class Editor {
         event.preventDefault();
         const raw = this.view_coords_to_doc_coords({ x: event.offsetX, y: event.offsetY });
         const radius = this.snap_radius_doc();
-        // Right-click removes nearest anchor
+        // Right-click near anchor removes it; otherwise fall through to draw with back color
         if (event.button === 2) {
-            const { was_center } = anchor_manager.remove_nearest(raw, radius);
+            const { removed, was_center } = anchor_manager.remove_nearest(raw, radius);
             if (was_center) mandala_mode.center = null;
-            return;
+            if (removed) return;
         }
         // Anchor edit mode: drag existing or place new; never start a draw stroke
         if (this.anchor_edit_mode) {

@@ -11,6 +11,7 @@ import { mandala_mode } from "./mandala_mode";
 export abstract class ClickAndDragTool extends EditingTool {
     dirty: boolean = false;
     drag_start: Vector2 | null = null;
+    protected _start_buttons: number = 0;
     init() {
         this.start = this.start.bind(this);
         this.drag = this.drag.bind(this);
@@ -54,6 +55,7 @@ export abstract class ClickAndDragTool extends EditingTool {
         }
     }
     start(at: Vector2, buttons: number): void {
+        this._start_buttons = buttons;
         this.drag_start = vfloor(at);
         // Reset canvas to 1×1 so stale cross pixels don't bleed into the new stroke
         this.canvas!.width = 1;

@@ -15,7 +15,8 @@ export class ScribbleTool extends ClickAndDragTool {
     }
 
     editing_start() {
-        const colorStr = settings.peek<string>(SettingName.ForeColor);
+        const is_right = (this._start_buttons & 2) !== 0;
+        const colorStr = settings.peek<string>(is_right ? SettingName.BackColor : SettingName.ForeColor);
         this._stroke_color = parseColor(colorStr);
         this._prev = null;
         this.editing_drag(this.drag_start!, this.drag_start!);
@@ -63,6 +64,14 @@ export class ScribbleTool extends ClickAndDragTool {
 
         context.putImageData(imageData, 0, 0);
         this.publish_signals();
+    }
+
+    commit_to_document(color: string | null = null) {
+        if (color == null) {
+            const is_right = (this._start_buttons & 2) !== 0;
+            color = settings.peek<string>(is_right ? SettingName.BackColor : SettingName.ForeColor);
+        }
+        super.commit_to_document(color);
     }
 
     editing_stop() {
