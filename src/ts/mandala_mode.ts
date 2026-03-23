@@ -13,6 +13,7 @@ class MandalaMode {
     enabled: boolean = false;
     n: number = 8;
     mirror: boolean = true;
+    center: Vector2 | null = null;
 
     get_line_transforms(from: Vector2, to: Vector2, center: Vector2): Array<{ from: Vector2, to: Vector2 }> {
         const results: Array<{ from: Vector2, to: Vector2 }> = [];

@@ -6,7 +6,7 @@ import { Rect, Vector2, RectToRectMapping, unit_rect, vfloor } from "./types";
 import { signal, computed, effect } from "@preact/signals";
 import { parse_RGBA, tool_to_document, clear_canvas, rect_union, extend_rect } from "./utils";
 import { settings, SettingName } from "./settings_registry";
-import { drawFilledCircle, parseColor, RGBA } from "./pixel_utils";
+import { drawFilledCircle, parseColor, RGBA, setPixel } from "./pixel_utils";
 import { mandala_mode } from "./mandala_mode";
 export abstract class ClickAndDragTool extends EditingTool {
     dirty: boolean = false;
@@ -55,6 +55,10 @@ export abstract class ClickAndDragTool extends EditingTool {
     }
     start(at: Vector2, buttons: number): void {
         this.drag_start = vfloor(at);
+        // Reset canvas to 1×1 so stale cross pixels don't bleed into the new stroke
+        this.canvas!.width = 1;
+        this.canvas!.height = 1;
+        this.canvas_bounds_mapping = null;
         this.extend_canvas_mapping(at);
         this.editing_start();
     }
@@ -84,7 +88,7 @@ export abstract class ClickAndDragTool extends EditingTool {
         const ctx = this.context!;
 
         if (mandala_mode.enabled && this.document_canvas) {
-            const center = {
+            const center = mandala_mode.center ?? {
                 x: this.document_canvas.width / 2,
                 y: this.document_canvas.height / 2,
             };
@@ -100,6 +104,7 @@ export abstract class ClickAndDragTool extends EditingTool {
             for (const pt of mandala_mode.get_point_transforms(at, center)) {
                 drawFilledCircle(imageData, Math.round(pt.x), Math.round(pt.y), radius, color);
             }
+            this._draw_center_cross(imageData, center);
             ctx.putImageData(imageData, 0, 0);
         } else {
             const margin = 1;
@@ -116,6 +121,15 @@ export abstract class ClickAndDragTool extends EditingTool {
             ctx.putImageData(imageData, 0, 0);
         }
         this.publish_signals();
+    }
+    _draw_center_cross(imageData: ImageData, center: { x: number, y: number }) {
+        if (!mandala_mode.center) return;
+        const arm = 4;
+        const cross_color: RGBA = [80, 80, 80, 200];
+        for (let i = -arm; i <= arm; i++) {
+            setPixel(imageData, center.x + i, center.y, cross_color);
+            setPixel(imageData, center.x, center.y + i, cross_color);
+        }
     }
     pointer_leave() {
         this.canvas_bounds_mapping = null;
@@ -142,8 +156,11 @@ export abstract class ClickAndDragTool extends EditingTool {
 
     }
     stop(at: Vector2) {
-        this.commit_to_document()
-        this.document_dirty_signal!.value++;
+        if (this.drag_start) {
+            this.commit_to_document();
+            this.document_dirty_signal!.value++;
+            this.push_undo_snapshot?.();
+        }
         this.drag_start = null;
         this.canvas_bounds_mapping = null;
         // Reset canvas to 1×1 so old stroke content doesn't bleed into the next stroke
@@ -151,7 +168,6 @@ export abstract class ClickAndDragTool extends EditingTool {
         this.canvas!.height = 1;
         // Hide overlay
         this.canvas_signal!.value = null;
-        this.push_undo_snapshot?.();
     }
 
 }

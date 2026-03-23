@@ -16,6 +16,8 @@ import { unit_rect, Vector2, Rect, RectToRectMapping, scale_rect } from "./types
 import { init_canvas, tool_to_document } from "./utils"
 import { Signal, signal, computed, effect } from "@preact/signals";
 import { StateValue, state_registry } from "./state_registry"
+import { mandala_mode } from "./mandala_mode"
+import { setPixel, RGBA } from "./pixel_utils"
 const v: new (...args: any[]) => EditingTool = RectTool
 const tool_classes = new Map<string, new (...args: any[]) => EditingTool>
     ([
@@ -109,22 +111,75 @@ export class Editor {
     }
     pointerdown(event: MouseEvent) {
         event.preventDefault();
-        this.tool.start(this.view_coords_to_doc_coords({ x: event.offsetX, y: event.offsetY }), event.buttons);
+        const at = this.view_coords_to_doc_coords({ x: event.offsetX, y: event.offsetY });
+        if (mandala_mode.enabled && mandala_mode.center === null) {
+            mandala_mode.center = at;
+            this.show_center_overlay();
+            return;
+        }
+        this.tool.start(at, event.buttons);
     }
     pointermove(event: MouseEvent) {
         this._last_hover_spot = { x: event.offsetX, y: event.offsetY }
+        const at = this.view_coords_to_doc_coords({ x: event.offsetX, y: event.offsetY });
+        if (mandala_mode.enabled && mandala_mode.center === null) {
+            if (!event.buttons) this._show_center_placement_cursor(at);
+            return;
+        }
         if (event.buttons) {
-            this.tool.drag(this.view_coords_to_doc_coords({ x: event.offsetX, y: event.offsetY }));
-            this.tool.hover(this.view_coords_to_doc_coords({ x: event.offsetX, y: event.offsetY }));
+            this.tool.drag(at);
+            this.tool.hover(at);
         }
         else {
-            this.tool.hover(this.view_coords_to_doc_coords({ x: event.offsetX, y: event.offsetY }));
+            this.tool.hover(at);
         }
         // Appply action
         // this.staging_to_view()
         // this.tmp_tool_to_view();
 
     }
+    private _show_center_placement_cursor(at: Vector2) {
+        const arm = 7;
+        const size = arm * 2 + 1;
+        this.tool.canvas!.width = size;
+        this.tool.canvas!.height = size;
+        this.tool.canvas_bounds_mapping = {
+            from: { x: 0, y: 0, w: 1, h: 1 },
+            to: { x: at.x - arm, y: at.y - arm, w: size, h: size },
+        };
+        const ctx = this.tool.context!;
+        const imageData = ctx.getImageData(0, 0, size, size);
+        const color: RGBA = [0, 0, 0, 255];
+        for (let i = 0; i < size; i++) {
+            setPixel(imageData, i, arm, color);
+            setPixel(imageData, arm, i, color);
+        }
+        ctx.putImageData(imageData, 0, 0);
+        this.tool.publish_signals();
+    }
+
+    show_center_overlay() {
+        if (!mandala_mode.center) return;
+        const at = mandala_mode.center;
+        const arm = 4;
+        const size = arm * 2 + 1;
+        this.tool.canvas!.width = size;
+        this.tool.canvas!.height = size;
+        this.tool.canvas_bounds_mapping = {
+            from: { x: 0, y: 0, w: 1, h: 1 },
+            to: { x: at.x - arm, y: at.y - arm, w: size, h: size },
+        };
+        const ctx = this.tool.context!;
+        const imageData = ctx.getImageData(0, 0, size, size);
+        const color: RGBA = [80, 80, 80, 255];
+        for (let i = 0; i < size; i++) {
+            setPixel(imageData, i, arm, color);
+            setPixel(imageData, arm, i, color);
+        }
+        ctx.putImageData(imageData, 0, 0);
+        this.tool.publish_signals();
+    }
+
     push_undo_snapshot() {
         const imageData = this.document_context.getImageData(
             0, 0, this.document_canvas.width, this.document_canvas.height
@@ -156,8 +211,12 @@ export class Editor {
 
     pointerup(event: MouseEvent) {
         const at = this.view_coords_to_doc_coords({ x: event.offsetX, y: event.offsetY });
-        this.tool.hover(at);
         this.tool.stop(at);
+        if (mandala_mode.enabled && mandala_mode.center) {
+            this.show_center_overlay();
+        } else {
+            this.tool.hover(at);
+        }
     }
     pointerin(event: MouseEvent) {
         if (!!event.buttons) {

@@ -203,10 +203,20 @@ export class MainApp {
         const mandala_n_val = document.getElementById('mandala-n-val')!;
         const mandala_mirror_btn = document.getElementById('mandala-mirror')!;
 
+        const rect_button = document.getElementsByClassName('rect')[0] as HTMLElement;
         mandala_button.addEventListener('click', () => {
             mandala_mode.enabled = !mandala_mode.enabled;
+            if (!mandala_mode.enabled) {
+                mandala_mode.center = null;
+                this.editor.tool.pointer_leave?.();
+            }
             mandala_button.classList.toggle('pressed', mandala_mode.enabled);
             mandala_panel.classList.toggle('visible', mandala_mode.enabled);
+            rect_button.classList.toggle('tool-disabled', mandala_mode.enabled);
+            // If rect was selected when mandala turns on, switch to scribble
+            if (mandala_mode.enabled && state_registry.peek<string>(StateValue.SelectedToolName) === 'rect') {
+                this.select_tool('scribble');
+            }
         });
 
         document.getElementById('mandala-n-minus')!.addEventListener('click', () => {
@@ -237,6 +247,7 @@ export class MainApp {
             const button_class_list = button.classList;
             if (button_class_list[0] != 'button' && button_class_list[0] != 'mandala' && button_class_list[0] != 'fillstyle') {
                 button.addEventListener('click', event => {
+                    if (mandala_mode.enabled && button_class_list[0] === 'rect') return;
                     this.select_tool(button_class_list[0])
                 })
             }

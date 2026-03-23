@@ -40,6 +40,10 @@ class StateRegistry {
         }
     }
 
+    peek<T>(key: StateValue): T | undefined {
+        return state_store.get(key)?.current.value;
+    }
+
     pop<T>(key: StateValue): T | undefined {
         const entry = state_store.get(key);
         if (!entry || entry.previous === undefined) {

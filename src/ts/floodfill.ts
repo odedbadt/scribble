@@ -3,7 +3,7 @@ import { settings, SettingName } from "./settings_registry";
 import { Vector2 } from "./types";
 import { parse_RGBA } from "./utils";
 import { mandala_mode } from "./mandala_mode";
-import { drawFilledCircle, parseColor } from "./pixel_utils";
+import { drawFilledCircle, parseColor, setPixel, RGBA } from "./pixel_utils";
 
 function _equal_colors(c1: Uint8ClampedArray, c2: Uint8ClampedArray): boolean {
     return c1[0] == c2[0] &&
@@ -51,7 +51,7 @@ export class Floodfill extends ClickTool {
         const radius = 2;
 
         if (mandala_mode.enabled && this.document_canvas) {
-            const center = { x: this.document_canvas.width / 2, y: this.document_canvas.height / 2 };
+            const center = mandala_mode.center ?? { x: this.document_canvas.width / 2, y: this.document_canvas.height / 2 };
             const docW = this.document_canvas.width;
             const docH = this.document_canvas.height;
             this.canvas!.width = docW;
@@ -63,6 +63,14 @@ export class Floodfill extends ClickTool {
             const imageData = ctx.getImageData(0, 0, docW, docH);
             for (const pt of mandala_mode.get_point_transforms(at, center)) {
                 drawFilledCircle(imageData, Math.round(pt.x), Math.round(pt.y), radius, color);
+            }
+            if (mandala_mode.center) {
+                const arm = 4;
+                const cross_color: RGBA = [80, 80, 80, 200];
+                for (let i = -arm; i <= arm; i++) {
+                    setPixel(imageData, center.x + i, center.y, cross_color);
+                    setPixel(imageData, center.x, center.y + i, cross_color);
+                }
             }
             ctx.putImageData(imageData, 0, 0);
         } else {
@@ -95,7 +103,7 @@ export class Floodfill extends ClickTool {
         const fill_color = parse_RGBA(settings.peek<string>(SettingName.ForeColor));
 
         const positions = mandala_mode.enabled
-            ? mandala_mode.get_point_transforms(at, { x: w / 2, y: h / 2 })
+            ? mandala_mode.get_point_transforms(at, mandala_mode.center ?? { x: w / 2, y: h / 2 })
             : [at];
 
         for (const pos of positions) {

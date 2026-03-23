@@ -3,6 +3,7 @@ import { Editor } from "./editor";
 import { SettingName, settings } from "./settings_registry";
 import { Vector2, bounding_rect } from "./types";
 import { drawLine, drawThickLine, parseColor, RGBA } from "./pixel_utils";
+import { mandala_mode } from "./mandala_mode";
 
 export class LineTool extends ClickAndDragTool {
     protected _stroke_color: RGBA;
@@ -24,27 +25,32 @@ export class LineTool extends ClickAndDragTool {
 
         const lw = settings.peek<number>(SettingName.LineWidth);
         const radius = Math.floor(lw / 2);
-        const margin = radius + 1;
-
-        const extended_canvas_bounding_rect = bounding_rect(from, to);
-        this.extend_canvas_mapping(extended_canvas_bounding_rect, false, margin);
-
-        const bounds = this.canvas_bounds_mapping!.to;
         const context = this.context!;
         const canvas = this.canvas!;
 
-        const x0 = Math.floor(from.x - bounds.x);
-        const y0 = Math.floor(from.y - bounds.y);
-        const x1 = Math.floor(to.x - bounds.x);
-        const y1 = Math.floor(to.y - bounds.y);
+        let pairs: Array<{ from: Vector2, to: Vector2 }>;
+        if (mandala_mode.enabled && this.document_canvas) {
+            const center = mandala_mode.center ?? { x: this.document_canvas.width / 2, y: this.document_canvas.height / 2 };
+            pairs = mandala_mode.get_line_transforms(from, to, center);
+            this.extend_canvas_mapping({ x: 0, y: 0, w: this.document_canvas.width, h: this.document_canvas.height }, false);
+        } else {
+            pairs = [{ from, to }];
+            this.extend_canvas_mapping(bounding_rect(from, to), false, radius + 1);
+        }
 
-        // Get image data and draw using pixel-perfect algorithms
+        const bounds = this.canvas_bounds_mapping!.to;
         const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
 
-        if (radius <= 0) {
-            drawLine(imageData, x0, y0, x1, y1, this._stroke_color);
-        } else {
-            drawThickLine(imageData, x0, y0, x1, y1, radius, this._stroke_color);
+        for (const pair of pairs) {
+            const x0 = Math.floor(pair.from.x - bounds.x);
+            const y0 = Math.floor(pair.from.y - bounds.y);
+            const x1 = Math.floor(pair.to.x - bounds.x);
+            const y1 = Math.floor(pair.to.y - bounds.y);
+            if (radius <= 0) {
+                drawLine(imageData, x0, y0, x1, y1, this._stroke_color);
+            } else {
+                drawThickLine(imageData, x0, y0, x1, y1, radius, this._stroke_color);
+            }
         }
 
         context.putImageData(imageData, 0, 0);

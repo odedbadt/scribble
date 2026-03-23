@@ -3,6 +3,7 @@ import { ClickAndDragTool } from "./click_and_drag_tool"
 import { SettingName, settings } from "./settings_registry";
 import { Vector2 } from "./types";
 import { drawCircle, drawFilledCircle, drawThickCircle, parseColor, RGBA } from "./pixel_utils";
+import { mandala_mode } from "./mandala_mode";
 
 export class CircleTool extends ClickAndDragTool {
     protected _stroke_color: RGBA;
@@ -25,31 +26,43 @@ export class CircleTool extends ClickAndDragTool {
             (to.y - from.y) * (to.y - from.y)
         ));
 
-        const margin = 2;
-        const rb = r + margin;
-        const br = { x: from.x - rb, y: from.y - rb, w: rb * 2, h: rb * 2 };
-
         const context = this.context!;
         const canvas = this.canvas!;
+        const lw = settings.peek<number>(SettingName.LineWidth);
+        const thickness = Math.max(1, Math.floor(lw / 2));
 
-        canvas.width = br.w;
-        canvas.height = br.h;
-        this.canvas_bounds_mapping = { from: { x: 0, y: 0, w: 1, h: 1 }, to: br };
+        const drawAt = (imageData: ImageData, cx: number, cy: number) => {
+            if (this._fill) {
+                drawFilledCircle(imageData, cx, cy, r, this._stroke_color);
+            } else {
+                drawThickCircle(imageData, cx, cy, r, thickness, this._stroke_color);
+            }
+        };
 
-        const cx = rb;
-        const cy = rb;
-
-        // Get image data and draw using pixel-perfect algorithms
-        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-
-        if (this._fill) {
-            drawFilledCircle(imageData, cx, cy, r, this._stroke_color);
+        if (mandala_mode.enabled && this.document_canvas) {
+            const center = mandala_mode.center ?? { x: this.document_canvas.width / 2, y: this.document_canvas.height / 2 };
+            const docW = this.document_canvas.width;
+            const docH = this.document_canvas.height;
+            canvas.width = docW;
+            canvas.height = docH;
+            this.canvas_bounds_mapping = { from: { x: 0, y: 0, w: 1, h: 1 }, to: { x: 0, y: 0, w: docW, h: docH } };
+            const imageData = context.getImageData(0, 0, docW, docH);
+            for (const c of mandala_mode.get_point_transforms(from, center)) {
+                drawAt(imageData, Math.round(c.x), Math.round(c.y));
+            }
+            context.putImageData(imageData, 0, 0);
         } else {
-            const lw = settings.peek<number>(SettingName.LineWidth);
-            drawThickCircle(imageData, cx, cy, r, Math.max(1, Math.floor(lw / 2)), this._stroke_color);
+            const margin = 2;
+            const rb = r + margin;
+            const br = { x: from.x - rb, y: from.y - rb, w: rb * 2, h: rb * 2 };
+            canvas.width = br.w;
+            canvas.height = br.h;
+            this.canvas_bounds_mapping = { from: { x: 0, y: 0, w: 1, h: 1 }, to: br };
+            const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+            drawAt(imageData, rb, rb);
+            context.putImageData(imageData, 0, 0);
         }
 
-        context.putImageData(imageData, 0, 0);
         this.publish_signals();
     }
 }

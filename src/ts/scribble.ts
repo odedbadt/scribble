@@ -27,7 +27,7 @@ export class ScribbleTool extends ClickAndDragTool {
 
         let line_pairs: Array<{ from: Vector2, to: Vector2 }>;
         if (mandala_mode.enabled) {
-            const center: Vector2 = {
+            const center: Vector2 = mandala_mode.center ?? {
                 x: this.document_canvas!.width / 2,
                 y: this.document_canvas!.height / 2
             };
