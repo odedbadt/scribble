@@ -193,6 +193,25 @@ export function drawRect(imageData: ImageData, x: number, y: number, w: number, 
     }
 }
 
+export function drawThickRect(imageData: ImageData, x: number, y: number, w: number, h: number, thickness: number, color: RGBA): void {
+    for (let i = 0; i < thickness && i * 2 < w && i * 2 < h; i++) {
+        drawRect(imageData, x + i, y + i, w - 2 * i, h - 2 * i, color);
+    }
+}
+
+export function drawThickCircle(imageData: ImageData, cx: number, cy: number, radius: number, thickness: number, color: RGBA): void {
+    cx = Math.floor(cx);
+    cy = Math.floor(cy);
+    radius = Math.floor(radius);
+    const inner = Math.max(0, radius - thickness);
+    for (let y = -radius; y <= radius; y++) {
+        const xOut = Math.floor(Math.sqrt(Math.max(0, radius * radius - y * y)));
+        const xIn = Math.abs(y) <= inner ? Math.floor(Math.sqrt(inner * inner - y * y)) : -1;
+        for (let x = -xOut; x <= -xIn - 1; x++) setPixel(imageData, cx + x, cy + y, color);
+        for (let x = xIn + 1; x <= xOut; x++) setPixel(imageData, cx + x, cy + y, color);
+    }
+}
+
 /**
  * Parse a CSS color string to RGBA array
  */

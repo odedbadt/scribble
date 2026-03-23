@@ -2,7 +2,7 @@ import { ClickAndDragTool } from "./click_and_drag_tool"
 import { Editor } from "./editor";
 import { SettingName, settings } from "./settings_registry";
 import { Vector2, bounding_rect } from "./types";
-import { drawFilledRect, drawRect, parseColor, RGBA } from "./pixel_utils";
+import { drawFilledRect, drawRect, drawThickRect, parseColor, RGBA } from "./pixel_utils";
 
 export class RectTool extends ClickAndDragTool {
     protected _stroke_color: RGBA;
@@ -36,7 +36,8 @@ export class RectTool extends ClickAndDragTool {
         if (this._fill) {
             drawFilledRect(imageData, 0, 0, w, h, this._stroke_color);
         } else {
-            drawRect(imageData, 0, 0, w, h, this._stroke_color);
+            const lw = settings.peek<number>(SettingName.LineWidth);
+            drawThickRect(imageData, 0, 0, w, h, Math.max(1, Math.floor(lw / 2)), this._stroke_color);
         }
 
         context.putImageData(imageData, 0, 0);

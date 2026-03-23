@@ -2,7 +2,7 @@ import { Editor } from "./editor"
 import { ClickAndDragTool } from "./click_and_drag_tool"
 import { SettingName, settings } from "./settings_registry";
 import { Vector2 } from "./types";
-import { drawCircle, drawFilledCircle, parseColor, RGBA } from "./pixel_utils";
+import { drawCircle, drawFilledCircle, drawThickCircle, parseColor, RGBA } from "./pixel_utils";
 
 export class CircleTool extends ClickAndDragTool {
     protected _stroke_color: RGBA;
@@ -50,7 +50,8 @@ export class CircleTool extends ClickAndDragTool {
         if (this._fill) {
             drawFilledCircle(imageData, cx, cy, r, this._stroke_color);
         } else {
-            drawCircle(imageData, cx, cy, r, this._stroke_color);
+            const lw = settings.peek<number>(SettingName.LineWidth);
+            drawThickCircle(imageData, cx, cy, r, Math.max(1, Math.floor(lw / 2)), this._stroke_color);
         }
 
         context.putImageData(imageData, 0, 0);
