@@ -136,9 +136,10 @@ export class MainApp {
         img.addEventListener('load', () => {
             this.document_canvas.width = img.naturalWidth;
             this.document_canvas.height = img.naturalHeight;
-            const aspect = img.naturalWidth / img.naturalHeight;
-            this.view_port_signal.value = { x: 0, y: 0, w: img.naturalWidth, h: img.naturalHeight };
             this.document_context.drawImage(img, 0, 0);
+            // Keep current viewport size (zoom level); reset pan to origin
+            const vp = this.view_port_signal.value;
+            this.view_port_signal.value = { x: 0, y: 0, w: vp.w, h: vp.h };
             this.document_dirty_signal.value++;
             this.editor.push_undo_snapshot();
         });
@@ -355,21 +356,16 @@ export class MainApp {
         this.view_canvas.addEventListener('wheel', (event) => {
             event.preventDefault();
 
-            // Get the modifiers pressed
             const ctrl_key = event.ctrlKey;
+            const deltaX = event.deltaX;
+            const deltaY = event.deltaY;
 
-            // Access scroll properties
-            const deltaX = event.deltaX; // Horizontal scroll
-            const deltaY = event.deltaY; // Vertical scroll
-
-
-            // Perform actions based on modifiers and scroll direction
             const vp = this.view_port_signal.value;
             const doc_w = this.document_canvas.width;
             const doc_h = this.document_canvas.height;
             const clamp_pos = (x: number, y: number, w: number, h: number) => ({
-                x: Math.max(0, Math.min(x, doc_w - w)),
-                y: Math.max(0, Math.min(y, doc_h - h)),
+                x: Math.max(0, Math.min(x, Math.max(0, doc_w - w))),
+                y: Math.max(0, Math.min(y, Math.max(0, doc_h - h))),
                 w,
                 h,
             });

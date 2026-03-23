@@ -139,6 +139,7 @@ export class ScribRenderer {
             antialias: false,
             canvas: this.view_canvas
         });
+        renderer.setClearColor(0xd0d0c8, 1); // gray background outside document
 
         // Document mesh — texture and geometry recreated when canvas dimensions change
         let docTexW = this.document_canvas.width;
