@@ -17,6 +17,7 @@ export class ScribbleTool extends ClickAndDragTool {
     editing_start() {
         const colorStr = settings.peek<string>(SettingName.ForeColor);
         this._stroke_color = parseColor(colorStr);
+        this._prev = null;
     }
 
     editing_drag(from: Vector2, to: Vector2) {
