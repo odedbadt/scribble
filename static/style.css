@@ -27,7 +27,7 @@ body {
     margin: 0;
     display: grid;
     grid-template-columns: repeat(2, 50px);
-    grid-template-rows: 25px 25px repeat(8, 50px) 200px 1em;
+    grid-template-rows: 25px 25px repeat(9, 50px) 200px 1em;
     grid-gap: 0;
     box-sizing: border-box;
 }
@@ -268,6 +268,15 @@ body {
 .mandala {
     background-image: url(mandala.png);
     background-size: 40px 40px;
+}
+
+.polygon {
+    font-family: monospace;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #333;
 }
 
 .anchor {

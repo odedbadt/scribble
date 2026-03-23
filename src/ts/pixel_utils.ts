@@ -282,3 +282,43 @@ export function parseColor(color: string): RGBA {
     console.warn(`Could not parse color: ${color}, defaulting to black`);
     return [0, 0, 0, 255];
 }
+
+export function drawPolygonOutline(imageData: ImageData, vertices: { x: number; y: number }[], thickness: number, color: RGBA): void {
+    const n = vertices.length;
+    for (let i = 0; i < n; i++) {
+        const a = vertices[i];
+        const b = vertices[(i + 1) % n];
+        if (thickness <= 0) {
+            drawLine(imageData, Math.floor(a.x), Math.floor(a.y), Math.floor(b.x), Math.floor(b.y), color);
+        } else {
+            drawThickLine(imageData, Math.floor(a.x), Math.floor(a.y), Math.floor(b.x), Math.floor(b.y), thickness, color);
+        }
+    }
+}
+
+export function drawFilledPolygon(imageData: ImageData, vertices: { x: number; y: number }[], color: RGBA): void {
+    if (vertices.length < 3) return;
+    const w = imageData.width;
+    const h = imageData.height;
+    let minY = Infinity, maxY = -Infinity;
+    for (const v of vertices) {
+        if (v.y < minY) minY = v.y;
+        if (v.y > maxY) maxY = v.y;
+    }
+    const n = vertices.length;
+    for (let y = Math.max(0, Math.floor(minY)); y <= Math.min(h - 1, Math.ceil(maxY)); y++) {
+        const xs: number[] = [];
+        for (let i = 0; i < n; i++) {
+            const a = vertices[i], b = vertices[(i + 1) % n];
+            if ((a.y <= y && b.y > y) || (b.y <= y && a.y > y)) {
+                xs.push(a.x + (y - a.y) / (b.y - a.y) * (b.x - a.x));
+            }
+        }
+        xs.sort((a, b) => a - b);
+        for (let j = 0; j + 1 < xs.length; j += 2) {
+            for (let x = Math.max(0, Math.ceil(xs[j])); x <= Math.min(w - 1, Math.floor(xs[j + 1])); x++) {
+                setPixel(imageData, x, y, color);
+            }
+        }
+    }
+}

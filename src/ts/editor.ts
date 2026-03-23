@@ -9,6 +9,7 @@ import { EraserTool } from "./eraser";
 import { Floodfill } from "./floodfill";
 import { LineTool } from "./line";
 import { RectTool } from "./rect";
+import { PolygonTool } from "./polygon";
 import { CursorSize } from './cursor_size'
 //import { FillStyleToggler } from './styletogglers'
 //import { mandala } from "./mandala";
@@ -22,7 +23,8 @@ import { anchor_manager, SNAP_RADIUS_SCREEN_PX } from "./anchor_manager"
 const v: new (...args: any[]) => EditingTool = RectTool
 const tool_classes = new Map<string, new (...args: any[]) => EditingTool>
     ([
-        ["rect", RectTool]
+        ["polygon", PolygonTool]
+        , ["rect", RectTool]
         , ["scribble", ScribbleTool]
         , ["line", LineTool]
         , ["circle", CircleTool]
