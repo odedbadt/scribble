@@ -1,6 +1,8 @@
 import { EditingTool } from "./editing_tool";
 import { SettingName, settings } from "./settings_registry";
 import { Vector2 } from "./types";
+import { anchor_manager } from "./anchor_manager";
+import { mandala_mode } from "./mandala_mode";
 
 export class ClearAllTool extends EditingTool {
 
@@ -13,6 +15,8 @@ export class ClearAllTool extends EditingTool {
         this.document_context.fillRect(0, 0, this.document_canvas.width, this.document_canvas.height);
         this.document_dirty_signal!.value++;
         this.push_undo_snapshot?.();
+        anchor_manager.clear();
+        mandala_mode.center = null;
     }
     start(at: Vector2, buttons: number) {}
     drag(at: Vector2) {}

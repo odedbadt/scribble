@@ -21,6 +21,12 @@ class AnchorManager {
         return this._anchors.length - 1;
     }
 
+    clear() {
+        this._anchors = [];
+        this.mandala_center_idx = -1;
+        this.dirty.value++;
+    }
+
     set_mandala_center(idx: number) {
         this.mandala_center_idx = idx;
         this.dirty.value++;

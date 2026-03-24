@@ -110,6 +110,7 @@ export class Editor {
         if (!tool_class) {
             return;
         }
+        this.tool?.deselect?.();
         this.tool = new tool_class();
         this.tool.init_editor(this);
 

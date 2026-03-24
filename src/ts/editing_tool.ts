@@ -50,6 +50,7 @@ export abstract class EditingTool {
     }
     abstract hover(at: Vector2): void;
     pointer_leave(): void {}
+    deselect(): void {}
 
 }
 export class NopTool extends EditingTool {
