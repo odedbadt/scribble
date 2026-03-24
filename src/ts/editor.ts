@@ -11,6 +11,7 @@ import { LineTool } from "./line";
 import { RectTool } from "./rect";
 import { PolygonTool } from "./polygon";
 import { TopoHullTool } from "./topo_hull";
+import { HeartTool } from "./heart";
 import { CursorSize } from './cursor_size'
 //import { FillStyleToggler } from './styletogglers'
 //import { mandala } from "./mandala";
@@ -26,6 +27,7 @@ const tool_classes = new Map<string, new (...args: any[]) => EditingTool>
     ([
         ["polygon", PolygonTool]
         , ["topo_hull", TopoHullTool]
+        , ["heart", HeartTool]
         , ["rect", RectTool]
         , ["scribble", ScribbleTool]
         , ["line", LineTool]

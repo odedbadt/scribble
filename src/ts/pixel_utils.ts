@@ -283,6 +283,38 @@ export function parseColor(color: string): RGBA {
     return [0, 0, 0, 255];
 }
 
+// Heart shape via implicit equation (x²+y²-1)³ ≤ x²y³ (math coords, y-up)
+// nx = dx/r, ny = -dy/r (flip screen y so heart points down in screen space)
+function _heartInside(nx: number, ny: number): boolean {
+    const t = nx * nx + ny * ny - 1;
+    return t * t * t <= nx * nx * ny * ny * ny;
+}
+
+export function drawFilledHeart(imageData: ImageData, cx: number, cy: number, r: number, color: RGBA): void {
+    cx = Math.floor(cx); cy = Math.floor(cy); r = Math.floor(r);
+    if (r <= 0) { setPixel(imageData, cx, cy, color); return; }
+    const bound = Math.ceil(r * 1.5) + 1;
+    for (let dy = -bound; dy <= bound; dy++) {
+        for (let dx = -bound; dx <= bound; dx++) {
+            if (_heartInside(dx / r, -dy / r)) setPixel(imageData, cx + dx, cy + dy, color);
+        }
+    }
+}
+
+export function drawHeartOutline(imageData: ImageData, cx: number, cy: number, r: number, thickness: number, color: RGBA): void {
+    cx = Math.floor(cx); cy = Math.floor(cy); r = Math.floor(r);
+    if (r <= 0) { setPixel(imageData, cx, cy, color); return; }
+    const rInner = Math.max(0, r - thickness);
+    const bound = Math.ceil(r * 1.5) + 1;
+    for (let dy = -bound; dy <= bound; dy++) {
+        for (let dx = -bound; dx <= bound; dx++) {
+            if (!_heartInside(dx / r, -dy / r)) continue;
+            if (rInner > 0 && _heartInside(dx / rInner, -dy / rInner)) continue;
+            setPixel(imageData, cx + dx, cy + dy, color);
+        }
+    }
+}
+
 export function drawPolygonOutline(imageData: ImageData, vertices: { x: number; y: number }[], thickness: number, color: RGBA): void {
     const n = vertices.length;
     for (let i = 0; i < n; i++) {
