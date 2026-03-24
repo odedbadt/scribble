@@ -270,7 +270,8 @@ body {
     background-size: 40px 40px;
 }
 
-.polygon {
+.polygon,
+.topo_hull {
     font-family: monospace;
     font-size: 20px;
     display: flex;
