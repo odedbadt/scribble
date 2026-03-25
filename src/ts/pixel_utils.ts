@@ -410,3 +410,60 @@ export function drawFilledPolygon(imageData: ImageData, vertices: { x: number; y
         }
     }
 }
+
+/** Draw a cloud shape (5 overlapping filled circles) centered at (cx, cy) */
+export function drawCloud(imageData: ImageData, cx: number, cy: number, size: number, color: RGBA): void {
+    cx = Math.floor(cx); cy = Math.floor(cy); size = Math.max(1, Math.floor(size));
+    drawFilledCircle(imageData, cx, cy, size, color);
+    drawFilledCircle(imageData, cx - Math.floor(size * 0.75), cy + Math.floor(size * 0.1), Math.floor(size * 0.65), color);
+    drawFilledCircle(imageData, cx + Math.floor(size * 0.75), cy + Math.floor(size * 0.1), Math.floor(size * 0.65), color);
+    drawFilledCircle(imageData, cx - Math.floor(size * 0.35), cy - Math.floor(size * 0.55), Math.floor(size * 0.6), color);
+    drawFilledCircle(imageData, cx + Math.floor(size * 0.35), cy - Math.floor(size * 0.55), Math.floor(size * 0.6), color);
+}
+
+const _RAINBOW_COLORS: RGBA[] = [
+    [220, 0, 0, 255],    // Red (outermost)
+    [255, 140, 0, 255],  // Orange
+    [240, 230, 0, 255],  // Yellow
+    [0, 180, 0, 255],    // Green
+    [0, 60, 220, 255],   // Blue (innermost)
+];
+
+/**
+ * Draw a 5-band rainbow arc from (x1,y1) to (x2,y2), arching toward screen-top.
+ * Bands from outer to inner: Red, Orange, Yellow, Green, Blue.
+ */
+export function drawRainbow(imageData: ImageData, x1: number, y1: number, x2: number, y2: number, bandWidth: number): void {
+    x1 = Math.floor(x1); y1 = Math.floor(y1);
+    x2 = Math.floor(x2); y2 = Math.floor(y2);
+    const dx = x2 - x1, dy = y2 - y1;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < 1) return;
+
+    const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+    const radius = dist / 2;
+    const nBands = _RAINBOW_COLORS.length;
+    const totalThickness = nBands * bandWidth;
+    const outerR = radius;
+    const innerR = Math.max(0, radius - totalThickness);
+
+    // Upward perpendicular: choose perp to chord that has negative Y (screen-up)
+    const ndx = dx / dist, ndy = dy / dist;
+    const upPerpX = ndx >= 0 ? ndy : -ndy;
+    const upPerpY = ndx >= 0 ? -ndx : ndx;
+
+    const bx1 = Math.floor(mx - outerR - 1), bx2 = Math.ceil(mx + outerR + 1);
+    const by1 = Math.floor(my - outerR - 1), by2 = Math.ceil(my + outerR + 1);
+
+    for (let py = by1; py <= by2; py++) {
+        for (let px = bx1; px <= bx2; px++) {
+            const relX = px - mx, relY = py - my;
+            const d = Math.sqrt(relX * relX + relY * relY);
+            if (d < innerR || d > outerR) continue;
+            if (relX * upPerpX + relY * upPerpY < 0) continue;
+            const band = Math.floor((outerR - d) / bandWidth);
+            if (band < 0 || band >= nBands) continue;
+            setPixel(imageData, px, py, _RAINBOW_COLORS[band]);
+        }
+    }
+}

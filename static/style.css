@@ -27,7 +27,7 @@ body {
     margin: 0;
     display: grid;
     grid-template-columns: repeat(2, 50px);
-    grid-template-rows: 25px 25px repeat(10, 50px) 200px 1em;
+    grid-template-rows: 25px 25px repeat(11, 50px) 200px 1em;
     grid-gap: 0;
     box-sizing: border-box;
 }
@@ -273,6 +273,7 @@ body {
 .polygon,
 .topo_hull,
 .heart,
+.cloud_stamp,
 .heart-south-btn {
     font-family: monospace;
     font-size: 20px;

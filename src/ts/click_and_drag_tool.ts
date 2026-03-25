@@ -134,6 +134,9 @@ export abstract class ClickAndDragTool extends EditingTool {
         }
     }
     pointer_leave() {
+        if (this.drag_start) {
+            return; // keep in-progress stroke visible
+        }
         this.canvas_bounds_mapping = null;
         this.canvas!.width = 1;
         this.canvas!.height = 1;
