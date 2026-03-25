@@ -4,7 +4,8 @@ export enum SettingName {
     ForeColor = 'fore_color',
     BackColor = 'back_color',
     LineWidth = 'line_width',
-    Filled = 'filled'
+    Filled = 'filled',
+    HeartSouth = 'heart_south'   // 'smooth' | 'straight'
 }
 type GenericSettingName = SettingName | string
 class SettingsRegistry {

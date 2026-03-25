@@ -315,6 +315,62 @@ export function drawHeartOutline(imageData: ImageData, cx: number, cy: number, r
     }
 }
 
+// Cubic-south heart: C1 at the equator junction, sharp V-tip at the bottom.
+//
+// South boundary: x(t) = r · (t²−1)(t−2)/2,  t = dy/r ∈ [0,1]
+//   t=0 → x=r,  dx/dy = −½  (slope dy/dx = −2, matches smooth heart)
+//   t=1 → x=0,  dx/dy = −1  (right side arrives at 90° V with left side)
+//
+function _southHW(r: number, dy: number): number {
+    if (dy >= r) return 0;
+    const t = dy / r;
+    return Math.max(0, Math.floor(r * (t * t - 1) * (t - 2) / 2));
+}
+function _southHWf(r: number, dy: number): number {
+    if (dy >= r) return 0;
+    const t = dy / r;
+    return Math.max(0, r * (t * t - 1) * (t - 2) / 2);
+}
+
+export function drawFilledStraightSouthHeart(imageData: ImageData, cx: number, cy: number, r: number, color: RGBA): void {
+    cx = Math.floor(cx); cy = Math.floor(cy); r = Math.floor(r);
+    if (r <= 0) { setPixel(imageData, cx, cy, color); return; }
+    const bound = Math.ceil(r * 1.5) + 1;
+    for (let dy = -bound; dy < 0; dy++) {
+        for (let dx = -bound; dx <= bound; dx++) {
+            if (_heartInside(dx / r, -dy / r)) setPixel(imageData, cx + dx, cy + dy, color);
+        }
+    }
+    for (let dy = 0; dy <= r; dy++) {
+        const hw = _southHW(r, dy);
+        for (let dx = -hw; dx <= hw; dx++) setPixel(imageData, cx + dx, cy + dy, color);
+    }
+}
+
+export function drawStraightSouthHeartOutline(imageData: ImageData, cx: number, cy: number, r: number, thickness: number, color: RGBA): void {
+    cx = Math.floor(cx); cy = Math.floor(cy); r = Math.floor(r);
+    if (r <= 0) { setPixel(imageData, cx, cy, color); return; }
+    const rInner = Math.max(0, r - thickness);
+    const bound = Math.ceil(r * 1.5) + 1;
+    // North: smooth outline
+    for (let dy = -bound; dy < 0; dy++) {
+        for (let dx = -bound; dx <= bound; dx++) {
+            if (!_heartInside(dx / r, -dy / r)) continue;
+            if (rInner > 0 && _heartInside(dx / rInner, -dy / rInner)) continue;
+            setPixel(imageData, cx + dx, cy + dy, color);
+        }
+    }
+    // South: cubic outline between outer (r) and inner (rInner)
+    for (let dy = 0; dy <= r; dy++) {
+        const hwOuter = _southHW(r, dy);
+        const hwInnerF = (rInner > 0 && dy < rInner) ? _southHWf(rInner, dy) : -1;
+        for (let dx = -hwOuter; dx <= hwOuter; dx++) {
+            if (Math.abs(dx) < hwInnerF) continue;
+            setPixel(imageData, cx + dx, cy + dy, color);
+        }
+    }
+}
+
 export function drawPolygonOutline(imageData: ImageData, vertices: { x: number; y: number }[], thickness: number, color: RGBA): void {
     const n = vertices.length;
     for (let i = 0; i < n; i++) {

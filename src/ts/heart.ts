@@ -1,7 +1,7 @@
 import { ClickAndDragTool } from "./click_and_drag_tool";
 import { SettingName, settings } from "./settings_registry";
 import { Vector2 } from "./types";
-import { drawFilledHeart, drawHeartOutline, parseColor, RGBA } from "./pixel_utils";
+import { drawFilledHeart, drawHeartOutline, drawFilledStraightSouthHeart, drawStraightSouthHeartOutline, parseColor, RGBA } from "./pixel_utils";
 import { mandala_mode } from "./mandala_mode";
 
 export class HeartTool extends ClickAndDragTool {
@@ -20,9 +20,15 @@ export class HeartTool extends ClickAndDragTool {
         const lw = settings.peek<number>(SettingName.LineWidth);
         const thickness = Math.max(1, lw);
 
+        const straight = settings.peek<string>(SettingName.HeartSouth) === 'straight';
         const drawAt = (imageData: ImageData, cx: number, cy: number) => {
-            if (this._fill) drawFilledHeart(imageData, cx, cy, r, this._stroke_color);
-            else drawHeartOutline(imageData, cx, cy, r, thickness, this._stroke_color);
+            if (this._fill) {
+                if (straight) drawFilledStraightSouthHeart(imageData, cx, cy, r, this._stroke_color);
+                else drawFilledHeart(imageData, cx, cy, r, this._stroke_color);
+            } else {
+                if (straight) drawStraightSouthHeartOutline(imageData, cx, cy, r, thickness, this._stroke_color);
+                else drawHeartOutline(imageData, cx, cy, r, thickness, this._stroke_color);
+            }
         };
 
         const context = this.context!;

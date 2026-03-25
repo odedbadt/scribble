@@ -250,6 +250,15 @@ export class MainApp {
             Array.from(fillable_buttons).forEach(btn => btn.classList.toggle('filled', filled));
         });
 
+        settings.set(SettingName.HeartSouth, 'smooth');
+        const heart_south_btn = document.getElementById('heart-south-btn') as HTMLElement;
+        heart_south_btn.addEventListener('click', () => {
+            const straight = settings.peek<string>(SettingName.HeartSouth) !== 'straight';
+            settings.set(SettingName.HeartSouth, straight ? 'straight' : 'smooth');
+            heart_south_btn.textContent = straight ? '♥V' : '♥∪';
+            heart_south_btn.classList.toggle('pressed', straight);
+        });
+
         const button_list = document.getElementsByClassName('button');
         Array.from(button_list).forEach(button => {
             const button_class_list = button.classList;
