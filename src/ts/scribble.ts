@@ -74,6 +74,14 @@ export class ScribbleTool extends ClickAndDragTool {
         super.commit_to_document(color);
     }
 
+    on_doc_origin_shift(dx: number, dy: number): void {
+        super.on_doc_origin_shift(dx, dy);
+        if (this._prev) {
+            this._prev.x += dx;
+            this._prev.y += dy;
+        }
+    }
+
     editing_stop() {
         this._prev = null;
     }

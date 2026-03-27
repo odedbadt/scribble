@@ -175,4 +175,11 @@ export abstract class ClickAndDragTool extends EditingTool {
         this.canvas_signal!.value = null;
     }
 
+    on_doc_origin_shift(dx: number, dy: number): void {
+        if (this.drag_start) {
+            this.drag_start.x += dx;
+            this.drag_start.y += dy;
+        }
+    }
+
 }

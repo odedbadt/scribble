@@ -74,6 +74,117 @@ export class Editor {
         this.document_context.imageSmoothingEnabled = false;
         this._last_hover_spot = null;
     }
+    private _scroll_raf: number | null = null;
+    private _scroll_dx = 0;
+    private _scroll_dy = 0;
+
+    private _start_edge_scroll() {
+        if (this._scroll_raf !== null) return;
+        const loop = () => {
+            if (this._scroll_dx !== 0 || this._scroll_dy !== 0) {
+                this._apply_edge_scroll();
+            }
+            this._scroll_raf = requestAnimationFrame(loop);
+        };
+        this._scroll_raf = requestAnimationFrame(loop);
+    }
+
+    private _stop_edge_scroll() {
+        if (this._scroll_raf !== null) {
+            cancelAnimationFrame(this._scroll_raf);
+            this._scroll_raf = null;
+        }
+        this._scroll_dx = 0;
+        this._scroll_dy = 0;
+    }
+
+    private _update_edge_scroll(view_x: number, view_y: number) {
+        const margin = 60;
+        const max_speed = 10;
+        const vw = this.view_canvas.clientWidth;
+        const vh = this.view_canvas.clientHeight;
+        // Scale to document pixels (accounts for zoom level)
+        const scale = this.view_port_signal.value.w / vw;
+
+        let dx = 0, dy = 0;
+        if (view_x < margin)       dx = -max_speed * scale * (1 - view_x / margin);
+        else if (view_x > vw - margin) dx =  max_speed * scale * (1 - (vw - view_x) / margin);
+        if (view_y < margin)       dy = -max_speed * scale * (1 - view_y / margin);
+        else if (view_y > vh - margin) dy =  max_speed * scale * (1 - (vh - view_y) / margin);
+
+        this._scroll_dx = dx;
+        this._scroll_dy = dy;
+    }
+
+    private _apply_edge_scroll() {
+        const vp = this.view_port_signal.value;
+        let nx = vp.x + this._scroll_dx;
+        let ny = vp.y + this._scroll_dy;
+
+        // Grow right / bottom (content stays at origin)
+        const need_right = nx + vp.w - this.document_canvas.width;
+        if (need_right > 0) this._grow_right(Math.max(need_right, 300));
+
+        const need_bottom = ny + vp.h - this.document_canvas.height;
+        if (need_bottom > 0) this._grow_bottom(Math.max(need_bottom, 300));
+
+        // Grow left / top (existing content shifts; compensate viewport and tool coords)
+        if (nx < 0) {
+            const grow = Math.max(Math.ceil(-nx), 300);
+            this._grow_left(grow);
+            nx += grow;
+        }
+        if (ny < 0) {
+            const grow = Math.max(Math.ceil(-ny), 300);
+            this._grow_top(grow);
+            ny += grow;
+        }
+
+        this.view_port_signal.value = { ...vp, x: nx, y: ny };
+    }
+
+    private _grow_right(amount: number) {
+        const { width: w, height: h } = this.document_canvas;
+        const img = this.document_context.getImageData(0, 0, w, h);
+        this.document_canvas.width = w + amount;
+        this.document_context.putImageData(img, 0, 0);
+        this.document_dirty_signal.value++;
+    }
+
+    private _grow_bottom(amount: number) {
+        const { width: w, height: h } = this.document_canvas;
+        const img = this.document_context.getImageData(0, 0, w, h);
+        this.document_canvas.height = h + amount;
+        this.document_context.putImageData(img, 0, 0);
+        this.document_dirty_signal.value++;
+    }
+
+    private _grow_left(amount: number) {
+        const { width: w, height: h } = this.document_canvas;
+        const img = this.document_context.getImageData(0, 0, w, h);
+        this.document_canvas.width = w + amount;
+        this.document_context.putImageData(img, amount, 0);
+        // Shift tool overlay so ongoing stroke stays aligned
+        const tb = this.tool_bounds_signal.value;
+        this.tool_bounds_signal.value = { from: tb.from, to: { ...tb.to, x: tb.to.x + amount } };
+        // Shift tool's stored doc positions
+        if (this._last_doc_pos) this._last_doc_pos.x += amount;
+        this.tool.on_doc_origin_shift?.(amount, 0);
+        this.document_dirty_signal.value++;
+    }
+
+    private _grow_top(amount: number) {
+        const { width: w, height: h } = this.document_canvas;
+        const img = this.document_context.getImageData(0, 0, w, h);
+        this.document_canvas.height = h + amount;
+        this.document_context.putImageData(img, 0, amount);
+        const tb = this.tool_bounds_signal.value;
+        this.tool_bounds_signal.value = { from: tb.from, to: { ...tb.to, y: tb.to.y + amount } };
+        if (this._last_doc_pos) this._last_doc_pos.y += amount;
+        this.tool.on_doc_origin_shift?.(0, amount);
+        this.document_dirty_signal.value++;
+    }
+
     view_coords_to_doc_coords(view_coords: Vector2): Vector2 {
         const vp = this.view_port_signal.value;
         return {
@@ -177,9 +288,12 @@ export class Editor {
         if (event.buttons) {
             this.tool.drag(at);
             this.tool.hover(at);
+            this._update_edge_scroll(event.offsetX, event.offsetY);
+            this._start_edge_scroll();
         }
         else {
             this.tool.hover(at);
+            this._stop_edge_scroll();
         }
         // Appply action
         // this.staging_to_view()
@@ -284,6 +398,7 @@ export class Editor {
     }
 
     pointerup(event: MouseEvent) {
+        this._stop_edge_scroll();
         if (this._dragging_anchor_idx >= 0) {
             this._dragging_anchor_idx = -1;
             return;
@@ -297,6 +412,7 @@ export class Editor {
         this.tool.hover(at);
     }
     pointerleave(event: MouseEvent) {
+        this._stop_edge_scroll();
         this._last_hover_spot = null;
         this._last_doc_pos = null;
         this._dragging_anchor_idx = -1;
