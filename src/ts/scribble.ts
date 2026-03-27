@@ -28,59 +28,41 @@ export class ScribbleTool extends ClickAndDragTool {
         const prev = this._prev ?? to;
         this._prev = { ...to };
 
+        let line_pairs: Array<{ from: Vector2, to: Vector2 }>;
         if (mandala_mode.enabled) {
             const center: Vector2 = mandala_mode.center ?? {
                 x: this.document_canvas!.width / 2,
                 y: this.document_canvas!.height / 2
             };
-            const line_pairs = mandala_mode.get_line_transforms(prev, to, center);
+            line_pairs = mandala_mode.get_line_transforms(prev, to, center);
             // Extend canvas to cover the full document so all rotated points fit
             this.extend_canvas_mapping(
                 { x: 0, y: 0, w: this.document_canvas!.width, h: this.document_canvas!.height },
                 true
             );
-            const context = this.context!;
-            const canvas = this.canvas!;
-            const bounds = this.canvas_bounds_mapping!.to;
-            const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-            for (const pair of line_pairs) {
-                const fx = Math.floor(pair.from.x - bounds.x);
-                const fy = Math.floor(pair.from.y - bounds.y);
-                const cx = Math.floor(pair.to.x - bounds.x);
-                const cy = Math.floor(pair.to.y - bounds.y);
-                if (radius <= 0) {
-                    drawLine(imageData, fx, fy, cx, cy, this._stroke_color);
-                } else {
-                    drawThickLine(imageData, fx, fy, cx, cy, radius, this._stroke_color);
-                }
-            }
-            context.putImageData(imageData, 0, 0);
         } else {
+            line_pairs = [{ from: prev, to }];
             this.extend_canvas_mapping(to, true, radius + 1);
-            const context = this.context!;
-            const canvas = this.canvas!;
-            const bounds = this.canvas_bounds_mapping!.to;
-            const fx = Math.floor(prev.x - bounds.x);
-            const fy = Math.floor(prev.y - bounds.y);
-            const cx = Math.floor(to.x - bounds.x);
-            const cy = Math.floor(to.y - bounds.y);
-
-            // Dirty-rect: only read/write the pixels touched by this segment.
-            const pad = radius + 1;
-            const dirtyX = Math.max(0, Math.min(fx, cx) - pad);
-            const dirtyY = Math.max(0, Math.min(fy, cy) - pad);
-            const dirtyW = Math.min(canvas.width, Math.max(fx, cx) + pad + 1) - dirtyX;
-            const dirtyH = Math.min(canvas.height, Math.max(fy, cy) + pad + 1) - dirtyY;
-
-            const imageData = context.getImageData(dirtyX, dirtyY, dirtyW, dirtyH);
-            if (radius <= 0) {
-                drawLine(imageData, fx - dirtyX, fy - dirtyY, cx - dirtyX, cy - dirtyY, this._stroke_color);
-            } else {
-                drawThickLine(imageData, fx - dirtyX, fy - dirtyY, cx - dirtyX, cy - dirtyY, radius, this._stroke_color);
-            }
-            context.putImageData(imageData, dirtyX, dirtyY);
         }
 
+        const context = this.context!;
+        const canvas = this.canvas!;
+        const bounds = this.canvas_bounds_mapping!.to;
+        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+
+        for (const pair of line_pairs) {
+            const fx = Math.floor(pair.from.x - bounds.x);
+            const fy = Math.floor(pair.from.y - bounds.y);
+            const cx = Math.floor(pair.to.x - bounds.x);
+            const cy = Math.floor(pair.to.y - bounds.y);
+            if (radius <= 0) {
+                drawLine(imageData, fx, fy, cx, cy, this._stroke_color);
+            } else {
+                drawThickLine(imageData, fx, fy, cx, cy, radius, this._stroke_color);
+            }
+        }
+
+        context.putImageData(imageData, 0, 0);
         this.publish_signals();
     }
 
