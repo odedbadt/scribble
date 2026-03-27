@@ -8,12 +8,6 @@ export type Rect = {
     w: number;
     h: number;
 }
-export type CornerRect = {
-    t: number;
-    l: number;
-    b: number;
-    r: number;
-}
 export type RectToRectMapping = {
     from: Rect,
     to: Rect
@@ -21,40 +15,6 @@ export type RectToRectMapping = {
 export const unit_rect: Rect = { x: 0, y: 0, w: 1, h: 1 }
 export const zero_vector: Vector2 = { x: 0, y: 0 }
 
-export function rtop(r: Rect): number {
-    return r.y;
-}
-export function rbottom(r: Rect): number {
-    return r.y + r.h;
-}
-export function rleft(r: Rect): number {
-    return r.x;
-}
-export function rright(r: Rect): number {
-    return r.x + r.w;
-}
-export function rect_to_corner_rect(r: Rect): CornerRect {
-    return {
-        b: rbottom(r),
-        l: rleft(r),
-        t: rtop(r),
-        r: rright(r)
-    }
-}
-export function corner_rect_to_rect(cr: CornerRect): Rect {
-    return {
-        x: cr.l, y: cr.t, w: cr.r - cr.l, h: cr.b - cr.t
-    }
-}
-export function scale_rect(r: Rect, scalarx: number, scalary: number | null = null): Rect {
-    scalary = scalary || scalarx
-    return {
-        x: r.x * scalarx,
-        y: r.y * scalary,
-        w: r.w * scalarx,
-        h: r.h * scalary,
-    }
-}
 export function bounding_rect(v1: Vector2, v2: Vector2, margin: number = 0): Rect {
     const left = Math.min(v1.x, v2.x) - margin;
     const top = Math.min(v1.y, v2.y) - margin;

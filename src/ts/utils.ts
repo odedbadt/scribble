@@ -99,14 +99,6 @@ export function scale_rect(r: Rect, scale: Vector2) {
         h: r.h * scale.y
     }
 }
-export function translate_rect(r: Rect, shift: Vector2) {
-    return {
-        x: r.x + shift.x,
-        y: r.y + shift.y,
-        w: r.w,
-        h: r.h
-    }
-}
 export function rect_union(r1: Rect, r2: Rect, margin: number = 0) {
     if (r1 == null) {
         return r2;
@@ -120,19 +112,6 @@ export function rect_union(r1: Rect, r2: Rect, margin: number = 0) {
     const bottom = Math.max(r1.y + r1.h, r2.y + r2.h) + margin;
     return { x: left, y: top, w: right - left, h: bottom - top }
 }
-export function rect_sum(r1: Rect, r2: Rect) {
-    // Mikowsky sum of two rectangles
-    const left = r1.x - r2.w;
-    const top = r1.y - r2.h;
-    return { x: left, y: top, w: r1.w + r2.w, h: r1.h + r2.h }
-}
-export function extend_rect(r: Rect, margin: number) {
-    // Mikowsky sum of two rectangles
-    const left = r.x - margin;
-    const top = r.y - margin;
-    return { x: left, y: top, w: r.w + margin * 2, h: r.h + margin * 2 }
-}
-
 export function tool_to_document(tool_canvas: HTMLCanvasElement,
     rect_to_rect_mapping: RectToRectMapping,
     document_context: CanvasRenderingContext2D,
@@ -207,31 +186,10 @@ export function init_canvas(tool: EditingTool, canvas_signal: Signal<HTMLCanvasE
     //canvas_signal.value = tool.canvas;
     return tool.canvas
 }
-export function tool_canvas_to_document_canvas(canvas: HTMLCanvasElement, canvas_bounds_mapping: RectToRectMapping, v: Vector2): Vector2 {
-    const from: Rect = canvas_bounds_mapping.from;
-    const to: Rect = canvas_bounds_mapping.to;
-    const cw = canvas.width;
-    const ch = canvas.height;
-    return {
-        x: (v.x / cw - from.x) * to.w + to.x,
-        y: (v.y / ch - from.y) * to.h + to.y
-    }
-}
 export function clear_canvas(canvas: HTMLCanvasElement) {
     const context: CanvasRenderingContext2D = canvas.getContext('2d')!;
     context.fillStyle = 'rgba(0,0,0,0)';
     context.fillRect(0, 0, canvas.width, canvas.height);
 
 }
-export function document_canvas_to_tool_canvas(canvas: HTMLCanvasElement, canvas_bounds_mapping: RectToRectMapping, v: Vector2): Vector2 {
 
-    const from: Rect = canvas_bounds_mapping.from;
-    const to: Rect = canvas_bounds_mapping.to;
-    const cw = canvas.width;
-    const ch = canvas.height;
-    return {
-        x: ((v.x - to.x) / to.w + from.x) * cw,
-        y: ((v.y - to.y) / to.h + from.y) * ch
-    }
-
-}

@@ -42,8 +42,6 @@ const tool_classes = new Map<string, new (...args: any[]) => EditingTool>
 export class Editor {
     undo_redo_buffer: UndoRedoBuffer<ImageData>;
     tool: any;
-    previous_tool_name: any;
-    current_tool_name: any;
     private _last_hover_spot: Vector2 | null;
     _last_doc_pos: Vector2 | null = null;
     private _dragging_anchor_idx: number = -1;
