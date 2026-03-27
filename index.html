@@ -1,0 +1,108 @@
+<html>
+
+<head>
+    <link type="text/css" rel="stylesheet" href="static/style.css">
+    <script src="static/ts/main.bundle.js"></script>
+</head>
+
+<body>
+    <div id="toolbar">
+        <div id="gdrive_button" class="gdrive button"></div>
+        <div id="save_button" class="save button">Save</div>
+        <div id="load_button" class="load button">Load</div>
+        <div id="undo_button" class="undo button"></div>
+        <div id="redo_button" class="redo button"></div>
+
+        <div class="scribble button"></div>
+        <!-- 1 -->
+        <div class="rect button filled fillable"></div>
+
+        <div class="line button"></div>
+        <!-- 2 -->
+        <div class="circle button filled fillable"></div>
+
+        <div class="polygon button filled fillable">⬡</div>
+        <!-- 3 -->
+        <div class="dropper button"></div>
+
+        <div class="floodfill button"></div>
+        <!-- 4 -->
+        <div class="eraser button"></div>
+
+        <div class="clearall button"></div>
+
+        <div class="cursor_size button"></div>
+        <!-- 5 -->
+        <div class="topo_hull button filled fillable">⊂</div>
+        <!-- 6 -->
+        <div class="heart button filled fillable">♥</div>
+
+        <div class="cloud_stamp button">☁</div>
+
+        <div id="colorswap" class="button">Swap colors</div>
+        <div id="debug_button" class="button debug-btn"
+            onclick="document.getElementById('debug-modal').style.display='flex'">Debug</div>
+    </div>
+    <div id="canvas-area">
+        <canvas id="view-canvas" width="300" height="300"></canvas>
+    </div>
+
+    <div id="debug-modal" style="display:none">
+        <div id="debug-modal-inner">
+            <div id="debug-modal-header">
+                <span>Debug Canvases</span>
+                <button onclick="document.getElementById('debug-modal').style.display='none'">✕</button>
+            </div>
+            <div id="debug-canvases">
+                <div>
+                    <div class="debug-label">document-canvas</div><canvas id="document-canvas" width="300"
+                        height="300"></canvas>
+                </div>
+                <div>
+                    <div class="debug-label">tool-canvas</div>
+                    <div id="debug-tool-canvas-slot"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="right-toolbar">
+        <!-- mandala -->
+        <div class="mandala button"></div>
+        <div id="mandala-panel">
+            <div class="mandala-row">
+                <span>n</span>
+                <button id="mandala-n-minus" class="mandala-ctrl-btn">-</button>
+                <span id="mandala-n-val">8</span>
+                <button id="mandala-n-plus" class="mandala-ctrl-btn">+</button>
+            </div>
+            <div class="mandala-row">
+                <span>mirror</span>
+                <button id="mandala-mirror" class="mandala-ctrl-btn pressed">on</button>
+            </div>
+        </div>
+        <!-- anchor -->
+        <div id="anchor-btn" class="anchor button" title="Toggle anchor edit mode">⚓</div>
+        <!-- fillstyle -->
+        <div class="fillstyle filled button"></div>
+        <!-- heart south style -->
+        <div id="heart-south-btn" class="heart-south-btn button" title="Toggle heart south: smooth / straight">♥∪</div>
+
+        <div class="color_stack_item button"></div>
+        <div class="color_stack_item button"></div>
+        <div class="color_stack_item button"></div>
+        <div class="color_stack_item button"></div>
+        <div class="color_stack_item button"></div>
+        <div class="color_stack_item button"></div>
+        <div class="color_stack_item button"></div>
+        <div class="color_stack_item button"></div>
+
+        <canvas id="hl-selector-canvas" width="50" height="200"></canvas>
+        <canvas id="sat-selector-canvas" width="50" height="100"></canvas>
+        <div id="color-selector-div-back">
+            <div id="color-selector-div-fore"></div>
+        </div>
+    </div>
+    <input type="file" id="file_input" accept="image/png" />
+</body>
+
+</html>
