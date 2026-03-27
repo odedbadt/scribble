@@ -70,9 +70,7 @@ export function drawLine(imageData: ImageData, x0: number, y0: number, x1: numbe
 }
 
 /**
- * Draw a thick line (capsule/stadium shape) by rasterizing the segment bounding box.
- * Each pixel is tested once against squared distance to the segment — O((L+r)·r)
- * instead of the old Bresenham+circle approach which was O(L·r²).
+ * Draw a thick line using Bresenham + filled circles at each point
  */
 export function drawThickLine(imageData: ImageData, x0: number, y0: number, x1: number, y1: number, radius: number, color: RGBA): void {
     x0 = Math.floor(x0);
@@ -81,48 +79,25 @@ export function drawThickLine(imageData: ImageData, x0: number, y0: number, x1: 
     y1 = Math.floor(y1);
     radius = Math.floor(radius);
 
-    if (radius <= 0) {
-        drawLine(imageData, x0, y0, x1, y1, color);
-        return;
-    }
+    const dx = Math.abs(x1 - x0);
+    const dy = Math.abs(y1 - y0);
+    const sx = x0 < x1 ? 1 : -1;
+    const sy = y0 < y1 ? 1 : -1;
+    let err = dx - dy;
 
-    const sdx = x1 - x0;
-    const sdy = y1 - y0;
-    const lenSq = sdx * sdx + sdy * sdy;
-    const r2 = radius * radius;
-
-    if (lenSq === 0) {
+    while (true) {
         drawFilledCircle(imageData, x0, y0, radius, color);
-        return;
-    }
 
-    const invLenSq = 1 / lenSq;
-    const minX = Math.max(0, Math.min(x0, x1) - radius);
-    const maxX = Math.min(imageData.width - 1, Math.max(x0, x1) + radius);
-    const minY = Math.max(0, Math.min(y0, y1) - radius);
-    const maxY = Math.min(imageData.height - 1, Math.max(y0, y1) + radius);
+        if (x0 === x1 && y0 === y1) break;
 
-    const data = imageData.data;
-    const stride = imageData.width;
-    const [cr, cg, cb, ca] = color;
-
-    for (let py = minY; py <= maxY; py++) {
-        const vy = py - y0;
-        const dotY = vy * sdy;
-        const rowBase = py * stride * 4;
-        for (let px = minX; px <= maxX; px++) {
-            const vx = px - x0;
-            // Closest point on segment (parameterised, clamped to [0,1])
-            const t = Math.max(0, Math.min(1, (vx * sdx + dotY) * invLenSq));
-            const ex = vx - t * sdx;
-            const ey = vy - t * sdy;
-            if (ex * ex + ey * ey <= r2) {
-                const offset = rowBase + px * 4;
-                data[offset]     = cr;
-                data[offset + 1] = cg;
-                data[offset + 2] = cb;
-                data[offset + 3] = ca;
-            }
+        const e2 = 2 * err;
+        if (e2 > -dy) {
+            err -= dy;
+            x0 += sx;
+        }
+        if (e2 < dx) {
+            err += dx;
+            y0 += sy;
         }
     }
 }
