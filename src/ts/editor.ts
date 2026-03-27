@@ -164,10 +164,17 @@ export class Editor {
         const img = this.document_context.getImageData(0, 0, w, h);
         this.document_canvas.width = w + amount;
         this.document_context.putImageData(img, amount, 0);
-        // Shift tool overlay so ongoing stroke stays aligned
+        // Shift BOTH the tool's own canvas_bounds_mapping AND the signal.
+        // If only the signal is shifted, the tool's next publish_signals() call
+        // overwrites the signal with the unshifted value, snapping the overlay back.
+        if (this.tool.canvas_bounds_mapping) {
+            this.tool.canvas_bounds_mapping = {
+                from: this.tool.canvas_bounds_mapping.from,
+                to: { ...this.tool.canvas_bounds_mapping.to, x: this.tool.canvas_bounds_mapping.to.x + amount },
+            };
+        }
         const tb = this.tool_bounds_signal.value;
         this.tool_bounds_signal.value = { from: tb.from, to: { ...tb.to, x: tb.to.x + amount } };
-        // Shift tool's stored doc positions
         if (this._last_doc_pos) this._last_doc_pos.x += amount;
         this.tool.on_doc_origin_shift?.(amount, 0);
         this.document_dirty_signal.value++;
@@ -178,6 +185,12 @@ export class Editor {
         const img = this.document_context.getImageData(0, 0, w, h);
         this.document_canvas.height = h + amount;
         this.document_context.putImageData(img, 0, amount);
+        if (this.tool.canvas_bounds_mapping) {
+            this.tool.canvas_bounds_mapping = {
+                from: this.tool.canvas_bounds_mapping.from,
+                to: { ...this.tool.canvas_bounds_mapping.to, y: this.tool.canvas_bounds_mapping.to.y + amount },
+            };
+        }
         const tb = this.tool_bounds_signal.value;
         this.tool_bounds_signal.value = { from: tb.from, to: { ...tb.to, y: tb.to.y + amount } };
         if (this._last_doc_pos) this._last_doc_pos.y += amount;
