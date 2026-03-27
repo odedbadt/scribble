@@ -51,6 +51,8 @@ export class Editor {
     private _last_hover_spot: Vector2 | null;
     _last_doc_pos: Vector2 | null = null;
     private _dragging_anchor_idx: number = -1;
+    private _pendingDragAt: Vector2 | null = null;
+    private _rafPending = false;
     placing_anchor: boolean = false;
     anchor_edit_mode: boolean = false;
     document_canvas: HTMLCanvasElement;
@@ -182,8 +184,17 @@ export class Editor {
             return;
         }
         if (event.buttons) {
-            this.tool.drag(at);
-            this.tool.hover(at);
+            this._pendingDragAt = at;
+            if (!this._rafPending) {
+                this._rafPending = true;
+                requestAnimationFrame(() => {
+                    this._rafPending = false;
+                    if (this._pendingDragAt !== null) {
+                        this.tool.drag(this._pendingDragAt);
+                        this._pendingDragAt = null;
+                    }
+                });
+            }
         }
         else {
             this.tool.hover(at);
@@ -300,6 +311,12 @@ export class Editor {
         }
         const raw = this.view_coords_to_doc_coords({ x: event.offsetX, y: event.offsetY });
         const { pt: at } = anchor_manager.snap(raw, this.snap_radius_doc());
+        // Flush any pending rAF drag so the last point is included before stop.
+        if (this._pendingDragAt !== null) {
+            this.tool.drag(this._pendingDragAt);
+            this._pendingDragAt = null;
+            this._rafPending = false;
+        }
         this.tool.stop(at);
         this.tool.hover(at);
     }

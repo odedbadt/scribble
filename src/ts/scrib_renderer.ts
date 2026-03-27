@@ -193,6 +193,9 @@ export class ScribRenderer {
         scene.add(anchorMesh);
         scene.add(overlayMesh);
 
+        let lastDocDirty = -1;
+        let currentOverlayCanvas: HTMLCanvasElement | null = null;
+
         effect(() => {
             const overlay_canvas = this.overlay_canvas_signal.value;
             const bounds_mapping = this.overlay_canvas_bounds_signal.value;
@@ -233,22 +236,34 @@ export class ScribRenderer {
 
             docTexture.needsUpdate = true;
 
-            // Dispose previous overlay texture to avoid leaking GPU memory
-            if (overlayMaterial.uniforms.uTexture.value) {
-                overlayMaterial.uniforms.uTexture.value.dispose();
-                overlayMaterial.uniforms.uTexture.value = null;
+            // Only re-upload the document texture when it actually changed.
+            const docDirty = this.document_dirty_signal.value;
+            if (docDirty !== lastDocDirty) {
+                lastDocDirty = docDirty;
+                docTexture.needsUpdate = true;
+            }
+
+            // Reuse overlay texture across drag events; only create/dispose once per stroke.
+            if (overlay_canvas !== currentOverlayCanvas) {
+                if (overlayMaterial.uniforms.uTexture.value) {
+                    overlayMaterial.uniforms.uTexture.value.dispose();
+                    overlayMaterial.uniforms.uTexture.value = null;
+                }
+                currentOverlayCanvas = overlay_canvas;
+                if (overlay_canvas != null) {
+                    const overlayTexture = new CanvasTexture(overlay_canvas);
+                    overlayTexture.flipY = false;
+                    overlayTexture.minFilter = NearestFilter;
+                    overlayTexture.magFilter = NearestFilter;
+                    overlayMaterial.uniforms.uTexture.value = overlayTexture;
+                }
+            } else if (overlay_canvas != null && overlayMaterial.uniforms.uTexture.value) {
+                // Same canvas element, new pixel data — mark dirty for re-upload.
+                overlayMaterial.uniforms.uTexture.value.needsUpdate = true;
             }
 
             if (overlay_canvas != null) {
                 const to_rect = bounds_mapping.to;
-
-                // Fresh texture from current canvas state — always picks up correct dimensions
-                const overlayTexture = new CanvasTexture(overlay_canvas);
-                overlayTexture.flipY = false;
-                overlayTexture.minFilter = NearestFilter;
-                overlayTexture.magFilter = NearestFilter;
-                overlayMaterial.uniforms.uTexture.value = overlayTexture;
-
                 overlayMesh.scale.set(to_rect.w, to_rect.h, 1);
                 overlayMesh.position.set(to_rect.x + to_rect.w / 2, to_rect.y + to_rect.h / 2, -2);
                 overlayMesh.visible = true;

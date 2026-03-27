@@ -34,6 +34,13 @@ export abstract class ClickAndDragTool extends EditingTool {
             clear_canvas(this.canvas!);
         } else {
             const next_to = rect_union(prev_mapping.to, rect_to_include, margin);
+            // Skip the canvas resize when bounds haven't changed: assigning canvas.width
+            // (even to the same value) clears the canvas, forcing an expensive read-clear-rewrite.
+            if (copy &&
+                next_to.x === prev_mapping.to.x && next_to.y === prev_mapping.to.y &&
+                next_to.w === prev_mapping.to.w && next_to.h === prev_mapping.to.h) {
+                return;
+            }
             const ctx = this.canvas.getContext('2d')!;
             if (copy) {
                 const src_image_data = ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
