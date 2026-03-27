@@ -1,6 +1,5 @@
 import { UndoRedoBuffer } from "./undo_redo_buffer"
 import { EditingTool, NopTool } from './editing_tool'
-import { MainApp } from "./main_app";
 import { ScribbleTool } from "./scribble";
 import { CircleTool } from "./circle";
 import { ClearAllTool } from "./clearall";
@@ -16,14 +15,12 @@ import { CloudStampTool } from "./cloud_stamp";
 import { CursorSize } from './cursor_size'
 //import { FillStyleToggler } from './styletogglers'
 //import { mandala } from "./mandala";
-import { unit_rect, Vector2, Rect, RectToRectMapping, scale_rect } from "./types"
-import { init_canvas, tool_to_document } from "./utils"
-import { Signal, signal, computed, effect } from "@preact/signals";
-import { StateValue, state_registry } from "./state_registry"
+import { Vector2, Rect, RectToRectMapping } from "./types"
+import { init_canvas } from "./utils"
+import { Signal } from "@preact/signals";
 import { mandala_mode } from "./mandala_mode"
 import { setPixel, RGBA } from "./pixel_utils"
 import { anchor_manager, SNAP_RADIUS_SCREEN_PX } from "./anchor_manager"
-const v: new (...args: any[]) => EditingTool = RectTool
 const tool_classes = new Map<string, new (...args: any[]) => EditingTool>
     ([
         ["polygon", PolygonTool]
@@ -47,7 +44,6 @@ export class Editor {
     tool: any;
     previous_tool_name: any;
     current_tool_name: any;
-    from: any;
     private _last_hover_spot: Vector2 | null;
     _last_doc_pos: Vector2 | null = null;
     private _dragging_anchor_idx: number = -1;
@@ -60,7 +56,6 @@ export class Editor {
     tool_bounds_signal: Signal<RectToRectMapping>;
     view_port_signal: Signal<Rect>;
     document_dirty_signal: Signal<number>;
-    init_: any;
     constructor(document_canvas: HTMLCanvasElement,
         view_canvas: HTMLCanvasElement,
         tool_canvas_signal: Signal<HTMLCanvasElement>,
@@ -303,75 +298,11 @@ export class Editor {
         this.tool.stop(at);
         this.tool.hover(at);
     }
-    pointerin(event: MouseEvent) {
-        if (!!event.buttons) {
-        }
-        //this.pointerup(event);
-    }
     pointerleave(event: MouseEvent) {
         this._last_hover_spot = null;
         this._last_doc_pos = null;
         this._dragging_anchor_idx = -1;
         this.tool.pointer_leave();
     }
-    staging_to_art() {
-        // override_canvas_context(this.document_context, this.app.staging_canvas,
-        //     this._art_canvas_bounding_rect, false, false, true)
-    }
-    staging_to_view() {
-        // this._non_native_view_render_countdown = 10;
-        // override_canvas_context(this.app.view_context, this.app.staging_canvas,
-        //     this.view_port_signal.value, false, false, false)
-        //     if (this._view_rendering_countdown_interval==undefined) {
-        //         const _this = this;
-        //         this._view_rendering_countdown_interval = setInterval(() => {
-        //             _this._non_native_view_render_countdown--;
-        //             if (_this._non_native_view_render_countdown <=0) {
-        //                 _this._non_native_view_render_countdown = 10
-        //                 override_canvas_context(this.app.view_context, this.app.staging_canvas,
-        //                     this.view_port_signal.value, false, true, false)
-        //                 window.clearInterval(this._view_rendering_countdown_interval)
-        //                 this._view_rendering_countdown_interval=undefined;
-        //             }
-        //         }, 100)
-        // }
-    }
-    art_to_view() {
-        // this._non_native_view_render_countdown = 10;
-        // override_canvas_context(this.app.view_context, this.app.document_canvas,
-        //     this.view_port_signal.value, false, false, false)
-        // if (this._view_rendering_countdown_interval==undefined) {
-        //     const _this = this;
-        //     this._view_rendering_countdown_interval = setInterval(() => {
-        //         _this._non_native_view_render_countdown--;
-        //         if (_this._non_native_view_render_countdown <=0) {
-        //             _this._non_native_view_render_countdown = 10
-        //             override_canvas_context(this.app.view_context, this.app.document_canvas,
-        //                 this.view_port_signal.value, false, true, false)
-        //                 window.clearInterval(this._view_rendering_countdown_interval)
-        //                 this._view_rendering_countdown_interval=undefined;
-        //         }
-        //     }, 100)
-        // }
-    }
-    art_to_staging() {
-        // override_canvas_context(this.app.staging_context, this.app.document_canvas, this._art_canvas_bounding_rect, false, false, true)
-    }
-    tool_to_document() {
-        const tool_canvas = this.tool_canvas_signal.value!;
-        tool_to_document(tool_canvas,
-            this.tool_bounds_signal.value!, this.document_context);
-    }
-    tool_to_view() {
-        // override_canvas_context(this.app.view_context, this.app.tool_canvas,
-        //     this.view_port_signal.value, false, false, false)
-    }
-    tmp_tool_to_staging() {
-        // override_canvas_context(this.app.staging_context, this.app.tool_tmp_canvas,
-        //     this._art_canvas_bounding_rect, true, false, true)
-    }
-    tmp_tool_to_view() {
-        // override_canvas_context(this.app.view_context, this.app.tool_tmp_canvas,
-        //     this.view_port_signal.value, true, false, false)
-    }
 }
+

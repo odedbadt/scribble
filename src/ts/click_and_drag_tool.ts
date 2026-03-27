@@ -4,7 +4,7 @@ import { MainApp } from "./main_app";
 import { Rect, Vector2, RectToRectMapping, unit_rect, vfloor } from "./types";
 
 import { signal, computed, effect } from "@preact/signals";
-import { parse_RGBA, tool_to_document, clear_canvas, rect_union, extend_rect } from "./utils";
+import { parse_RGBA, tool_to_document, clear_canvas, rect_union } from "./utils";
 import { settings, SettingName } from "./settings_registry";
 import { drawFilledCircle, parseColor, RGBA, setPixel } from "./pixel_utils";
 import { mandala_mode } from "./mandala_mode";

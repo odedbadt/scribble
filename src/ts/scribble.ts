@@ -1,7 +1,7 @@
 import { ClickAndDragTool } from "./click_and_drag_tool"
 import { Editor } from "./editor";
 import { SettingName, settings } from "./settings_registry";
-import { Vector2, bounding_rect } from "./types";
+import { Vector2 } from "./types";
 import { drawLine, drawThickLine, drawFilledCircle, parseColor, RGBA } from "./pixel_utils";
 import { mandala_mode } from "./mandala_mode";
 

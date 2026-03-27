@@ -83,7 +83,6 @@ export class MainApp {
         // Re-render anchor overlay whenever anchors change
         anchor_manager.dirty.subscribe(() => this._redraw_anchor_canvas());
 
-        this.editor.init_
         settings.bulkSet({
             fore_color: 'rgba(255,0,0,255)',
             back_color: 'rgba(255,255,255,255)',

@@ -1,72 +1,6 @@
-import { Scene } from "three";
 import { Rect, Vector2, RectToRectMapping } from "./types";
 import { EditingTool } from "./editing_tool";
 import { Signal } from "@preact/signals";
-export function override_canvas_context(
-    context_to: CanvasRenderingContext2D,
-    canvas_from: HTMLCanvasElement,
-    view_port_from: Rect,
-    keep?: boolean | undefined,
-    avoid_native?: boolean,
-    force_same_view_port?: boolean | undefined) {
-    const before_f_t = performance.now();
-    // context_to.putImage(context_to_image_data,0,0);
-    const to_w = context_to.canvas.clientWidth;
-    const to_h = context_to.canvas.offsetHeight;
-    const from_w = canvas_from.clientWidth;
-    const from_h = canvas_from.offsetHeight;
-    const context_from = canvas_from.getContext('2d')!
-    const context_from_image_data = context_from.getImageData(0, 0,
-        canvas_from.clientWidth, canvas_from.clientHeight)
-    const context_from_data = context_from_image_data.data;
-    const context_to_image_data = context_to.getImageData(0, 0,
-        context_to.canvas.clientWidth, context_to.canvas.clientHeight)
-    const context_to_data = context_to_image_data.data;
-    function render_non_native() {
-        for (let y = 0; y < to_h; ++y) {
-            for (let x = 0; x < to_w; ++x) {
-                const offset = (to_w * y + x) * 4;
-                const from_x = Math.round(x / to_w * view_port_from.w + view_port_from.x)
-                const from_y = Math.round(y / to_h * view_port_from.h + view_port_from.y)
-                const from_offset = force_same_view_port ? offset :
-                    (from_w * from_y + from_x) * 4;
-                if (context_from_data[from_offset + 3] > 0) {
-                    context_to_data[offset + 0] = context_from_data[from_offset + 0];
-                    context_to_data[offset + 1] = context_from_data[from_offset + 1];
-                    context_to_data[offset + 2] = context_from_data[from_offset + 2];
-                    context_to_data[offset + 3] = 255;
-                }
-            }
-        }
-        context_to.putImageData(context_to_image_data, 0, 0);
-    }
-    function render_native() {
-        context_to.drawImage(
-            canvas_from,
-            view_port_from.x,
-            view_port_from.y,
-            view_port_from.w,
-            view_port_from.h,
-            0,
-            0,
-            context_to.canvas.clientWidth,
-            context_to.canvas.clientHeight
-        );
-
-    }
-    if (!keep) {
-        context_to.clearRect(0, 0,
-            context_to.canvas.clientWidth,
-            context_to.canvas.clientHeight);
-    }
-    if (force_same_view_port) {
-        context_to.drawImage(canvas_from, 0, 0)
-    } else if (avoid_native) {
-        render_non_native()
-    } else {
-        render_native();
-    }
-}
 export function parse_RGBA(color: string | Uint8ClampedArray): Uint8ClampedArray {
     if (color instanceof Uint8ClampedArray) {
         return color
@@ -197,44 +131,6 @@ export function extend_rect(r: Rect, margin: number) {
     const left = r.x - margin;
     const top = r.y - margin;
     return { x: left, y: top, w: r.w + margin * 2, h: r.h + margin * 2 }
-}
-export function disposeScene(scene: Scene) {
-    // Loop through all objects in the scene
-    scene.traverse((object: any) => {
-        // Dispose of geometries
-        if (object.geometry) {
-            object.geometry.dispose();
-        }
-
-        // Dispose of materials
-        if (object.material) {
-            // If the material has textures, dispose of them too
-            if (Array.isArray(object.material)) {
-                object.material.forEach((mat: any) => {
-                    if (mat.map) mat.map.dispose(); // dispose of texture
-                    if (mat.lightMap) mat.lightMap.dispose();
-                    if (mat.bumpMap) mat.bumpMap.dispose();
-                    if (mat.normalMap) mat.normalMap.dispose();
-                    if (mat.aoMap) mat.aoMap.dispose();
-                    if (mat.emissiveMap) mat.emissiveMap.dispose();
-                    if (mat.envMap) mat.envMap.dispose();
-                    if (mat.displacementMap) mat.displacementMap.dispose();
-                    if (mat.specularMap) mat.specularMap.dispose();
-                });
-            } else {
-                if (object.material.map) object.material.map.dispose(); // dispose of texture
-                if (object.material.lightMap) object.material.lightMap.dispose();
-                if (object.material.bumpMap) object.material.bumpMap.dispose();
-                if (object.material.normalMap) object.material.normalMap.dispose();
-                if (object.material.aoMap) object.material.aoMap.dispose();
-                if (object.material.emissiveMap) object.material.emissiveMap.dispose();
-                if (object.material.envMap) object.material.envMap.dispose();
-                if (object.material.displacementMap) object.material.displacementMap.dispose();
-                if (object.material.specularMap) object.material.specularMap.dispose();
-            }
-            object.material.dispose();
-        }
-    });
 }
 
 export function tool_to_document(tool_canvas: HTMLCanvasElement,
