@@ -106,6 +106,7 @@ export class Floodfill extends ClickTool {
             ? mandala_mode.get_point_transforms(at, mandala_mode.center ?? { x: w / 2, y: h / 2 })
             : [at];
 
+        this.begin_undo_capture?.();
         for (const pos of positions) {
             const replaced_color = this.document_context!.getImageData(
                 Math.floor(pos.x), Math.floor(pos.y), 1, 1

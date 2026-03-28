@@ -90,7 +90,6 @@ export class MainApp {
             filled: true,
         });
         this.init_canvases();
-        this.editor.push_undo_snapshot(); // save initial blank state
         this.scrib_renderer.init();
     }
 
@@ -147,7 +146,8 @@ export class MainApp {
             const vp = this.view_port_signal.value;
             this.view_port_signal.value = { x: 0, y: 0, w: vp.w, h: vp.h };
             this.document_dirty_signal.value++;
-            this.editor.push_undo_snapshot();
+            // Loading a new image resets undo history (old history is invalid after resize)
+            this.editor.clear_undo_history();
         });
         img.src = url;
     }

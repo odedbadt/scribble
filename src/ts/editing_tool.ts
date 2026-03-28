@@ -16,6 +16,7 @@ export abstract class EditingTool {
     document_canvas: HTMLCanvasElement | null = null;
     document_dirty_signal: Signal<number> | null = null;
     push_undo_snapshot: (() => void) | null = null;
+    begin_undo_capture: ((rect?: Rect) => void) | null = null;
 
     constructor() {
 
@@ -41,6 +42,7 @@ export abstract class EditingTool {
         this.document_canvas = editor.document_canvas;
         this.document_dirty_signal = editor.document_dirty_signal;
         this.push_undo_snapshot = () => editor.push_undo_snapshot();
+        this.begin_undo_capture = (rect?) => editor.begin_undo_capture(rect);
     }
     abstract select(): void
     abstract start(at: Vector2, buttons: number): void;

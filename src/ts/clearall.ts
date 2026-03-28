@@ -11,6 +11,7 @@ export class ClearAllTool extends EditingTool {
             throw new Error("Cannot select tool if editor is not fully initialized")
         }
         const color = settings.peek<string>(SettingName.BackColor);
+        this.begin_undo_capture?.();
         this.document_context.fillStyle = color;
         this.document_context.fillRect(0, 0, this.document_canvas.width, this.document_canvas.height);
         this.document_dirty_signal!.value++;

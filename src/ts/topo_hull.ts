@@ -100,6 +100,7 @@ export class TopoHullTool extends ClickAndDragTool {
 
     private _commit_and_clear() {
         if ((this.drag_start || this._has_session) && this.canvas && this.canvas_bounds_mapping) {
+            this.begin_undo_capture?.(this.canvas_bounds_mapping.to);
             super.commit_to_document(settings.peek<string>(SettingName.ForeColor));
             this.document_dirty_signal!.value++;
             this.push_undo_snapshot?.();

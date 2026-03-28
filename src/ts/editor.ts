@@ -1,4 +1,4 @@
-import { UndoRedoBuffer } from "./undo_redo_buffer"
+import { UndoRedoBuffer, UndoPatch } from "./undo_redo_buffer"
 import { EditingTool, NopTool } from './editing_tool'
 import { ScribbleTool } from "./scribble";
 import { CircleTool } from "./circle";
@@ -40,7 +40,8 @@ const tool_classes = new Map<string, new (...args: any[]) => EditingTool>
         // , ["mandala", mandala]
     ])
 export class Editor {
-    undo_redo_buffer: UndoRedoBuffer<ImageData>;
+    undo_redo_buffer: UndoRedoBuffer;
+    private _undo_before: { x: number; y: number; data: ImageData } | null = null;
     tool: any;
     private _last_hover_spot: Vector2 | null;
     _last_doc_pos: Vector2 | null = null;
@@ -65,7 +66,7 @@ export class Editor {
         this.tool_bounds_signal = tool_bounds_signal;
         this.view_port_signal = view_port_signal;
         this.document_dirty_signal = document_dirty_signal;
-        this.undo_redo_buffer = new UndoRedoBuffer(100);
+        this.undo_redo_buffer = new UndoRedoBuffer();
         this.tool = new NopTool();
         this.document_canvas = document_canvas;
         this.view_canvas = view_canvas;
@@ -381,23 +382,40 @@ export class Editor {
         this.tool.publish_signals();
     }
 
+    clear_undo_history() {
+        this.undo_redo_buffer = new UndoRedoBuffer();
+        this._undo_before = null;
+    }
+
+    begin_undo_capture(rect?: Rect) {
+        const cw = this.document_canvas.width;
+        const ch = this.document_canvas.height;
+        const x = rect ? Math.max(0, Math.floor(rect.x)) : 0;
+        const y = rect ? Math.max(0, Math.floor(rect.y)) : 0;
+        const w = rect ? Math.min(Math.ceil(rect.w + (rect.x - x)), cw - x) : cw;
+        const h = rect ? Math.min(Math.ceil(rect.h + (rect.y - y)), ch - y) : ch;
+        if (w <= 0 || h <= 0) return;
+        this._undo_before = { x, y, data: this.document_context.getImageData(x, y, w, h) };
+    }
+
     push_undo_snapshot() {
-        const imageData = this.document_context.getImageData(
-            0, 0, this.document_canvas.width, this.document_canvas.height
-        );
-        this.undo_redo_buffer.push(imageData);
+        if (!this._undo_before) return;
+        const { x, y, data: before } = this._undo_before;
+        this._undo_before = null;
+        const after = this.document_context.getImageData(x, y, before.width, before.height);
+        this.undo_redo_buffer.push({ x, y, before, after } satisfies UndoPatch);
     }
     undo() {
-        const snapshot = this.undo_redo_buffer.undo();
-        if (snapshot) {
-            this.document_context.putImageData(snapshot, 0, 0);
+        const action = this.undo_redo_buffer.undo();
+        if (action) {
+            this.document_context.putImageData(action.data, action.x, action.y);
             this.document_dirty_signal.value++;
         }
     }
     redo() {
-        const snapshot = this.undo_redo_buffer.redo();
-        if (snapshot) {
-            this.document_context.putImageData(snapshot, 0, 0);
+        const action = this.undo_redo_buffer.redo();
+        if (action) {
+            this.document_context.putImageData(action.data, action.x, action.y);
             this.document_dirty_signal.value++;
         }
     }

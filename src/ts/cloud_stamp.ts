@@ -23,7 +23,7 @@ export class CloudStampTool extends EditingTool {
     }
 
     start(at: Vector2, _buttons: number) {
-        this.push_undo_snapshot?.();
+        this.begin_undo_capture?.();
         const w = this.document_canvas!.width;
         const h = this.document_canvas!.height;
         const imageData = this.document_context!.getImageData(0, 0, w, h);
@@ -42,6 +42,7 @@ export class CloudStampTool extends EditingTool {
         drawCloud(imageData, at.x, at.y, size, CLOUD_COLOR);
         this.document_context!.putImageData(imageData, 0, 0);
         this.document_dirty_signal!.value++;
+        this.push_undo_snapshot?.();
         this._last_pos = { x: at.x, y: at.y };
     }
 

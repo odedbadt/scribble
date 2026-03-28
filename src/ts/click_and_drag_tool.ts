@@ -162,6 +162,7 @@ export abstract class ClickAndDragTool extends EditingTool {
     }
     stop(at: Vector2) {
         if (this.drag_start) {
+            this.begin_undo_capture?.(this.canvas_bounds_mapping?.to);
             this.commit_to_document();
             this.document_dirty_signal!.value++;
             this.push_undo_snapshot?.();

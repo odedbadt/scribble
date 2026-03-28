@@ -1,152 +1,61 @@
 /*
-COMPLETELY EMPTY STACK WITH LINE DRWN:
+ * Stores before/after ImageData patches for a dirty rect instead of full
+ * canvas snapshots.  Each entry covers only the bounding box that changed,
+ * so a thin pencil stroke on a large canvas uses kilobytes instead of megabytes.
+ *
+ * Stack layout (next_index points at the next free slot):
+ *
+ *   [patch0, patch1, patch2, ...]
+ *          ^
+ *     next_index = 2  →  current state = patch1.after has been applied
+ *
+ *   undo():  apply patch[next_index-1].before, next_index--
+ *   redo():  apply patch[next_index].after,    next_index++
+ *   push():  write to stack[next_index], next_index++, truncate redo history
+ */
 
+export interface UndoPatch {
+    x: number;
+    y: number;
+    before: ImageData;
+    after: ImageData;
+}
 
--1|
- ^
+export interface UndoAction {
+    x: number;
+    y: number;
+    data: ImageData;
+}
 
-next_index: INDEX: -1
-ON SCREEN: A
-UNDO: NULL
-REDO: NULL
+export class UndoRedoBuffer {
+    private stack: UndoPatch[];
+    private next_index: number;
+    private high_water_mark: number;
 
-ONLY BLANK CANVAS:
-
-SECOND LINE DRAWN:
-
-A
-^
-
-next_index: INDEX 0
-ON SCREEN: B
-UNDO: -1
-REDO: NONE
-UNDO = next_index - 2
-
-BLANK CANVAS + FIRST LINE + SECOND LINE:
-
-0123
-XAB
- US^
-
-next_index: INDEX 3
-ON SCREEN: B (INDEX 2)
-UNDO: INDEX 1
-REDO: NONE
-UNDO = next_index - 2
-
-BLANK CANVAS + FIRST LINE + SECOND LINE + UNDO:
-
-0123
-XAB
-US^
-
-next_index: INDEX 2
-ON SCREEN: A (INDEX 1)
-UNDO: INDEX 0
-REDO: INDEX 2
-UNDO = next_index - 2
-REDO = next_index
-
-01
-XA
-^R
-
-XAB
- ^|
-
-...
-...
-XABCDEF
-    U^|
-
-ABCDEF
-  USR
-
-
-*/
-export class UndoRedoBuffer<T> {
-    stack: T[];
-    next_index: number;
-    high_water_mark: number;
-    constructor(size:number, log_level?:number) {
-        this.stack = new Array(size);
+    constructor() {
+        this.stack = [];
         this.next_index = 0;
-        this.high_water_mark = 0; // abuse of notation, h.w.m. of "next" actually
-        //, ${v.data[0]}, ${v.data[1]}, ${v.data[2]}`)
-
+        this.high_water_mark = 0;
     }
-    dump_to_canvas() {
-        // if (!this._log_level) {
-        //     return
-        // }
-        // const canvas = document.getElementById('dbg-canvas');
-        // const context = canvas.getContext('2d');
-        // context.fillStyle = 'rgb(128,128,128)';
-        // context.fillRect(0,0,800,80)
 
-        // for (let j = 0; j < this.high_water_mark; ++j) {
-        //     const v = this.stack[j];
-        //     if (v && v.data) {
-        //         context.putImageData(v, j*82,0)
-        //     } else if (v){
-        //         context.fillStyle = 'rgb(255,128,128)';
-        //         context.fillRect(j*82,0,80,80)
-        //     } else {
-        //         context.fillStyle = 'rgb(128,255,128)';
-        //         context.fillRect(j*82,0,80,80)
-        //     }
-        // }
-        // context.fillStyle = 'rgb(255,0,0)';
-        // context.fillRect(this.next_index*82+20,60,5,10)
-        // context.fillStyle = 'rgb(0,0,255)';
-        // context.fillRect(this.high_water_mark*82+20,70,5,10)
-    }
-    log(msg:string) {
-        console.log(msg)
-        // if (this._log_level) {
-        //     console.log(msg)
-        //     try {
-        //         document.getElementById('dbg').style.visibility = 50
-        //         document.getElementById('dbg').style.visibility = 'visible'
-        //         document.getElementById('dbg').innerHTML = msg
-        //     } catch {
-
-        //     }
-        // }
-    }
-    undo():T|null {
-        if (this.next_index <=1) {
-            if (this.next_index == 1) {
-                this.next_index--;
-            }
-            this.dump_to_canvas()
-            return null
-        }
-        const v = this.stack[this.next_index-2] || null;
+    undo(): UndoAction | null {
+        if (this.next_index <= 0) return null;
         this.next_index--;
-        this.dump_to_canvas()
-        return v;
+        const patch = this.stack[this.next_index];
+        return { x: patch.x, y: patch.y, data: patch.before };
     }
-    redo():T |null{
-        if (this.next_index >= this.high_water_mark) {
-            this.dump_to_canvas()
-            return null
-        }
-        const v = this.stack[this.next_index] || null;
+
+    redo(): UndoAction | null {
+        if (this.next_index >= this.high_water_mark) return null;
+        const patch = this.stack[this.next_index];
         this.next_index++;
-        this.dump_to_canvas()
-        return v;
+        return { x: patch.x, y: patch.y, data: patch.after };
     }
-    push(v:T) {
-        this.stack[this.next_index] = v;
+
+    push(patch: UndoPatch) {
+        this.stack[this.next_index] = patch;
         this.next_index++;
-        if (this.next_index > this.high_water_mark) {
-            this.high_water_mark = this.next_index;
-        }
-        if (this.high_water_mark > this.stack.length) {
-            this.stack.length = this.stack.length*2;
-        }
-        this.dump_to_canvas()
+        // Truncate any redo history that branched off from this point
+        this.high_water_mark = this.next_index;
     }
 }

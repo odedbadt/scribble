@@ -135,6 +135,7 @@ export class PolygonTool extends EditingTool {
         ctx.putImageData(imageData, 0, 0);
 
         const color_arr = parse_RGBA(settings.peek<string>(SettingName.ForeColor));
+        this.begin_undo_capture?.(this.canvas_bounds_mapping!.to);
         tool_to_document(this.canvas!, this.canvas_bounds_mapping!, this.document_context!, color_arr);
         this.document_dirty_signal!.value++;
         this.push_undo_snapshot?.();
