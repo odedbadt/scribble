@@ -12,6 +12,10 @@ export abstract class ClickAndDragTool extends EditingTool {
     dirty: boolean = false;
     drag_start: Vector2 | null = null;
     protected _start_buttons: number = 0;
+    // Cached filled-circle ImageData for hover cursor — reused while radius/color are unchanged
+    private _hover_circle_cache: ImageData | null = null;
+    private _hover_circle_cache_radius = -1;
+    private _hover_circle_cache_color = '';
     init() {
         this.start = this.start.bind(this);
         this.drag = this.drag.bind(this);
@@ -34,20 +38,28 @@ export abstract class ClickAndDragTool extends EditingTool {
             clear_canvas(this.canvas!);
         } else {
             const next_to = rect_union(prev_mapping.to, rect_to_include, margin);
-            const ctx = this.canvas.getContext('2d')!;
-            if (copy) {
-                const src_image_data = ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-                this.canvas.width = next_to.w;
-                this.canvas.height = next_to.h;
-                ctx.putImageData(src_image_data,
-                    -(next_to.x - prev_mapping.to.x),
-                    -(next_to.y - prev_mapping.to.y));
-                // Do NOT clear — preserve existing strokes
-            } else {
-                this.canvas.width = next_to.w;
-                this.canvas.height = next_to.h;
-                clear_canvas(this.canvas!);
+            const bounds_changed = next_to.x !== prev_mapping.to.x || next_to.y !== prev_mapping.to.y ||
+                next_to.w !== prev_mapping.to.w || next_to.h !== prev_mapping.to.h;
+
+            if (bounds_changed) {
+                const ctx = this.canvas.getContext('2d')!;
+                if (copy) {
+                    const src_image_data = ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+                    this.canvas.width = next_to.w;
+                    this.canvas.height = next_to.h;
+                    ctx.putImageData(src_image_data,
+                        -(next_to.x - prev_mapping.to.x),
+                        -(next_to.y - prev_mapping.to.y));
+                    // Do NOT clear — preserve existing strokes
+                } else {
+                    this.canvas.width = next_to.w;
+                    this.canvas.height = next_to.h;
+                    clear_canvas(this.canvas!);
+                }
             }
+
+            // Always assign a new object so the bounds signal always changes reference,
+            // ensuring the renderer effect fires even when bounds values are unchanged.
             this.canvas_bounds_mapping = {
                 to: next_to,
                 from: { x: 0, y: 0, w: 1, h: 1 }
@@ -86,7 +98,8 @@ export abstract class ClickAndDragTool extends EditingTool {
     hover_action(at: Vector2) {
         const lw = settings.peek<number>(SettingName.LineWidth);
         const radius = Math.floor(lw / 2);
-        const color = this.hover_color();
+        const colorStr = settings.peek<string>(SettingName.ForeColor);
+        const color = parseColor(colorStr);
         const ctx = this.context!;
 
         if (mandala_mode.enabled && this.document_canvas) {
@@ -102,7 +115,7 @@ export abstract class ClickAndDragTool extends EditingTool {
                 from: { x: 0, y: 0, w: 1, h: 1 },
                 to: { x: 0, y: 0, w: docW, h: docH },
             };
-            const imageData = ctx.getImageData(0, 0, docW, docH);
+            const imageData = new ImageData(docW, docH);
             for (const pt of mandala_mode.get_point_transforms(at, center)) {
                 drawFilledCircle(imageData, Math.round(pt.x), Math.round(pt.y), radius, color);
             }
@@ -118,9 +131,16 @@ export abstract class ClickAndDragTool extends EditingTool {
                 from: { x: 0, y: 0, w: 1, h: 1 },
                 to: { x: at.x - half, y: at.y - half, w: size, h: size },
             };
-            const imageData = ctx.getImageData(0, 0, size, size);
-            drawFilledCircle(imageData, half, half, radius, color);
-            ctx.putImageData(imageData, 0, 0);
+            // Reuse the filled-circle ImageData when radius and color haven't changed —
+            // the O(r²) fill is only paid once per (radius, color) combination.
+            if (this._hover_circle_cache_radius !== radius || this._hover_circle_cache_color !== colorStr) {
+                const imageData = new ImageData(size, size);
+                drawFilledCircle(imageData, half, half, radius, color);
+                this._hover_circle_cache = imageData;
+                this._hover_circle_cache_radius = radius;
+                this._hover_circle_cache_color = colorStr;
+            }
+            ctx.putImageData(this._hover_circle_cache!, 0, 0);
         }
         this.publish_signals();
     }

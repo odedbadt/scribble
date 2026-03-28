@@ -27,7 +27,8 @@ export class CursorSize extends ClickAndDragTool {
         };
 
         const ctx = this.context!;
-        const imageData = ctx.getImageData(0, 0, size, size);
+        // Canvas was just reset (width assignment clears it) — allocate fresh zeroed buffer
+        const imageData = new ImageData(size, size);
         const color = parseColor(settings.peek<string>(SettingName.ForeColor));
         drawFilledCircle(imageData, half, half, radius, color);
         ctx.putImageData(imageData, 0, 0);

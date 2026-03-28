@@ -75,7 +75,7 @@ export class ScribRenderer {
         const docMesh = new Mesh(docGeometry, docMaterial);
         docMesh.position.set(docTexW * 0.5, docTexH * 0.5, -5);
 
-        // Overlay mesh — geometry/material/mesh reused; texture recreated each frame
+        // Overlay mesh — geometry/material/mesh reused; texture reused when canvas dimensions match
         const overlayMaterial = new ShaderMaterial({
             uniforms: { uTexture: { value: null } },
             vertexShader: VERTEX_SHADER_CODE,
@@ -86,6 +86,9 @@ export class ScribRenderer {
         const overlayGeometry = new PlaneGeometry(1, 1);
         const overlayMesh = new Mesh(overlayGeometry, overlayMaterial);
         overlayMesh.visible = false;
+        let overlayTexture: CanvasTexture | null = null;
+        let overlayTexW = 0;
+        let overlayTexH = 0;
 
         // Anchor overlay mesh — full-document-sized, persists across strokes
         const anchorMaterial = new ShaderMaterial({
@@ -97,6 +100,13 @@ export class ScribRenderer {
         });
         const anchorMesh = new Mesh(new PlaneGeometry(1, 1), anchorMaterial);
         anchorMesh.visible = false;
+        let anchorTexture: CanvasTexture | null = null;
+        let anchorTexW = 0;
+        let anchorTexH = 0;
+
+        // Render is throttled to one call per animation frame to avoid rendering faster
+        // than the display can show when pointer events fire at high rate.
+        let renderPending = false;
 
         const scene = new Scene();
         scene.add(docMesh);
@@ -107,28 +117,36 @@ export class ScribRenderer {
             const overlay_canvas = this.overlay_canvas_signal.value;
             const bounds_mapping = this.overlay_canvas_bounds_signal.value;
             this.document_dirty_signal.value; // subscribe so document-only changes trigger re-render
-            const vp = this.view_port_signal.value;
+            this.view_port_signal.value; // subscribe so viewport changes trigger re-render
             const anchor_canvas = this.anchor_canvas_signal.value;
 
-            // Update anchor mesh
-            if (anchorMaterial.uniforms.uTexture.value) {
-                anchorMaterial.uniforms.uTexture.value.dispose();
-                anchorMaterial.uniforms.uTexture.value = null;
-            }
+            // Update anchor mesh — reuse texture when canvas dimensions are unchanged
             if (anchor_canvas != null) {
-                const at = new CanvasTexture(anchor_canvas);
-                at.flipY = false;
-                at.minFilter = NearestFilter;
-                at.magFilter = NearestFilter;
-                anchorMaterial.uniforms.uTexture.value = at;
-                anchorMesh.scale.set(anchor_canvas.width, anchor_canvas.height, 1);
-                anchorMesh.position.set(anchor_canvas.width / 2, anchor_canvas.height / 2, -3);
+                if (anchorTexture && anchor_canvas.width === anchorTexW && anchor_canvas.height === anchorTexH) {
+                    anchorTexture.needsUpdate = true;
+                } else {
+                    anchorTexture?.dispose();
+                    anchorTexture = new CanvasTexture(anchor_canvas);
+                    anchorTexture.flipY = false;
+                    anchorTexture.minFilter = NearestFilter;
+                    anchorTexture.magFilter = NearestFilter;
+                    anchorMaterial.uniforms.uTexture.value = anchorTexture;
+                    anchorTexW = anchor_canvas.width;
+                    anchorTexH = anchor_canvas.height;
+                    anchorMesh.scale.set(anchorTexW, anchorTexH, 1);
+                    anchorMesh.position.set(anchorTexW / 2, anchorTexH / 2, -3);
+                }
                 anchorMesh.visible = true;
             } else {
+                if (anchorTexture) {
+                    anchorTexture.dispose();
+                    anchorTexture = null;
+                    anchorMaterial.uniforms.uTexture.value = null;
+                }
                 anchorMesh.visible = false;
             }
 
-            // Recreate texture and geometry if canvas was resized (e.g. after image load)
+            // Recreate document texture and geometry if canvas was resized (e.g. after image load)
             if (this.document_canvas.width !== docTexW || this.document_canvas.height !== docTexH) {
                 docTexW = this.document_canvas.width;
                 docTexH = this.document_canvas.height;
@@ -143,30 +161,45 @@ export class ScribRenderer {
 
             docTexture.needsUpdate = true;
 
-            // Dispose previous overlay texture to avoid leaking GPU memory
-            if (overlayMaterial.uniforms.uTexture.value) {
-                overlayMaterial.uniforms.uTexture.value.dispose();
-                overlayMaterial.uniforms.uTexture.value = null;
-            }
-
+            // Update overlay mesh — reuse texture when canvas dimensions are unchanged
             if (overlay_canvas != null) {
                 const to_rect = bounds_mapping.to;
 
-                // Fresh texture from current canvas state — always picks up correct dimensions
-                const overlayTexture = new CanvasTexture(overlay_canvas);
-                overlayTexture.flipY = false;
-                overlayTexture.minFilter = NearestFilter;
-                overlayTexture.magFilter = NearestFilter;
-                overlayMaterial.uniforms.uTexture.value = overlayTexture;
+                if (overlayTexture && overlay_canvas.width === overlayTexW && overlay_canvas.height === overlayTexH) {
+                    // Same size: just mark pixels dirty — no GPU texture reallocation
+                    overlayTexture.needsUpdate = true;
+                } else {
+                    overlayTexture?.dispose();
+                    overlayTexture = new CanvasTexture(overlay_canvas);
+                    overlayTexture.flipY = false;
+                    overlayTexture.minFilter = NearestFilter;
+                    overlayTexture.magFilter = NearestFilter;
+                    overlayMaterial.uniforms.uTexture.value = overlayTexture;
+                    overlayTexW = overlay_canvas.width;
+                    overlayTexH = overlay_canvas.height;
+                }
 
                 overlayMesh.scale.set(to_rect.w, to_rect.h, 1);
                 overlayMesh.position.set(to_rect.x + to_rect.w / 2, to_rect.y + to_rect.h / 2, -2);
                 overlayMesh.visible = true;
             } else {
+                if (overlayTexture) {
+                    overlayTexture.dispose();
+                    overlayTexture = null;
+                    overlayMaterial.uniforms.uTexture.value = null;
+                }
                 overlayMesh.visible = false;
             }
 
-            renderer.render(scene, this.init_camera(vp));
+            // Throttle renders to one per animation frame; pointer events can fire much faster
+            // than the display refresh rate, so batching them avoids redundant GPU work.
+            if (!renderPending) {
+                renderPending = true;
+                requestAnimationFrame(() => {
+                    renderPending = false;
+                    renderer.render(scene, this.init_camera(this.view_port_signal.peek()));
+                });
+            }
         });
     }
 

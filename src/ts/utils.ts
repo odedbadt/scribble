@@ -99,6 +99,8 @@ export function scale_rect(r: Rect, scale: Vector2) {
         h: r.h * scale.y
     }
 }
+// Returns the smallest rect that contains r1 and a margin-padded r2.
+// The margin expands r2 only — r1 is never shrunk, only grown if needed.
 export function rect_union(r1: Rect, r2: Rect, margin: number = 0) {
     if (r1 == null) {
         return r2;
@@ -106,10 +108,10 @@ export function rect_union(r1: Rect, r2: Rect, margin: number = 0) {
     if (r2 == null) {
         return r1;
     }
-    const left = Math.max(0, Math.min(r1.x, r2.x) - margin);
-    const top = Math.max(0, Math.min(r1.y, r2.y) - margin);
-    const right = Math.max(r1.x + r1.w, r2.x + r2.w) + margin;
-    const bottom = Math.max(r1.y + r1.h, r2.y + r2.h) + margin;
+    const left = Math.max(0, Math.min(r1.x, r2.x - margin));
+    const top = Math.max(0, Math.min(r1.y, r2.y - margin));
+    const right = Math.max(r1.x + r1.w, r2.x + r2.w + margin);
+    const bottom = Math.max(r1.y + r1.h, r2.y + r2.h + margin);
     return { x: left, y: top, w: right - left, h: bottom - top }
 }
 export function tool_to_document(tool_canvas: HTMLCanvasElement,
