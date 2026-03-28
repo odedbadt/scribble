@@ -19,7 +19,7 @@ import { Vector2, Rect, RectToRectMapping } from "./types"
 import { init_canvas } from "./utils"
 import { Signal } from "@preact/signals";
 import { mandala_mode } from "./mandala_mode"
-import { setPixel, RGBA } from "./pixel_utils"
+import { setPixel, RGBA, extract_sub_image } from "./pixel_utils"
 import { anchor_manager, SNAP_RADIUS_SCREEN_PX } from "./anchor_manager"
 const tool_classes = new Map<string, new (...args: any[]) => EditingTool>
     ([
@@ -385,6 +385,26 @@ export class Editor {
     clear_undo_history() {
         this.undo_redo_buffer = new UndoRedoBuffer();
         this._undo_before = null;
+    }
+
+    /** Discard a pending begin_undo_capture() without pushing (nothing changed). */
+    cancel_undo_capture() {
+        this._undo_before = null;
+    }
+
+    /**
+     * Like push_undo_snapshot() but clips the stored before-data to `rect`,
+     * so only that region is saved.  Intended for tools that capture a full
+     * canvas before-snapshot and later discover the actual dirty bounds.
+     */
+    push_undo_snapshot_clipped(rect: Rect) {
+        if (!this._undo_before) return;
+        const { data: fullBefore } = this._undo_before;
+        this._undo_before = null;
+        const { x, y } = rect;
+        const before = extract_sub_image(fullBefore, rect);
+        const after = this.document_context.getImageData(x, y, rect.w, rect.h);
+        this.undo_redo_buffer.push({ x, y, before, after } satisfies UndoPatch);
     }
 
     begin_undo_capture(rect?: Rect) {

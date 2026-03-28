@@ -1,5 +1,5 @@
 // Pixel-perfect drawing utilities - no anti-aliasing ever
-import { Vector2 } from "./types";
+import { Rect, Vector2 } from "./types";
 
 export type RGBA = [number, number, number, number];
 
@@ -466,4 +466,16 @@ export function drawRainbow(imageData: ImageData, x1: number, y1: number, x2: nu
             setPixel(imageData, px, py, _RAINBOW_COLORS[band]);
         }
     }
+}
+
+
+/** Copy a sub-rectangle out of a full-canvas ImageData without touching the DOM. */
+export function extract_sub_image(source: ImageData, rect: Rect): ImageData {
+    const result = new ImageData(rect.w, rect.h);
+    for (let row = 0; row < rect.h; row++) {
+        const srcOff = ((rect.y + row) * source.width + rect.x) * 4;
+        const dstOff = row * rect.w * 4;
+        result.data.set(source.data.subarray(srcOff, srcOff + rect.w * 4), dstOff);
+    }
+    return result;
 }

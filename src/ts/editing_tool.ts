@@ -17,6 +17,8 @@ export abstract class EditingTool {
     document_dirty_signal: Signal<number> | null = null;
     push_undo_snapshot: (() => void) | null = null;
     begin_undo_capture: ((rect?: Rect) => void) | null = null;
+    cancel_undo_capture: (() => void) | null = null;
+    push_undo_snapshot_clipped: ((rect: Rect) => void) | null = null;
 
     constructor() {
 
@@ -43,6 +45,8 @@ export abstract class EditingTool {
         this.document_dirty_signal = editor.document_dirty_signal;
         this.push_undo_snapshot = () => editor.push_undo_snapshot();
         this.begin_undo_capture = (rect?) => editor.begin_undo_capture(rect);
+        this.cancel_undo_capture = () => editor.cancel_undo_capture();
+        this.push_undo_snapshot_clipped = (rect) => editor.push_undo_snapshot_clipped(rect);
     }
     abstract select(): void
     abstract start(at: Vector2, buttons: number): void;

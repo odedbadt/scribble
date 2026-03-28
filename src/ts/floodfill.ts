@@ -1,7 +1,7 @@
 import { ClickTool } from "./click_tool"
 import { settings, SettingName } from "./settings_registry";
-import { Vector2 } from "./types";
-import { parse_RGBA } from "./utils";
+import { Rect, Vector2 } from "./types";
+import { parse_RGBA, rect_union } from "./utils";
 import { mandala_mode } from "./mandala_mode";
 import { drawFilledCircle, parseColor, setPixel, RGBA } from "./pixel_utils";
 
@@ -12,13 +12,15 @@ function _equal_colors(c1: Uint8ClampedArray, c2: Uint8ClampedArray): boolean {
         c1[3] == c2[3]
 }
 
+/** Returns the bounding rect of pixels that were changed, or null if nothing was filled. */
 function _floodfill(context: CanvasRenderingContext2D,
     replaced_color: Uint8ClampedArray, fill_color: Uint8ClampedArray,
-    x: number, y: number, w: number, h: number) {
+    x: number, y: number, w: number, h: number): Rect | null {
     const image_data = context.getImageData(0, 0, w, h);
     const data = image_data.data;
     let safety = w * h * 4;
     const stack = [{ x: Math.floor(x), y: Math.floor(y) }];
+    let minX = w, minY = h, maxX = -1, maxY = -1;
     while (stack.length > 0 && safety-- > 0) {
         const dot = stack.pop()!;
         const px = dot.x;
@@ -31,12 +33,18 @@ function _floodfill(context: CanvasRenderingContext2D,
         data[offset + 1] = fill_color[1];
         data[offset + 2] = fill_color[2];
         data[offset + 3] = 255;
+        if (px < minX) minX = px;
+        if (px > maxX) maxX = px;
+        if (py < minY) minY = py;
+        if (py > maxY) maxY = py;
         stack.push({ x: px + 1, y: py });
         stack.push({ x: px - 1, y: py });
         stack.push({ x: px, y: py - 1 });
         stack.push({ x: px, y: py + 1 });
     }
+    if (maxX < 0) return null;
     context.putImageData(image_data, 0, 0);
+    return { x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1 };
 }
 
 export class Floodfill extends ClickTool {
@@ -106,15 +114,22 @@ export class Floodfill extends ClickTool {
             ? mandala_mode.get_point_transforms(at, mandala_mode.center ?? { x: w / 2, y: h / 2 })
             : [at];
 
+        // Capture full canvas before fill; we'll clip to the actual dirty rect after.
         this.begin_undo_capture?.();
+        let dirty: Rect | null = null;
         for (const pos of positions) {
             const replaced_color = this.document_context!.getImageData(
                 Math.floor(pos.x), Math.floor(pos.y), 1, 1
             ).data;
             if (_equal_colors(replaced_color, fill_color)) continue;
-            _floodfill(this.document_context!, replaced_color, fill_color, pos.x, pos.y, w, h);
+            const bbox = _floodfill(this.document_context!, replaced_color, fill_color, pos.x, pos.y, w, h);
+            if (bbox) dirty = dirty ? rect_union(dirty, bbox) : bbox;
         }
-        this.document_dirty_signal!.value++;
-        this.push_undo_snapshot?.();
+        if (dirty) {
+            this.document_dirty_signal!.value++;
+            this.push_undo_snapshot_clipped?.(dirty);
+        } else {
+            this.cancel_undo_capture?.();
+        }
     }
 }
