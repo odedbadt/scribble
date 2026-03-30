@@ -1,6 +1,8 @@
 import { Editor } from "./editor"
 import { Palette } from './palette'
 import { ColorStack } from "./color_stack";
+import { LayerStack } from "./layer_stack";
+import { LayerPanel } from "./layer_panel";
 import { Rect, RectToRectMapping } from "./types";
 //import { GoogleDrive } from "./gdrive"
 import { Signal, signal, computed, effect } from "@preact/signals";
@@ -27,13 +29,18 @@ export class MainApp {
     private scrib_renderer: ScribRenderer;
     private anchor_canvas_signal = signal<HTMLCanvasElement>(null as any);
     private _anchor_canvas: HTMLCanvasElement = document.createElement('canvas');
-    document_canvas: HTMLCanvasElement;
-    document_context: CanvasRenderingContext2D;
+    layer_stack: LayerStack;
+
+    /** Active layer canvas — used by legacy helpers that reference document_canvas. */
+    get document_canvas(): HTMLCanvasElement { return this.layer_stack.composite_canvas; }
+    /** Active layer context. */
+    get document_context(): CanvasRenderingContext2D { return this.layer_stack.active_layer.context; }
 
     view_canvas: HTMLCanvasElement;
     editor: Editor;
     // google_drive?: GoogleDrive;
     color_stack: ColorStack;
+    layer_panel: LayerPanel;
     palette: Palette;
     palette_hl_canvas: HTMLCanvasElement;
     palette_sat_canvas: HTMLCanvasElement;
@@ -43,15 +50,20 @@ export class MainApp {
     view_port_signal: Signal<Rect>;
 
     constructor() {
-        this.document_canvas = document.getElementById('document-canvas')! as HTMLCanvasElement;
-        this.document_context = this.document_canvas.getContext('2d', { willReadFrequently: true, texImage3d: false }) as CanvasRenderingContext2D;
         this.view_canvas = document.getElementById('view-canvas')! as HTMLCanvasElement;
+
+        // Initialise canvases to match viewport before creating layers
+        const init_w = this.view_canvas.clientWidth || 800;
+        const init_h = this.view_canvas.clientHeight || 600;
+
+        this.layer_stack = new LayerStack(init_w, init_h);
+
         this.palette = new Palette(
             document.getElementById('hl-selector-canvas')! as HTMLCanvasElement,
             document.getElementById('sat-selector-canvas')! as HTMLCanvasElement, [1, 0.5, 0.5]);
         this.palette_hl_canvas = document.getElementById('hl-selector-canvas')! as HTMLCanvasElement
         this.palette_sat_canvas = document.getElementById('sat-selector-canvas')! as HTMLCanvasElement
-        this.color_stack = new ColorStack(this, 8, 100, 10000,
+        this.color_stack = new ColorStack(this, 6, 100, 10000,
             document.getElementById('color-selector-div-fore')!,
             document.getElementById('color-selector-div-back')!,
             document.getElementsByClassName('color_stack_item')
@@ -65,20 +77,22 @@ export class MainApp {
             }
         )
         this.view_port_signal = signal<Rect>({
-            x: 0, y: 0, w:
-                this.document_canvas.width, h: this.document_canvas.height
+            x: 0, y: 0, w: init_w, h: init_h
         })
-        this.editor = new Editor(this.document_canvas,
+        this.editor = new Editor(this.layer_stack,
             this.view_canvas,
             this.tool_canvas_signal,
             this.tool_bounds_signal,
             this.view_port_signal,
             this.document_dirty_signal);
-        this.scrib_renderer = new ScribRenderer(this.tool_canvas_signal,
+        this.scrib_renderer = new ScribRenderer(this.layer_stack,
+            this.tool_canvas_signal,
             this.tool_bounds_signal,
             this.document_dirty_signal,
             this.view_port_signal,
             this.anchor_canvas_signal);
+
+        this.layer_panel = new LayerPanel(this.editor, document.getElementById('layer-panel')!);
 
         // Re-render anchor overlay whenever anchors change
         anchor_manager.dirty.subscribe(() => this._redraw_anchor_canvas());
@@ -92,31 +106,13 @@ export class MainApp {
         this.init_canvases();
         this.scrib_renderer.init();
     }
-
-    // this.color_  ck = new ColorStack(this, 8, 100, 10000,
-    // document.getElementById('color-selector-div-fore')!,
-    // document.getElementById('color-selector-div-back')!,
-    // document.getElementsByClassName('color_stack_item')
-
-
-    //this.google_drive = new GoogleDrive(document.location.hash)
-    // this.init_canvases()
-    //         this.init_canvases();
-    // this.scrib_renderer.init_render_loop();
-
-    //     }
     init_canvases() {
         const w = this.view_canvas.clientWidth;
         const h = this.view_canvas.clientHeight;
         this.view_canvas.width = w;
         this.view_canvas.height = h;
-        this.document_canvas.width = w;
-        this.document_canvas.height = h;
+        this.layer_stack.resize_all(w, h);
         this.view_port_signal.value = { x: 0, y: 0, w, h };
-        this.document_context.clearRect(0, 0, w, h);
-
-
-
     }
 
 
@@ -124,8 +120,10 @@ export class MainApp {
         const button = document.getElementsByClassName(tool_name)[0];
         const button_list = document.getElementsByClassName('button');
         Array.from(button_list).forEach(other_button => {
-            // Mandala is a mode toggle — don't clear it when switching tools
-            if (!other_button.classList.contains('mandala')) {
+            // Mode-toggle buttons keep their pressed state when switching tools
+            if (!other_button.classList.contains('mandala') &&
+                other_button.id !== 'layers-btn' &&
+                other_button.id !== 'anchor-btn') {
                 other_button.classList.remove('pressed');
             }
         });
@@ -139,9 +137,10 @@ export class MainApp {
     load_image(url: string) {
         const img = new Image();
         img.addEventListener('load', () => {
-            this.document_canvas.width = img.naturalWidth;
-            this.document_canvas.height = img.naturalHeight;
-            this.document_context.drawImage(img, 0, 0);
+            const w = img.naturalWidth;
+            const h = img.naturalHeight;
+            this.layer_stack.resize_all(w, h);
+            this.layer_stack.active_layer.context.drawImage(img, 0, 0);
             // Keep current viewport size (zoom level); reset pan to origin
             const vp = this.view_port_signal.value;
             this.view_port_signal.value = { x: 0, y: 0, w: vp.w, h: vp.h };
@@ -153,16 +152,18 @@ export class MainApp {
     }
     init_load_save() {
         document.getElementById('save_button')!.addEventListener('click', async () => {
-            // Read pixels via getImageData to avoid Chrome GPU-transfer issue
-            // (document_canvas is used as a WebGL texture, which can cause toBlob to return empty)
-            const w = this.document_canvas.width;
-            const h = this.document_canvas.height;
-            const imageData = this.document_context.getImageData(0, 0, w, h);
+            // Recomposite all layers, then export the composite canvas
+            this.layer_stack.recomposite();
+            const composite = this.layer_stack.composite_canvas;
+            const w = composite.width;
+            const h = composite.height;
+            const ctx = composite.getContext('2d')!;
+            const imageData = ctx.getImageData(0, 0, w, h);
             const offscreen = document.createElement('canvas');
             offscreen.width = w;
             offscreen.height = h;
-            const ctx = offscreen.getContext('2d')!;
-            ctx.putImageData(imageData, 0, 0);
+            const offCtx = offscreen.getContext('2d')!;
+            offCtx.putImageData(imageData, 0, 0);
             const blob = await new Promise<Blob | null>(resolve =>
                 offscreen.toBlob(resolve, 'image/png'));
             if (!blob) return;
@@ -256,6 +257,13 @@ export class MainApp {
             settings.set(SettingName.HeartSouth, straight ? 'straight' : 'smooth');
             heart_south_btn.textContent = straight ? '♥V' : '♥∪';
             heart_south_btn.classList.toggle('pressed', straight);
+        });
+
+        // Layers button: toggles the layer panel
+        const layers_btn = document.getElementById('layers-btn')!;
+        layers_btn.addEventListener('click', () => {
+            this.layer_panel.toggle();
+            layers_btn.classList.toggle('pressed', this.layer_panel['_open']);
         });
 
         const button_list = document.getElementsByClassName('button');
@@ -383,8 +391,8 @@ export class MainApp {
 
     }
     _redraw_anchor_canvas() {
-        const docW = this.document_canvas.width;
-        const docH = this.document_canvas.height;
+        const docW = this.layer_stack.composite_canvas.width;
+        const docH = this.layer_stack.composite_canvas.height;
         const c = this._anchor_canvas;
         c.width = docW;
         c.height = docH;

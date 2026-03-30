@@ -3,27 +3,24 @@ import { WebGLRenderer, Scene, OrthographicCamera, ShaderMaterial, DoubleSide, M
 import { FRAGMENT_SHADER_CODE, VERTEX_SHADER_CODE } from "./glsl_shader_code"
 import { effect, Signal } from "@preact/signals";
 import { Rect, RectToRectMapping } from "./types";
+import { LayerStack } from "./layer_stack";
 
 export class ScribRenderer {
-    document_canvas: HTMLCanvasElement;
-    document_context: CanvasRenderingContext2D;
-    editor: any;
+    layer_stack: LayerStack;
     view_canvas: HTMLCanvasElement;
     overlay_canvas_signal: Signal<HTMLCanvasElement>;
     overlay_canvas_bounds_signal: Signal<RectToRectMapping>;
     document_dirty_signal: Signal<number>;
     view_port_signal: Signal<Rect>;
     anchor_canvas_signal: Signal<HTMLCanvasElement>;
-    constructor(overlay_canvas_signal: Signal<HTMLCanvasElement>,
+    constructor(layer_stack: LayerStack,
+        overlay_canvas_signal: Signal<HTMLCanvasElement>,
         overlay_canvas_bounds_signal: Signal<RectToRectMapping>,
         document_dirty_signal: Signal<number>,
         view_port_signal: Signal<Rect>,
         anchor_canvas_signal: Signal<HTMLCanvasElement>) {
-        this.document_canvas = document.getElementById('document-canvas')! as HTMLCanvasElement;
+        this.layer_stack = layer_stack;
         this.view_canvas = document.getElementById('view-canvas')! as HTMLCanvasElement;
-        this.document_context = this.document_canvas.getContext('2d', { willReadFrequently: true, texImage3d: false }) as CanvasRenderingContext2D;
-        this.document_context.imageSmoothingEnabled = false;
-        this.document_context.globalCompositeOperation = 'source-over';
         this.overlay_canvas_signal = overlay_canvas_signal;
         this.overlay_canvas_bounds_signal = overlay_canvas_bounds_signal;
         this.document_dirty_signal = document_dirty_signal;
@@ -55,10 +52,11 @@ export class ScribRenderer {
         renderer.setClearColor(0xd0d0c8, 1); // gray background outside document
 
         // Document mesh — texture and geometry recreated when canvas dimensions change
-        let docTexW = this.document_canvas.width;
-        let docTexH = this.document_canvas.height;
+        const composite_canvas = this.layer_stack.composite_canvas;
+        let docTexW = composite_canvas.width;
+        let docTexH = composite_canvas.height;
         const makeDocTexture = () => {
-            const t = new CanvasTexture(this.document_canvas);
+            const t = new CanvasTexture(composite_canvas);
             t.flipY = false;
             t.minFilter = NearestFilter;
             t.magFilter = NearestFilter;
@@ -119,6 +117,10 @@ export class ScribRenderer {
             this.document_dirty_signal.value; // subscribe so document-only changes trigger re-render
             this.view_port_signal.value; // subscribe so viewport changes trigger re-render
             const anchor_canvas = this.anchor_canvas_signal.value;
+            this.layer_stack.layers.value; // subscribe to layer list changes (add/delete/reorder/visibility)
+
+            // Recomposite visible layers onto composite_canvas before updating the texture
+            this.layer_stack.recomposite();
 
             // Update anchor mesh — reuse texture when canvas dimensions are unchanged
             if (anchor_canvas != null) {
@@ -147,9 +149,9 @@ export class ScribRenderer {
             }
 
             // Recreate document texture and geometry if canvas was resized (e.g. after image load)
-            if (this.document_canvas.width !== docTexW || this.document_canvas.height !== docTexH) {
-                docTexW = this.document_canvas.width;
-                docTexH = this.document_canvas.height;
+            if (composite_canvas.width !== docTexW || composite_canvas.height !== docTexH) {
+                docTexW = composite_canvas.width;
+                docTexH = composite_canvas.height;
                 docTexture.dispose();
                 docTexture = makeDocTexture();
                 docMaterial.uniforms.uTexture.value = docTexture;

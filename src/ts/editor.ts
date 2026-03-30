@@ -1,4 +1,5 @@
-import { UndoRedoBuffer, UndoPatch } from "./undo_redo_buffer"
+import { ActionHistory, UndoableAction } from "./action_history"
+import { LayerStack } from "./layer_stack"
 import { EditingTool, NopTool } from './editing_tool'
 import { ScribbleTool } from "./scribble";
 import { CircleTool } from "./circle";
@@ -40,7 +41,7 @@ const tool_classes = new Map<string, new (...args: any[]) => EditingTool>
         // , ["mandala", mandala]
     ])
 export class Editor {
-    undo_redo_buffer: UndoRedoBuffer;
+    private _history: ActionHistory = new ActionHistory();
     private _undo_before: { x: number; y: number; data: ImageData } | null = null;
     tool: any;
     private _last_hover_spot: Vector2 | null;
@@ -48,14 +49,19 @@ export class Editor {
     private _dragging_anchor_idx: number = -1;
     placing_anchor: boolean = false;
     anchor_edit_mode: boolean = false;
-    document_canvas: HTMLCanvasElement;
-    document_context: CanvasRenderingContext2D;
+    layer_stack: LayerStack;
     view_canvas: HTMLCanvasElement;
     tool_canvas_signal: Signal<HTMLCanvasElement>;
     tool_bounds_signal: Signal<RectToRectMapping>;
     view_port_signal: Signal<Rect>;
     document_dirty_signal: Signal<number>;
-    constructor(document_canvas: HTMLCanvasElement,
+
+    /** The active drawing canvas — proxies to the current layer. */
+    get document_canvas(): HTMLCanvasElement { return this.layer_stack.active_layer.canvas; }
+    /** The active drawing context — proxies to the current layer. */
+    get document_context(): CanvasRenderingContext2D { return this.layer_stack.active_layer.context; }
+
+    constructor(layer_stack: LayerStack,
         view_canvas: HTMLCanvasElement,
         tool_canvas_signal: Signal<HTMLCanvasElement>,
         tool_bounds_signal: Signal<RectToRectMapping>,
@@ -66,13 +72,9 @@ export class Editor {
         this.tool_bounds_signal = tool_bounds_signal;
         this.view_port_signal = view_port_signal;
         this.document_dirty_signal = document_dirty_signal;
-        this.undo_redo_buffer = new UndoRedoBuffer();
+        this.layer_stack = layer_stack;
         this.tool = new NopTool();
-        this.document_canvas = document_canvas;
         this.view_canvas = view_canvas;
-        this.document_context = this.document_canvas.getContext('2d', { willReadFrequently: true }) as CanvasRenderingContext2D;
-        // Disable anti-aliasing/smoothing for pixel-perfect rendering
-        this.document_context.imageSmoothingEnabled = false;
         this._last_hover_spot = null;
     }
 
@@ -257,7 +259,7 @@ export class Editor {
     }
 
     clear_undo_history() {
-        this.undo_redo_buffer = new UndoRedoBuffer();
+        this._history.clear();
         this._undo_before = null;
     }
 
@@ -278,7 +280,11 @@ export class Editor {
         const { x, y } = rect;
         const before = extract_sub_image(fullBefore, rect);
         const after = this.document_context.getImageData(x, y, rect.w, rect.h);
-        this.undo_redo_buffer.push({ x, y, before, after } satisfies UndoPatch);
+        const ctx = this.document_context;
+        this._history.push({
+            undo() { ctx.putImageData(before, x, y); },
+            redo() { ctx.putImageData(after, x, y); },
+        });
     }
 
     begin_undo_capture(rect?: Rect) {
@@ -297,21 +303,21 @@ export class Editor {
         const { x, y, data: before } = this._undo_before;
         this._undo_before = null;
         const after = this.document_context.getImageData(x, y, before.width, before.height);
-        this.undo_redo_buffer.push({ x, y, before, after } satisfies UndoPatch);
+        const ctx = this.document_context;
+        this._history.push({
+            undo() { ctx.putImageData(before, x, y); },
+            redo() { ctx.putImageData(after, x, y); },
+        });
     }
+
     undo() {
-        const action = this.undo_redo_buffer.undo();
-        if (action) {
-            this.document_context.putImageData(action.data, action.x, action.y);
-            this.document_dirty_signal.value++;
-        }
+        const did_undo = this._history.undo();
+        if (did_undo) this._mark_dirty();
     }
+
     redo() {
-        const action = this.undo_redo_buffer.redo();
-        if (action) {
-            this.document_context.putImageData(action.data, action.x, action.y);
-            this.document_dirty_signal.value++;
-        }
+        const did_redo = this._history.redo();
+        if (did_redo) this._mark_dirty();
     }
     keydown(event: KeyboardEvent) {
         if (event.code == 'KeyU') {

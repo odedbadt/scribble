@@ -12,13 +12,21 @@ export abstract class EditingTool {
     zero: Vector2 | null = null
     safety = 0
     canvas_signal: Signal<HTMLCanvasElement | null> | null = null;
-    document_context: CanvasRenderingContext2D | null = null;
-    document_canvas: HTMLCanvasElement | null = null;
+    private _editor: Editor | null = null;
     document_dirty_signal: Signal<number> | null = null;
     push_undo_snapshot: (() => void) | null = null;
     begin_undo_capture: ((rect?: Rect) => void) | null = null;
     cancel_undo_capture: (() => void) | null = null;
     push_undo_snapshot_clipped: ((rect: Rect) => void) | null = null;
+
+    /** Always returns the currently active layer's context. */
+    get document_context(): CanvasRenderingContext2D | null {
+        return this._editor?.document_context ?? null;
+    }
+    /** Always returns the currently active layer's canvas. */
+    get document_canvas(): HTMLCanvasElement | null {
+        return this._editor?.document_canvas ?? null;
+    }
 
     constructor() {
 
@@ -35,8 +43,7 @@ export abstract class EditingTool {
         })
     }
     init_editor(editor: Editor) {
-        this.document_context = editor.document_context;
-        this.document_canvas = editor.document_canvas;
+        this._editor = editor;
         this.document_dirty_signal = editor.document_dirty_signal;
         this.push_undo_snapshot = () => editor.push_undo_snapshot();
         this.begin_undo_capture = (rect?) => editor.begin_undo_capture(rect);
