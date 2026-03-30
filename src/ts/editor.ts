@@ -80,9 +80,11 @@ export class Editor {
 
     view_coords_to_doc_coords(view_coords: Vector2): Vector2 {
         const vp = this.view_port_signal.value;
+        const doc_w = this.document_canvas.width;
+        const doc_h = this.document_canvas.height;
         return {
-            x: Math.floor(vp.x + view_coords.x / this.view_canvas.clientWidth * vp.w),
-            y: Math.floor(vp.y + view_coords.y / this.view_canvas.clientHeight * vp.h)
+            x: Math.max(0, Math.min(doc_w - 1, Math.floor(vp.x + view_coords.x / this.view_canvas.clientWidth * vp.w))),
+            y: Math.max(0, Math.min(doc_h - 1, Math.floor(vp.y + view_coords.y / this.view_canvas.clientHeight * vp.h)))
         }
     }
 
