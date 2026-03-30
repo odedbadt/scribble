@@ -494,6 +494,26 @@ body {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    /* look like plain text when read-only */
+    background: transparent;
+    border: none;
+    outline: none;
+    padding: 0;
+    margin: 0;
+    color: inherit;
+    cursor: default;
+    min-width: 0;
+    width: 0; /* flex child fills remaining space */
+}
+
+.layer-name.editing {
+    background: #fff;
+    border: 1px solid #88a;
+    border-radius: 2px;
+    padding: 0 2px;
+    cursor: text;
+    outline: none;
+    text-overflow: clip;
 }
 
 .layer-delete {

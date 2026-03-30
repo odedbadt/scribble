@@ -95,10 +95,58 @@ export class LayerPanel {
             this._toggle_visibility(index);
         });
 
-        // Name
-        const name = document.createElement('span');
-        name.className = 'layer-name';
-        name.textContent = layer.name;
+        // Name — double-click to rename; dir=auto handles RTL (Hebrew etc.)
+        const name_input = document.createElement('input');
+        name_input.className = 'layer-name';
+        name_input.type = 'text';
+        name_input.value = layer.name;
+        name_input.readOnly = true;
+        name_input.dir = 'auto';
+        name_input.title = 'Double-click to rename';
+        name_input.addEventListener('dblclick', (e) => {
+            e.stopPropagation();
+            name_input.readOnly = false;
+            name_input.classList.add('editing');
+            name_input.select();
+        });
+        const commit_rename = () => {
+            const new_name = name_input.value.trim() || layer.name;
+            name_input.value = new_name;
+            name_input.readOnly = true;
+            name_input.classList.remove('editing');
+            if (new_name === layer.name) return;
+            const old_name = layer.name;
+            const ls = this._layer_stack;
+            const editor = this._editor;
+            // Update the layer name on the object directly (no signal re-render needed)
+            const layers = ls.layers.peek();
+            layers[index] = { ...layers[index], name: new_name };
+            ls.layers.value = layers.slice(); // trigger signal for panel rebuild
+            editor.push_layer_action({
+                undo() {
+                    const ll = ls.layers.peek().slice();
+                    ll[index] = { ...ll[index], name: old_name };
+                    ls.layers.value = ll;
+                },
+                redo() {
+                    const ll = ls.layers.peek().slice();
+                    ll[index] = { ...ll[index], name: new_name };
+                    ls.layers.value = ll;
+                },
+            } satisfies UndoableAction);
+        };
+        name_input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); name_input.blur(); }
+            if (e.key === 'Escape') {
+                name_input.value = layer.name;
+                name_input.readOnly = true;
+                name_input.classList.remove('editing');
+            }
+            e.stopPropagation(); // prevent editor keyboard shortcuts while typing
+        });
+        name_input.addEventListener('blur', commit_rename);
+        // Prevent item click from activating layer while editing
+        name_input.addEventListener('click', (e) => { if (!name_input.readOnly) e.stopPropagation(); });
 
         // Delete button
         const del_btn = document.createElement('button');
@@ -115,7 +163,7 @@ export class LayerPanel {
 
         item.appendChild(drag_handle);
         item.appendChild(eye);
-        item.appendChild(name);
+        item.appendChild(name_input);
         item.appendChild(del_btn);
 
         // Click item body to set active layer
