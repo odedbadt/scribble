@@ -53,10 +53,18 @@ export class ScribRenderer {
 
         // Document mesh — texture and geometry recreated when canvas dimensions change
         const composite_canvas = this.layer_stack.composite_canvas;
+        const above_composite_canvas = this.layer_stack.above_composite_canvas;
         let docTexW = composite_canvas.width;
         let docTexH = composite_canvas.height;
         const makeDocTexture = () => {
             const t = new CanvasTexture(composite_canvas);
+            t.flipY = false;
+            t.minFilter = NearestFilter;
+            t.magFilter = NearestFilter;
+            return t;
+        };
+        const makeAboveTexture = () => {
+            const t = new CanvasTexture(above_composite_canvas);
             t.flipY = false;
             t.minFilter = NearestFilter;
             t.magFilter = NearestFilter;
@@ -72,6 +80,19 @@ export class ScribRenderer {
         let docGeometry = new PlaneGeometry(docTexW, docTexH);
         const docMesh = new Mesh(docGeometry, docMaterial);
         docMesh.position.set(docTexW * 0.5, docTexH * 0.5, -5);
+
+        // Above-active-layer mesh — renders on top of the overlay stroke
+        let aboveTexture = makeAboveTexture();
+        const aboveMaterial = new ShaderMaterial({
+            uniforms: { uTexture: { value: aboveTexture } },
+            vertexShader: VERTEX_SHADER_CODE,
+            fragmentShader: FRAGMENT_SHADER_CODE,
+            transparent: true,
+            side: DoubleSide,
+        });
+        let aboveGeometry = new PlaneGeometry(docTexW, docTexH);
+        const aboveMesh = new Mesh(aboveGeometry, aboveMaterial);
+        aboveMesh.position.set(docTexW * 0.5, docTexH * 0.5, -1);
 
         // Overlay mesh — geometry/material/mesh reused; texture reused when canvas dimensions match
         const overlayMaterial = new ShaderMaterial({
@@ -110,6 +131,7 @@ export class ScribRenderer {
         scene.add(docMesh);
         scene.add(anchorMesh);
         scene.add(overlayMesh);
+        scene.add(aboveMesh);
 
         effect(() => {
             const overlay_canvas = this.overlay_canvas_signal.value;
@@ -118,8 +140,9 @@ export class ScribRenderer {
             this.view_port_signal.value; // subscribe so viewport changes trigger re-render
             const anchor_canvas = this.anchor_canvas_signal.value;
             this.layer_stack.layers.value; // subscribe to layer list changes (add/delete/reorder/visibility)
+            this.layer_stack.active_index.value; // subscribe so switching active layer updates split
 
-            // Recomposite visible layers onto composite_canvas before updating the texture
+            // Recomposite visible layers, split at active layer, before updating textures
             this.layer_stack.recomposite();
 
             // Update anchor mesh — reuse texture when canvas dimensions are unchanged
@@ -162,6 +185,20 @@ export class ScribRenderer {
             }
 
             docTexture.needsUpdate = true;
+
+            // Update above-composite mesh — resize geometry when canvas dimensions change
+            if (above_composite_canvas.width !== docTexW || above_composite_canvas.height !== docTexH) {
+                // above canvas resizes in sync with composite_canvas via resize_all()
+                // so this branch fires at the same time as docMesh resize above
+                aboveTexture.dispose();
+                aboveTexture = makeAboveTexture();
+                aboveMaterial.uniforms.uTexture.value = aboveTexture;
+                aboveGeometry.dispose();
+                aboveGeometry = new PlaneGeometry(docTexW, docTexH);
+                aboveMesh.geometry = aboveGeometry;
+                aboveMesh.position.set(docTexW * 0.5, docTexH * 0.5, -1);
+            }
+            aboveTexture.needsUpdate = true;
 
             // Update overlay mesh — reuse texture when canvas dimensions are unchanged
             if (overlay_canvas != null) {

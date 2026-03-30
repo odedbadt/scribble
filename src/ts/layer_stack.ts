@@ -31,6 +31,9 @@ export class LayerStack {
     active_index: Signal<number>;
     composite_canvas: HTMLCanvasElement;
     private _composite_context: CanvasRenderingContext2D;
+    /** Holds the composite of all visible layers *above* the active layer. */
+    above_composite_canvas: HTMLCanvasElement;
+    private _above_composite_context: CanvasRenderingContext2D;
 
     constructor(width: number, height: number) {
         this.composite_canvas = document.createElement('canvas');
@@ -38,6 +41,12 @@ export class LayerStack {
         this.composite_canvas.height = height;
         this._composite_context = this.composite_canvas.getContext('2d', { willReadFrequently: true }) as CanvasRenderingContext2D;
         this._composite_context.imageSmoothingEnabled = false;
+
+        this.above_composite_canvas = document.createElement('canvas');
+        this.above_composite_canvas.width = width;
+        this.above_composite_canvas.height = height;
+        this._above_composite_context = this.above_composite_canvas.getContext('2d', { willReadFrequently: true }) as CanvasRenderingContext2D;
+        this._above_composite_context.imageSmoothingEnabled = false;
 
         const initial_layer = make_layer(width, height, 'Layer 1');
         _layer_counter = 1; // reset so first explicit add_layer yields "Layer 2"
@@ -115,19 +124,39 @@ export class LayerStack {
     }
 
     /**
-     * When set, recomposite() uses this order instead of layers.peek().
+     * When set, recomposite_split() uses this order instead of layers.peek().
      * Used during drag to show a live preview without mutating the layers signal.
      */
     preview_order: Layer[] | null = null;
 
-    /** Composites all visible layers onto composite_canvas. */
+    /**
+     * Composites visible layers onto two canvases split by the active layer:
+     *  - composite_canvas      ← layers at or below the active layer
+     *  - above_composite_canvas ← layers strictly above the active layer
+     *
+     * When preview_order is set (drag), the active layer's position is determined
+     * by its position within preview_order.
+     */
     recomposite(): void {
+        const order = this.preview_order ?? this.layers.peek();
+        const active_layer = this.active_layer;
+        const split = order.indexOf(active_layer);
         const w = this.composite_canvas.width;
         const h = this.composite_canvas.height;
+
         this._composite_context.clearRect(0, 0, w, h);
-        for (const layer of (this.preview_order ?? this.layers.peek())) {
-            if (layer.visible) {
-                this._composite_context.drawImage(layer.canvas, 0, 0);
+        for (let i = 0; i <= (split < 0 ? order.length - 1 : split); i++) {
+            if (order[i].visible) {
+                this._composite_context.drawImage(order[i].canvas, 0, 0);
+            }
+        }
+
+        this._above_composite_context.clearRect(0, 0, w, h);
+        if (split >= 0 && split < order.length - 1) {
+            for (let i = split + 1; i < order.length; i++) {
+                if (order[i].visible) {
+                    this._above_composite_context.drawImage(order[i].canvas, 0, 0);
+                }
             }
         }
     }
@@ -147,5 +176,8 @@ export class LayerStack {
         this.composite_canvas.width = new_w;
         this.composite_canvas.height = new_h;
         this._composite_context.imageSmoothingEnabled = false;
+        this.above_composite_canvas.width = new_w;
+        this.above_composite_canvas.height = new_h;
+        this._above_composite_context.imageSmoothingEnabled = false;
     }
 }
