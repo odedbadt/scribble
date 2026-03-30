@@ -125,38 +125,47 @@ export function tool_to_document(tool_canvas: HTMLCanvasElement,
     const pixel_from_rect = scale_rect(rect_to_rect_mapping.from,
         { x: tw, y: th });
     const pixel_to_rect = rect_to_rect_mapping.to;
+
+    // Clip destination rect to document canvas bounds so strokes near the edge
+    // are committed correctly rather than being dropped as out-of-bounds writes.
+    const doc_w = document_context.canvas.width;
+    const doc_h = document_context.canvas.height;
+    const clip_x1 = Math.max(0, pixel_to_rect.x);
+    const clip_y1 = Math.max(0, pixel_to_rect.y);
+    const clip_x2 = Math.min(pixel_to_rect.x + pixel_to_rect.w, doc_w);
+    const clip_y2 = Math.min(pixel_to_rect.y + pixel_to_rect.h, doc_h);
+    if (clip_x2 <= clip_x1 || clip_y2 <= clip_y1) return; // entirely outside
+    const clipped_w = clip_x2 - clip_x1;
+    const clipped_h = clip_y2 - clip_y1;
+    // Offsets into the full tool/doc buffer where the clipped region starts
+    const src_x_off = clip_x1 - pixel_to_rect.x;
+    const src_y_off = clip_y1 - pixel_to_rect.y;
+
     const tool_image_data = tool_context.getImageData(pixel_from_rect.x, pixel_from_rect.y, pixel_from_rect.w, pixel_from_rect.h)
     const tool_data = tool_image_data.data;
-    const document_image_data = document_context.getImageData(
-        pixel_to_rect.x, pixel_to_rect.y,
-        pixel_to_rect.w, pixel_to_rect.h)
+    const document_image_data = document_context.getImageData(clip_x1, clip_y1, clipped_w, clipped_h);
     const document_data = document_image_data.data;
-    for (let y = 0; y < pixel_from_rect.h; ++y) {
-        for (let x = 0; x < pixel_from_rect.w; ++x) {
-            const base_offset = 4 * (y * pixel_from_rect.w + x);
-            if (tool_data[base_offset + 3] > 0) {
-                const opacity = tool_data[base_offset + 3] / 255
+    for (let dy = 0; dy < clipped_h; ++dy) {
+        for (let dx = 0; dx < clipped_w; ++dx) {
+            const src_off = 4 * ((src_y_off + dy) * pixel_from_rect.w + (src_x_off + dx));
+            const dst_off = 4 * (dy * clipped_w + dx);
+            if (tool_data[src_off + 3] > 0) {
+                const opacity = tool_data[src_off + 3] / 255
                 if (layer_color) {
-                    document_data[base_offset + 0] = layer_color[0]
-                    document_data[base_offset + 1] = layer_color[1]
-                    document_data[base_offset + 2] = layer_color[2]
-                    document_data[base_offset + 3] = 255;
+                    document_data[dst_off + 0] = layer_color[0]
+                    document_data[dst_off + 1] = layer_color[1]
+                    document_data[dst_off + 2] = layer_color[2]
+                    document_data[dst_off + 3] = 255;
                 } else {
-                    document_data[base_offset + 0] = tool_data[base_offset + 0] / opacity
-                    document_data[base_offset + 1] = tool_data[base_offset + 1] / opacity
-                    document_data[base_offset + 2] = tool_data[base_offset + 2] / opacity
-                    document_data[base_offset + 3] = 255;//tool_data[base_offset + 3] / opacity
+                    document_data[dst_off + 0] = tool_data[src_off + 0] / opacity
+                    document_data[dst_off + 1] = tool_data[src_off + 1] / opacity
+                    document_data[dst_off + 2] = tool_data[src_off + 2] / opacity
+                    document_data[dst_off + 3] = 255;
                 }
-
-                // document_data[base_offset + 0] = opacity * tool_data[base_offset + 0] + (1 - opacity) * document_data[base_offset + 0]
-                // document_data[base_offset + 1] = opacity * tool_data[base_offset + 1] + (1 - opacity) * document_data[base_offset + 1]
-                // document_data[base_offset + 2] = opacity * tool_data[base_offset + 2] + (1 - opacity) * document_data[base_offset + 2]
-                // document_data[base_offset + 3] = opacity * tool_data[base_offset + 3] + (1 - opacity) * document_data[base_offset + 3]
             }
         }
     }
-    document_context.putImageData(document_image_data,
-        pixel_to_rect.x, pixel_to_rect.y);
+    document_context.putImageData(document_image_data, clip_x1, clip_y1);
 }
 
 export function init_canvas(tool: EditingTool, canvas_signal: Signal<HTMLCanvasElement>,
