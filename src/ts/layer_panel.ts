@@ -68,10 +68,11 @@ export class LayerPanel {
         // Remove existing items
         this._list.innerHTML = '';
 
-        layers.forEach((layer, idx) => {
-            const item = this._make_item(layer, idx, active_idx === idx);
+        // Display in reverse so the visually-topmost layer (highest index) is at the top of the panel
+        for (let idx = layers.length - 1; idx >= 0; idx--) {
+            const item = this._make_item(layers[idx], idx, active_idx === idx);
             this._list.appendChild(item);
-        });
+        }
     }
 
     private _make_item(layer: Layer, index: number, is_active: boolean): HTMLElement {
@@ -207,7 +208,10 @@ export class LayerPanel {
         this._drag_from_index = index;
         this._drag_start_y = e.clientY;
 
-        const source_item = this._list.children[index] as HTMLElement;
+        // Panel is displayed in reverse: actual index `i` is at panel position `n-1-i`
+        const n = this._layer_stack.layers.peek().length;
+        const panel_pos = n - 1 - index;
+        const source_item = this._list.children[panel_pos] as HTMLElement;
         this._drag_item = source_item;
         source_item.classList.add('dragging');
 
@@ -231,18 +235,18 @@ export class LayerPanel {
         const list_rect = this._list.getBoundingClientRect();
         const relative_y = e.clientY - list_rect.top;
         const item_h = this._drag_item.offsetHeight;
-        const to_index = Math.max(0, Math.min(
-            this._layer_stack.layers.peek().length - 1,
-            Math.floor(relative_y / item_h)
-        ));
+        const n = this._layer_stack.layers.peek().length;
+        const panel_pos = Math.max(0, Math.min(n - 1, Math.floor(relative_y / item_h)));
+        // Panel is reversed: panel position 0 = actual index n-1
+        const to_index = n - 1 - panel_pos;
 
-        // Show placeholder at target position
+        // Show placeholder at target panel position
         if (this._drag_placeholder && this._drag_placeholder.dataset.at !== String(to_index)) {
             this._drag_placeholder.dataset.at = String(to_index);
             if (this._drag_placeholder.parentNode === this._list) {
                 this._list.removeChild(this._drag_placeholder);
             }
-            const ref = this._list.children[to_index] as HTMLElement;
+            const ref = this._list.children[panel_pos] as HTMLElement;
             if (ref && ref !== this._drag_item) {
                 this._list.insertBefore(this._drag_placeholder, ref);
             } else if (!ref) {
@@ -273,14 +277,13 @@ export class LayerPanel {
         // Clear the live preview before committing the real reorder
         this._layer_stack.preview_order = null;
 
-        // Compute target index
+        // Compute target actual index from pointer position (panel is reversed)
         const list_rect = this._list.getBoundingClientRect();
         const relative_y = e.clientY - list_rect.top;
-        const item_h = this._drag_item?.offsetHeight ?? 40;
-        const to_index = Math.max(0, Math.min(
-            this._layer_stack.layers.peek().length - 1,
-            Math.floor(relative_y / item_h)
-        ));
+        const item_h = this._drag_item?.offsetHeight ?? 18;
+        const n = this._layer_stack.layers.peek().length;
+        const panel_pos = Math.max(0, Math.min(n - 1, Math.floor(relative_y / item_h)));
+        const to_index = n - 1 - panel_pos;
 
         const from_index = this._drag_from_index;
         this._drag_from_index = -1;
