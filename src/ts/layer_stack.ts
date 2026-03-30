@@ -114,12 +114,18 @@ export class LayerStack {
         this.active_index.value = index;
     }
 
+    /**
+     * When set, recomposite() uses this order instead of layers.peek().
+     * Used during drag to show a live preview without mutating the layers signal.
+     */
+    preview_order: Layer[] | null = null;
+
     /** Composites all visible layers onto composite_canvas. */
     recomposite(): void {
         const w = this.composite_canvas.width;
         const h = this.composite_canvas.height;
         this._composite_context.clearRect(0, 0, w, h);
-        for (const layer of this.layers.peek()) {
+        for (const layer of (this.preview_order ?? this.layers.peek())) {
             if (layer.visible) {
                 this._composite_context.drawImage(layer.canvas, 0, 0);
             }

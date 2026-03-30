@@ -200,6 +200,13 @@ export class LayerPanel {
             } else if (!ref) {
                 this._list.appendChild(this._drag_placeholder);
             }
+
+            // Live canvas preview: reorder without mutating the layers signal
+            const layers = this._layer_stack.layers.peek().slice();
+            const [dragged] = layers.splice(this._drag_from_index, 1);
+            layers.splice(to_index, 0, dragged);
+            this._layer_stack.preview_order = layers;
+            this._editor['_mark_dirty']();
         }
     };
 
@@ -214,6 +221,9 @@ export class LayerPanel {
         if (this._drag_placeholder?.parentNode === this._list) {
             this._list.removeChild(this._drag_placeholder);
         }
+
+        // Clear the live preview before committing the real reorder
+        this._layer_stack.preview_order = null;
 
         // Compute target index
         const list_rect = this._list.getBoundingClientRect();
