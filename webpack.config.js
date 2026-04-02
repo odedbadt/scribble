@@ -7,7 +7,7 @@ export default {
   },
   output: {
     filename: '[name].bundle.js',
-    path: path.resolve('static/ts'),
+    path: path.resolve('distro'),
   },
   resolve: {
     extensions: ['.ts', '.js'],
