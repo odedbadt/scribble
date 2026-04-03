@@ -24,18 +24,13 @@ export abstract class EditingTool {
 
     }
     publish_signals() {
-        // if (this.canvas_bounds_mapping) {
-        //     const to: Rect = this.canvas_bounds_mapping.to;
-        //     this.context!.save()
-        //     this.context!.lineWidth = 1;
-        //     this.context!.fillStyle = 'grey';
-        //     this.context!.beginPath()
-        //     this.context!.fillRect(0, 0, to.w, to.h);
-        //     this.context!.fill()
-        //     this.context!.restore()
-        // }
+        // Always create a new object reference so the signal fires even when bounds are unchanged.
+        // Preact signals use reference equality; reusing the same object would silently skip renders.
+        const mapping = this.canvas_bounds_mapping;
         batch(() => {
-            this.canvas_bounds_mapping_signal!.value = this.canvas_bounds_mapping!;
+            this.canvas_bounds_mapping_signal!.value = mapping
+                ? { from: { ...mapping.from }, to: { ...mapping.to } }
+                : null!;
             this.canvas_signal!.value = this.canvas;
         })
     }

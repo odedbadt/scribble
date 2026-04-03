@@ -32,20 +32,17 @@ export class LineTool extends ClickAndDragTool {
         if (mandala_mode.enabled && this.document_canvas) {
             const center = mandala_mode.center ?? { x: this.document_canvas.width / 2, y: this.document_canvas.height / 2 };
             pairs = mandala_mode.get_line_transforms(from, to, center);
-            this.extend_canvas_mapping({ x: 0, y: 0, w: this.document_canvas.width, h: this.document_canvas.height }, false);
         } else {
             pairs = [{ from, to }];
-            this.extend_canvas_mapping(bounding_rect(from, to), false, radius + 1);
         }
 
-        const bounds = this.canvas_bounds_mapping!.to;
         const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
 
         for (const pair of pairs) {
-            const x0 = Math.floor(pair.from.x - bounds.x);
-            const y0 = Math.floor(pair.from.y - bounds.y);
-            const x1 = Math.floor(pair.to.x - bounds.x);
-            const y1 = Math.floor(pair.to.y - bounds.y);
+            const x0 = Math.floor(pair.from.x);
+            const y0 = Math.floor(pair.from.y);
+            const x1 = Math.floor(pair.to.x);
+            const y1 = Math.floor(pair.to.y);
             if (radius <= 0) {
                 drawLine(imageData, x0, y0, x1, y1, this._stroke_color);
             } else {

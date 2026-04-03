@@ -35,26 +35,19 @@ export class ScribbleTool extends ClickAndDragTool {
                 y: this.document_canvas!.height / 2
             };
             line_pairs = mandala_mode.get_line_transforms(prev, to, center);
-            // Extend canvas to cover the full document so all rotated points fit
-            this.extend_canvas_mapping(
-                { x: 0, y: 0, w: this.document_canvas!.width, h: this.document_canvas!.height },
-                true
-            );
         } else {
             line_pairs = [{ from: prev, to }];
-            this.extend_canvas_mapping(to, true, radius + 1);
         }
 
         const context = this.context!;
         const canvas = this.canvas!;
-        const bounds = this.canvas_bounds_mapping!.to;
         const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
 
         for (const pair of line_pairs) {
-            const fx = Math.floor(pair.from.x - bounds.x);
-            const fy = Math.floor(pair.from.y - bounds.y);
-            const cx = Math.floor(pair.to.x - bounds.x);
-            const cy = Math.floor(pair.to.y - bounds.y);
+            const fx = Math.floor(pair.from.x);
+            const fy = Math.floor(pair.from.y);
+            const cx = Math.floor(pair.to.x);
+            const cy = Math.floor(pair.to.y);
             if (radius <= 0) {
                 drawLine(imageData, fx, fy, cx, cy, this._stroke_color);
             } else {

@@ -24,56 +24,19 @@ export abstract class ClickAndDragTool extends EditingTool {
     }
     select(): void {
     }
-    extend_canvas_mapping(to_include: Vector2 | Rect, copy: boolean = true, margin: number = 0): void {
-        if (this.canvas == null || this.context == null) {
-            throw new Error('cannot extend without a canvas')
-        }
-        const rect_to_include: Rect = { w: 1, h: 1, ...to_include };
-        const prev_mapping: RectToRectMapping | null = this.canvas_bounds_mapping
-        if (prev_mapping == null) {
-            this.canvas_bounds_mapping = {
-                from: { x: 0, y: 0, w: 1, h: 1 },
-                to: rect_to_include
-            }
-            clear_canvas(this.canvas!);
-        } else {
-            const next_to = rect_union(prev_mapping.to, rect_to_include, margin);
-            const bounds_changed = next_to.x !== prev_mapping.to.x || next_to.y !== prev_mapping.to.y ||
-                next_to.w !== prev_mapping.to.w || next_to.h !== prev_mapping.to.h;
 
-            if (bounds_changed) {
-                const ctx = this.canvas.getContext('2d')!;
-                if (copy) {
-                    const src_image_data = ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-                    this.canvas.width = next_to.w;
-                    this.canvas.height = next_to.h;
-                    ctx.putImageData(src_image_data,
-                        -(next_to.x - prev_mapping.to.x),
-                        -(next_to.y - prev_mapping.to.y));
-                    // Do NOT clear — preserve existing strokes
-                } else {
-                    this.canvas.width = next_to.w;
-                    this.canvas.height = next_to.h;
-                    clear_canvas(this.canvas!);
-                }
-            }
-
-            // Always assign a new object so the bounds signal always changes reference,
-            // ensuring the renderer effect fires even when bounds values are unchanged.
-            this.canvas_bounds_mapping = {
-                to: next_to,
-                from: { x: 0, y: 0, w: 1, h: 1 }
-            }
-        }
-    }
     start(at: Vector2, buttons: number): void {
         this._start_buttons = buttons;
         this.drag_start = vfloor(at);
         // Reset canvas to 1×1 so stale cross pixels don't bleed into the new stroke
-        this.canvas!.width = 1;
-        this.canvas!.height = 1;
-        this.canvas_bounds_mapping = null;
-        this.extend_canvas_mapping(at);
+        if (this.document_canvas) {
+            this.canvas!.width = this.document_canvas.width;
+            this.canvas!.height = this.document_canvas.height;
+            this.canvas_bounds_mapping = {
+                from: { x: 0, y: 0, w: 1, h: 1 },
+                to: { x: 0, y: 0, w: this.document_canvas.width, h: this.document_canvas.height }
+            };
+        }
         this.editing_start();
     }
     editing_start() {
