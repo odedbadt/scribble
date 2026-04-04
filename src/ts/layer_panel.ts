@@ -11,6 +11,7 @@ export class LayerPanel {
     private _drag_placeholder: HTMLElement | null = null;
     private _drag_item: HTMLElement | null = null;
     private _drag_start_y: number = 0;
+    private _drag_item_start_top: number = 0;
     private _open = false;
 
     constructor(editor: Editor, container: HTMLElement) {
@@ -208,16 +209,20 @@ export class LayerPanel {
         this._drag_from_index = index;
         this._drag_start_y = e.clientY;
 
-        // Panel is displayed in reverse: actual index `i` is at panel position `n-1-i`
         const n = this._layer_stack.layers.peek().length;
         const panel_pos = n - 1 - index;
         const source_item = this._list.children[panel_pos] as HTMLElement;
         this._drag_item = source_item;
+
+        // Record top before going absolute so we can keep it visually in place
+        const list_rect = this._list.getBoundingClientRect();
+        this._drag_item_start_top = source_item.getBoundingClientRect().top - list_rect.top;
+        source_item.style.top = this._drag_item_start_top + 'px';
+        source_item.style.width = source_item.offsetWidth + 'px';
         source_item.classList.add('dragging');
 
         const placeholder = document.createElement('div');
         placeholder.className = 'layer-drag-placeholder';
-        placeholder.style.height = source_item.offsetHeight + 'px';
         this._drag_placeholder = placeholder;
 
         (e.target as HTMLElement).setPointerCapture(e.pointerId);
@@ -229,31 +234,33 @@ export class LayerPanel {
     private _on_drag_move = (e: PointerEvent): void => {
         if (this._drag_from_index < 0 || !this._drag_item) return;
         const dy = e.clientY - this._drag_start_y;
-        this._drag_item.style.transform = `translateY(${dy}px)`;
+        this._drag_item.style.top = (this._drag_item_start_top + dy) + 'px';
 
-        // Determine target index based on pointer position in list
+        // Determine the gap index (0 = before first item, n = after last)
+        // by seeing which half of each item the pointer is in.
         const list_rect = this._list.getBoundingClientRect();
         const relative_y = e.clientY - list_rect.top;
         const item_h = this._drag_item.offsetHeight;
         const n = this._layer_stack.layers.peek().length;
-        const panel_pos = Math.max(0, Math.min(n - 1, Math.floor(relative_y / item_h)));
-        // Panel is reversed: panel position 0 = actual index n-1
-        const to_index = n - 1 - panel_pos;
+        // gap_panel: 0..n, where gap 0 = top of list, gap n = bottom
+        const gap_panel = Math.max(0, Math.min(n, Math.round(relative_y / item_h)));
+        // Panel is reversed: gap 0 (top of panel) = inserting above highest layer
+        const to_index = n - gap_panel;
 
-        // Show placeholder at target panel position
         if (this._drag_placeholder && this._drag_placeholder.dataset.at !== String(to_index)) {
             this._drag_placeholder.dataset.at = String(to_index);
             if (this._drag_placeholder.parentNode === this._list) {
                 this._list.removeChild(this._drag_placeholder);
             }
-            const ref = this._list.children[panel_pos] as HTMLElement;
-            if (ref && ref !== this._drag_item) {
+            // Insert the line before the item at gap_panel (or at end if gap_panel === n)
+            const ref = this._list.children[gap_panel] as HTMLElement | undefined;
+            if (ref) {
                 this._list.insertBefore(this._drag_placeholder, ref);
-            } else if (!ref) {
+            } else {
                 this._list.appendChild(this._drag_placeholder);
             }
 
-            // Live canvas preview: reorder without mutating the layers signal
+            // Live canvas preview
             const layers = this._layer_stack.layers.peek().slice();
             const [dragged] = layers.splice(this._drag_from_index, 1);
             layers.splice(to_index, 0, dragged);
@@ -267,8 +274,9 @@ export class LayerPanel {
 
         // Clean up visual state
         if (this._drag_item) {
-            this._drag_item.style.transform = '';
             this._drag_item.classList.remove('dragging');
+            this._drag_item.style.top = '';
+            this._drag_item.style.width = '';
         }
         if (this._drag_placeholder?.parentNode === this._list) {
             this._list.removeChild(this._drag_placeholder);
@@ -277,13 +285,13 @@ export class LayerPanel {
         // Clear the live preview before committing the real reorder
         this._layer_stack.preview_order = null;
 
-        // Compute target actual index from pointer position (panel is reversed)
+        // Compute target actual index from pointer position (panel is reversed, gap-based)
         const list_rect = this._list.getBoundingClientRect();
         const relative_y = e.clientY - list_rect.top;
         const item_h = this._drag_item?.offsetHeight ?? 18;
         const n = this._layer_stack.layers.peek().length;
-        const panel_pos = Math.max(0, Math.min(n - 1, Math.floor(relative_y / item_h)));
-        const to_index = n - 1 - panel_pos;
+        const gap_panel = Math.max(0, Math.min(n, Math.round(relative_y / item_h)));
+        const to_index = n - gap_panel;
 
         const from_index = this._drag_from_index;
         this._drag_from_index = -1;

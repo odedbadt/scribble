@@ -428,6 +428,7 @@ body {
 
 #layer-list {
     padding: 4px 0;
+    position: relative;
 }
 
 .layer-item {
@@ -454,15 +455,21 @@ body {
 }
 
 .layer-item.dragging {
-    opacity: 0.5;
+    position: absolute;
+    left: 0;
+    right: 0;
+    opacity: 0.85;
     z-index: 200;
+    pointer-events: none;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
 }
 
 .layer-drag-placeholder {
-    background: rgba(100, 130, 200, 0.3);
-    border: 1px dashed #669;
-    box-sizing: border-box;
+    height: 0;
+    border-top: 2px solid #000;
     width: 100%;
+    box-sizing: border-box;
+    pointer-events: none;
 }
 
 .layer-drag-handle {
