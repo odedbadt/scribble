@@ -107,6 +107,19 @@ body {
     width: auto;
 }
 
+#color-stack-live-track {
+    flex: 0 0 22px;
+    height: 35px;
+    width: 22px;
+    font-size: 11px;
+    padding: 0;
+    border: none;
+    border-right: 1px solid #ccd;
+    line-height: 35px;
+    text-align: center;
+    cursor: pointer;
+}
+
 /* ── Left toolbar (tools only) ───────────────────────────────────────────── */
 
 #toolbar {

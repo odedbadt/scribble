@@ -337,35 +337,79 @@ export class MainApp {
 
 
         const palette = this.palette;
-        const hl_callback = (event: MouseEvent) => {
-            if (event.buttons == 0) {
-                return
-            }
-            event.preventDefault()
+        // Tracks which canvas owns the current drag gesture; null means no drag in progress.
+        let activeCanvas: 'hl' | 'sat' | null = null;
+        // When false (default), colors are only pushed to the stack on pointer release.
+        // When true, every drag position is pushed (old behavior).
+        let trackColorOnDrag = false;
+
+        const trackToggleBtn = document.getElementById('color-stack-live-track')!;
+        trackToggleBtn.addEventListener('click', () => {
+            trackColorOnDrag = !trackColorOnDrag;
+            trackToggleBtn.classList.toggle('pressed', trackColorOnDrag);
+        });
+
+        const apply_hl = (event: MouseEvent, commit: boolean) => {
             palette.hl_click(event.offsetX, event.offsetY);
             const rgb_color = palette.get_rgb_color();
-            this.color_stack.select_color(rgb_color, !!(event.buttons & 1), true);
-        }
-        this.palette_hl_canvas.addEventListener('pointermove', hl_callback)
-        this.palette_hl_canvas.addEventListener('pointerup', hl_callback)
-        this.palette_hl_canvas.addEventListener('pointerdown', hl_callback)
-        this.palette_hl_canvas.addEventListener('click', hl_callback)
-        const sat_callback = (event: MouseEvent) => {
-            if (event.buttons == 0) {
-                return
-            }
-            event.preventDefault()
+            this.color_stack.select_color(rgb_color, !!(event.buttons & 1), commit || trackColorOnDrag);
+        };
+        const apply_sat = (event: MouseEvent, commit: boolean) => {
             palette.sat_click(event.offsetX, event.offsetY);
             const rgb_color = palette.get_rgb_color();
-            this.color_stack.select_color(rgb_color, !!(event.buttons & 1), true);
-        }
-        this.palette_sat_canvas.addEventListener('pointermove', sat_callback)
-        this.palette_sat_canvas.addEventListener('pointerdown', sat_callback)
-        this.palette_sat_canvas.addEventListener('pointerup', sat_callback)
-        this.palette_sat_canvas.addEventListener('click', sat_callback)
+            this.color_stack.select_color(rgb_color, !!(event.buttons & 1), commit || trackColorOnDrag);
+        };
 
-        this.palette_sat_canvas.onpointermove = sat_callback
-        this.palette_sat_canvas.onpointerup = sat_callback
+        this.palette_hl_canvas.addEventListener('pointerdown', (event: MouseEvent) => {
+            activeCanvas = 'hl';
+            event.preventDefault();
+            apply_hl(event, false);
+        });
+        this.palette_hl_canvas.addEventListener('pointermove', (event: MouseEvent) => {
+            if (activeCanvas !== 'hl' || event.buttons === 0) return;
+            event.preventDefault();
+            apply_hl(event, false);
+        });
+        this.palette_hl_canvas.addEventListener('pointerup', (event: MouseEvent) => {
+            if (activeCanvas === 'hl') {
+                event.preventDefault();
+                apply_hl(event, true);
+            }
+            activeCanvas = null;
+        });
+        // Commit the last in-bounds HL position when the pointer leaves mid-drag.
+        this.palette_hl_canvas.addEventListener('pointerleave', (event: MouseEvent) => {
+            if (activeCanvas === 'hl' && event.buttons !== 0) {
+                apply_hl(event, false);
+            }
+        });
+
+        this.palette_sat_canvas.addEventListener('pointerdown', (event: MouseEvent) => {
+            activeCanvas = 'sat';
+            event.preventDefault();
+            apply_sat(event, false);
+        });
+        this.palette_sat_canvas.addEventListener('pointermove', (event: MouseEvent) => {
+            if (activeCanvas !== 'sat' || event.buttons === 0) return;
+            event.preventDefault();
+            apply_sat(event, false);
+        });
+        this.palette_sat_canvas.addEventListener('pointerup', (event: MouseEvent) => {
+            if (activeCanvas === 'sat') {
+                event.preventDefault();
+                apply_sat(event, true);
+            }
+            activeCanvas = null;
+        });
+        // Commit the last in-bounds SAT position when the pointer leaves mid-drag.
+        this.palette_sat_canvas.addEventListener('pointerleave', (event: MouseEvent) => {
+            if (activeCanvas === 'sat' && event.buttons !== 0) {
+                apply_sat(event, false);
+            }
+        });
+
+        // Clear activeCanvas if the pointer is released anywhere outside both canvases.
+        document.addEventListener('pointerup', () => { activeCanvas = null; });
         this.palette_hl_canvas.addEventListener('contextmenu', (event: MouseEvent) => {
             event.preventDefault();
         });

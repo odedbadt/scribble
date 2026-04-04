@@ -9,6 +9,9 @@ export class Palette {
     private _sat_h: number;
     private _rgb_color: number[];
     private _hsl_color: number[];
+    // Last clicked pixel position on the HL canvas; null until first click.
+    private _hl_indicator_x: number | null = null;
+    private _hl_indicator_y: number | null = null;
     constructor(hl_canvas: HTMLCanvasElement, sat_canvas: HTMLCanvasElement, initial_color_hsl: number[]) {
         this._hl_canvas = hl_canvas
         this._hl_w = hl_canvas.width;
@@ -31,8 +34,13 @@ export class Palette {
                 const hsl_val = [h, this._hsl_color[1], l];
 
                 const rgb_val = hsl_to_rgb(hsl_val);
-                if ((Math.abs(h - this._hsl_color[0]) <= 1 / this._hl_w) ||
-                    (Math.abs(l - this._hsl_color[2]) <= 1 / this._hl_h)) {
+                // Use the actual clicked pixel position for the indicator so the crosshair
+                // sits exactly where the user clicked, including inside the black/white bands.
+                // Fall back to deriving position from HSL before the first click.
+                const ind_y = this._hl_indicator_y ?? this._hl_h * (0.5 + (this._hsl_color[2] - 0.5) / 1.25);
+                const ind_x = this._hl_indicator_x ?? this._hl_w * ((this._hsl_color[0] / 2 + 0.5) % 1);
+                if ((Math.abs(x - ind_x) <= 0.5) ||
+                    (Math.abs(y - ind_y) <= 0.5)) {
                     // negative color
                     const negative = vec_diff([255, 255, 255], rgb_val);
                     rgb_val[0] = negative[0];
@@ -99,6 +107,8 @@ export class Palette {
         const hl = this._hl_canvas_xy_to_hl(x, y)
         this._hsl_color = [hl[0], this._hsl_color[1], hl[1]]
         this._rgb_color = hsl_to_rgb(this._hsl_color);
+        this._hl_indicator_x = x;
+        this._hl_indicator_y = y;
         this.plot()
     }
     sat_click(x: number, y: number) {
