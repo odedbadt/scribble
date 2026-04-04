@@ -14,6 +14,11 @@ export class ColorStack {
     view_context: any;
     private _app: MainApp;
     private _adjacent_threshold: number;
+    // Last palette-picked color not yet committed to the stack (set before a stroke starts).
+    private _pending_fore: number[] | null = null;
+    private _pending_back: number[] | null = null;
+    // Guard to prevent signal subscriptions from re-staging while select_color is running.
+    _suppress_signal_stage = false;
     constructor(
         app: MainApp,
         depth: number,
@@ -47,35 +52,62 @@ export class ColorStack {
                 const color_string = `rgba(${color[0]},${color[1]},${color[2]},255)`;
                 slot.style.backgroundColor = color_string;
                 slot.addEventListener('click', (event) => {
-                    _this.select_color(color, event.button == 0, false)
+                    _this.select_color(color, event.button == 0, false, false, true)
                 })
             }
         }
     }
 
-    select_color(color: number[], is_fore: boolean, update_stack?: boolean) {
+    select_color(color: number[], is_fore: boolean, update_stack?: boolean, force?: boolean, from_stack?: boolean) {
         if (update_stack) {
-            if (this._stack.length == 0 ||
+            if (force || this._stack.length == 0 ||
                 dist2_to_set(color, this._stack) > this._pairwise_threshold &&
                 dist2(color, this._stack[this._stack.length - 1]) > this._adjacent_threshold) {
                 this._stack.push(color);
                 if (this._stack.length > this._depth) {
                     this._stack.shift();
                 }
-            } else if (this._stack.length > 0) {
-
             }
             this.refresh_color_stack()
+        } else {
+            // Stage color so it can be committed when actually used in a stroke.
+            // If picked from the stack itself, clear the pending slot so it won't re-enter.
+            if (is_fore) this._pending_fore = from_stack ? null : color;
+            else this._pending_back = from_stack ? null : color;
         }
         const color_string = `rgba(${color[0]},${color[1]},${color[2]},255)`;
+        this._suppress_signal_stage = true;
         if (is_fore) {
             settings.set(SettingName.ForeColor, color_string);
-
             this._color_selector_div_fore.style.backgroundColor = color_string
         } else {
             settings.set(SettingName.BackColor, color_string);
             this._color_selector_div_back.style.backgroundColor = color_string
         }
+        this._suppress_signal_stage = false;
+    }
+
+    /**
+     * Called from signal subscriptions when a color is changed externally (e.g. by the dropper).
+     * Stages the color as pending so it enters the history on next stroke.
+     */
+    stage_from_signal(color: number[], is_fore: boolean) {
+        if (this._suppress_signal_stage) return;
+        if (is_fore) this._pending_fore = color;
+        else this._pending_back = color;
+    }
+
+    /** Call when a stroke actually starts, to commit the staged color to the history stack. */
+    commit_pending(is_fore: boolean) {
+        const pending = is_fore ? this._pending_fore : this._pending_back;
+        if (!pending) return;
+        if (is_fore) this._pending_fore = null;
+        else this._pending_back = null;
+        // Skip if an identical color is already anywhere in the stack.
+        if (this._stack.length > 0 && dist2_to_set(pending, this._stack) === 0) return;
+        this._stack.push(pending);
+        if (this._stack.length > this._depth) this._stack.shift();
+        this.refresh_color_stack();
     }
 
 }

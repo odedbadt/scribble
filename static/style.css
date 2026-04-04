@@ -196,8 +196,10 @@ body {
     position: relative;
 }
 
-#heart-south-btn {
-    display: none; /* shown by JS only when heart tool is active */
+#tool-ctrl-btn {
+    font-family: monospace;
+    font-size: 20px;
+    display: none; /* shown by JS only when active tool has a contextual control */
 }
 
 .button,
@@ -413,8 +415,7 @@ body {
 .polygon,
 .topo_hull,
 .heart,
-.cloud_stamp,
-.heart-south-btn {
+.cloud_stamp {
     font-family: monospace;
     font-size: 20px;
     display: flex;

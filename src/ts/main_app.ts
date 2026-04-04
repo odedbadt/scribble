@@ -24,6 +24,14 @@ function click_for_a_second(id: string, callback: Function) {
         })
     }
 }
+
+/** Parse an `rgba(r,g,b,a)` string into a `[r,g,b]` array, or null on failure. */
+function parse_rgba_string(s: string): number[] | null {
+    if (!s) return null;
+    const m = s.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+    if (!m) return null;
+    return [parseInt(m[1]), parseInt(m[2]), parseInt(m[3])];
+}
 export class MainApp {
     public overlay_canvas_signal = signal<CanvasRenderingContext2D>();
     private scrib_renderer: ScribRenderer;
@@ -60,7 +68,7 @@ export class MainApp {
 
         this.palette = new Palette(
             document.getElementById('hl-selector-canvas')! as HTMLCanvasElement,
-            document.getElementById('sat-selector-canvas')! as HTMLCanvasElement, [1, 0.5, 0.5]);
+            document.getElementById('sat-selector-canvas')! as HTMLCanvasElement, [1, 1, 0.5]);
         this.palette_hl_canvas = document.getElementById('hl-selector-canvas')! as HTMLCanvasElement
         this.palette_sat_canvas = document.getElementById('sat-selector-canvas')! as HTMLCanvasElement
         this.color_stack = new ColorStack(this, 36, 100, 10000,
@@ -68,6 +76,8 @@ export class MainApp {
             document.getElementById('color-selector-div-back')!,
             document.getElementsByClassName('color_stack_item')
         )
+        // Seed the stack with the initial foreground color so it appears from the start.
+        this.color_stack.select_color(this.palette.get_rgb_color(), true, true, true);
         this.tool_canvas_signal = signal<HTMLCanvasElement>()
         this.document_dirty_signal = signal<number>(0)
         this.tool_bounds_signal = signal<RectToRectMapping>(
@@ -260,15 +270,6 @@ export class MainApp {
             Array.from(fillable_buttons).forEach(btn => btn.classList.toggle('filled', filled));
         });
 
-        settings.set(SettingName.HeartSouth, 'smooth');
-        const heart_south_btn = document.getElementById('heart-south-btn') as HTMLElement;
-        heart_south_btn.addEventListener('click', () => {
-            const straight = settings.peek<string>(SettingName.HeartSouth) !== 'straight';
-            settings.set(SettingName.HeartSouth, straight ? 'straight' : 'smooth');
-            heart_south_btn.textContent = straight ? '♥V' : '♥∪';
-            heart_south_btn.classList.toggle('pressed', straight);
-        });
-
         // Layers button: toggles the layer panel
         const layers_btn = document.getElementById('layers-btn')!;
         layers_btn.addEventListener('click', () => {
@@ -286,10 +287,41 @@ export class MainApp {
                 })
             }
         })
+
+        // Single contextual tool control button.
+        // Each entry defines the icon and toggle action for a specific tool.
+        // Add entries here when a tool needs a contextual control.
+        type ToolCtrl = { icon: () => string; toggle: () => void };
+        settings.set(SettingName.HeartSouth, 'smooth');
+        const tool_ctrl_defs: Record<string, ToolCtrl> = {
+            'heart': {
+                icon: () => settings.peek<string>(SettingName.HeartSouth) === 'straight' ? '♥V' : '♥∪',
+                toggle: () => {
+                    const straight = settings.peek<string>(SettingName.HeartSouth) !== 'straight';
+                    settings.set(SettingName.HeartSouth, straight ? 'straight' : 'smooth');
+                },
+            },
+        };
+        const tool_ctrl_btn = document.getElementById('tool-ctrl-btn') as HTMLElement;
+        tool_ctrl_btn.style.display = 'none';
+        tool_ctrl_btn.addEventListener('click', () => {
+            const current_tool = state_registry.peek<string>(StateValue.SelectedToolName) ?? '';
+            const ctrl = tool_ctrl_defs[current_tool];
+            if (!ctrl) return;
+            ctrl.toggle();
+            tool_ctrl_btn.textContent = ctrl.icon();
+            tool_ctrl_btn.classList.toggle('pressed',
+                settings.peek<string>(SettingName.HeartSouth) === 'straight');
+        });
+
         const select_tool_signal = state_registry.use_signal<string>(StateValue.SelectedToolName, 'scribble');
-        const heart_south_elem = document.getElementById('heart-south-btn')!;
         select_tool_signal.subscribe((tool_name) => {
-            heart_south_elem.style.display = tool_name === 'heart' ? '' : 'none';
+            const ctrl = tool_ctrl_defs[tool_name];
+            tool_ctrl_btn.style.display = ctrl ? 'flex' : 'none';
+            if (ctrl) {
+                tool_ctrl_btn.textContent = ctrl.icon();
+                tool_ctrl_btn.classList.remove('pressed');
+            }
             this._perform_select_tool(tool_name);
         })
         this.init_undo_redo_buttons()
@@ -302,6 +334,11 @@ export class MainApp {
         ["pointerdown", "pointerup", "pointerout", "pointerleave", "pointermove", "click", "keydown"].forEach((ename) => {
             canvas_area.addEventListener(ename, (ev) => {
                 ev.preventDefault();
+                if (ename === 'pointerdown') {
+                    // Commit staged palette color to history the moment a stroke begins.
+                    const is_fore = !((ev as MouseEvent).button === 2);
+                    this.color_stack.commit_pending(is_fore);
+                }
                 const method = ename as keyof Editor
                 if (this.editor[method]) {
                     this.editor[method](ev);
@@ -352,12 +389,24 @@ export class MainApp {
         const apply_hl = (event: MouseEvent, commit: boolean) => {
             palette.hl_click(event.offsetX, event.offsetY);
             const rgb_color = palette.get_rgb_color();
-            this.color_stack.select_color(rgb_color, !!(event.buttons & 1), commit || trackColorOnDrag);
+            const is_fore = !!(event.buttons & 1);
+            if (trackColorOnDrag) {
+                // Live mode: push on every interaction with distance filtering.
+                this.color_stack.select_color(rgb_color, is_fore, true, false);
+            } else {
+                // Default mode: just set the color and stage it; push when stroke starts.
+                this.color_stack.select_color(rgb_color, is_fore, false);
+            }
         };
         const apply_sat = (event: MouseEvent, commit: boolean) => {
             palette.sat_click(event.offsetX, event.offsetY);
             const rgb_color = palette.get_rgb_color();
-            this.color_stack.select_color(rgb_color, !!(event.buttons & 1), commit || trackColorOnDrag);
+            const is_fore = !!(event.buttons & 1);
+            if (trackColorOnDrag) {
+                this.color_stack.select_color(rgb_color, is_fore, true, false);
+            } else {
+                this.color_stack.select_color(rgb_color, is_fore, false);
+            }
         };
 
         this.palette_hl_canvas.addEventListener('pointerdown', (event: MouseEvent) => {
@@ -425,10 +474,13 @@ export class MainApp {
         })
         settings.get(SettingName.ForeColor).subscribe((color_string: string) => {
             document.getElementById('color-selector-div-fore')!.style.backgroundColor = color_string;
-
+            const rgb = parse_rgba_string(color_string);
+            if (rgb) this.color_stack.stage_from_signal(rgb, true);
         });
         settings.get(SettingName.BackColor).subscribe((color_string: string) => {
             document.getElementById('color-selector-div-back')!.style.backgroundColor = color_string;
+            const rgb = parse_rgba_string(color_string);
+            if (rgb) this.color_stack.stage_from_signal(rgb, false);
         });
     }
     clear_context(context: CanvasRenderingContext2D) {
