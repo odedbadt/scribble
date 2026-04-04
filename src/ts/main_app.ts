@@ -63,7 +63,7 @@ export class MainApp {
             document.getElementById('sat-selector-canvas')! as HTMLCanvasElement, [1, 0.5, 0.5]);
         this.palette_hl_canvas = document.getElementById('hl-selector-canvas')! as HTMLCanvasElement
         this.palette_sat_canvas = document.getElementById('sat-selector-canvas')! as HTMLCanvasElement
-        this.color_stack = new ColorStack(this, 6, 100, 10000,
+        this.color_stack = new ColorStack(this, 36, 100, 10000,
             document.getElementById('color-selector-div-fore')!,
             document.getElementById('color-selector-div-back')!,
             document.getElementsByClassName('color_stack_item')
@@ -204,6 +204,16 @@ export class MainApp {
 
     init_buttons() {
 
+        // Toolbar fold button: exclusive page flip (only one page visible at a time)
+        const fold_btn = document.getElementById('toolbar-fold-btn')!;
+        const toolbar_page1 = document.getElementById('toolbar-page-1')!;
+        const toolbar_page2 = document.getElementById('toolbar-page-2')!;
+        fold_btn.addEventListener('click', () => {
+            const is_open = toolbar_page2.classList.toggle('open');
+            toolbar_page1.classList.toggle('hidden', is_open);
+            fold_btn.textContent = is_open ? '▲' : '▼';
+        });
+
         // Mandala button: toggle mode, independent of tool selection
         const mandala_button = document.getElementsByClassName('mandala')[0] as HTMLElement;
         const mandala_panel = document.getElementById('mandala-panel')!;
@@ -277,7 +287,9 @@ export class MainApp {
             }
         })
         const select_tool_signal = state_registry.use_signal<string>(StateValue.SelectedToolName, 'scribble');
+        const heart_south_elem = document.getElementById('heart-south-btn')!;
         select_tool_signal.subscribe((tool_name) => {
+            heart_south_elem.style.display = tool_name === 'heart' ? '' : 'none';
             this._perform_select_tool(tool_name);
         })
         this.init_undo_redo_buttons()

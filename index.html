@@ -7,43 +7,39 @@
 </head>
 
 <body>
-    <div id="toolbar">
-        <div id="gdrive_button" class="gdrive button"></div>
-        <div id="save_button" class="save button">Save</div>
-        <div id="load_button" class="load button">Load</div>
-        <div id="undo_button" class="undo button"></div>
-        <div id="redo_button" class="redo button"></div>
-
-        <div class="scribble button"></div>
-        <!-- 1 -->
-        <div class="rect button filled fillable"></div>
-
-        <div class="line button"></div>
-        <!-- 2 -->
-        <div class="circle button filled fillable"></div>
-
-        <div class="polygon button filled fillable">⬡</div>
-        <!-- 3 -->
-        <div class="dropper button"></div>
-
-        <div class="floodfill button"></div>
-        <!-- 4 -->
-        <div class="eraser button"></div>
-
-        <div class="clearall button"></div>
-
-        <div class="cursor_size button"></div>
-        <!-- 5 -->
-        <div class="topo_hull button filled fillable">⊂</div>
-        <!-- 6 -->
-        <div class="heart button filled fillable">♥</div>
-
-        <div class="cloud_stamp button">☁</div>
-
-        <div id="colorswap" class="button">Swap colors</div>
-        <div id="debug_button" class="button debug-btn"
-            onclick="document.getElementById('debug-modal').style.display='flex'">Debug</div>
+    <!-- TOP BAR: menu bar -->
+    <div id="top-bar">
+        <div id="file-menu" class="top-menu-item">
+            <span class="top-menu-label">File</span>
+            <div class="top-menu-dropdown">
+                <div id="save_button" class="top-menu-action">Save</div>
+                <div id="load_button" class="top-menu-action">Load</div>
+            </div>
+        </div>
     </div>
+
+    <!-- LEFT TOOLBAR: drawing tools only -->
+    <div id="toolbar">
+        <div id="toolbar-page-1">
+            <div class="scribble button"></div>
+            <div class="rect button filled fillable"></div>
+            <div class="line button"></div>
+            <div class="circle button filled fillable"></div>
+            <div class="polygon button filled fillable">⬡</div>
+            <div class="dropper button"></div>
+            <div class="floodfill button"></div>
+            <div class="eraser button"></div>
+            <div class="clearall button"></div>
+            <div class="topo_hull button filled fillable">⊂</div>
+        </div>
+        <!-- secondary tools, hidden until fold button is pressed -->
+        <div id="toolbar-page-2">
+            <div class="heart button filled fillable">♥</div>
+            <div class="cloud_stamp button">☁</div>
+        </div>
+        <div id="toolbar-fold-btn" class="button">▼</div>
+    </div>
+
     <div id="canvas-area">
         <canvas id="view-canvas" width="300" height="300"></canvas>
     </div>
@@ -66,7 +62,15 @@
             </div>
         </div>
     </div>
+
+    <!-- RIGHT TOOLBAR: controls only -->
     <div id="right-toolbar">
+        <!-- layers first -->
+        <div id="layers-btn" class="button" title="Toggle layers panel">☰</div>
+        <div id="layer-panel">
+            <div id="layer-list"></div>
+            <button id="add-layer-btn">＋ Add Layer</button>
+        </div>
         <!-- mandala -->
         <div class="mandala button"></div>
         <div id="mandala-panel">
@@ -83,31 +87,68 @@
         </div>
         <!-- anchor -->
         <div id="anchor-btn" class="anchor button" title="Toggle anchor edit mode">⚓</div>
-        <!-- layers -->
-        <div id="layers-btn" class="button" title="Toggle layers panel">☰</div>
-        <!-- layer panel — slides in to the left of the right toolbar -->
-        <div id="layer-panel">
-            <div id="layer-list"></div>
-            <button id="add-layer-btn">＋ Add Layer</button>
-        </div>
-        <!-- fillstyle -->
+        <!-- fill style -->
         <div class="fillstyle filled button"></div>
-        <!-- heart south style -->
-        <div id="heart-south-btn" class="heart-south-btn button" title="Toggle heart south: smooth / straight">♥∪</div>
-
-        <div class="color_stack_item button"></div>
-        <div class="color_stack_item button"></div>
-        <div class="color_stack_item button"></div>
-        <div class="color_stack_item button"></div>
-        <div class="color_stack_item button"></div>
-        <div class="color_stack_item button"></div>
-
+        <!-- line width (cursor size tool) -->
+        <div class="cursor_size button"></div>
+        <!-- contextual tool controls slot -->
+        <div id="tool-controls-slot">
+            <div id="heart-south-btn" class="heart-south-btn button" title="Toggle heart south: smooth / straight">♥∪</div>
+        </div>
+        <!-- undo / redo -->
+        <div id="undo_button" class="undo button"></div>
+        <div id="redo_button" class="redo button"></div>
+        <!-- debug -->
+        <div id="debug_button" class="button debug-btn"
+            onclick="document.getElementById('debug-modal').style.display='flex'">Debug</div>
+        <!-- color pickers -->
         <canvas id="hl-selector-canvas" width="50" height="200"></canvas>
         <canvas id="sat-selector-canvas" width="50" height="100"></canvas>
         <div id="color-selector-div-back">
             <div id="color-selector-div-fore"></div>
         </div>
     </div>
+
+    <!-- BOTTOM BAR: color history stack (36 slots) -->
+    <div id="bottom-bar">
+        <div class="color_stack_item button"></div>
+        <div class="color_stack_item button"></div>
+        <div class="color_stack_item button"></div>
+        <div class="color_stack_item button"></div>
+        <div class="color_stack_item button"></div>
+        <div class="color_stack_item button"></div>
+        <div class="color_stack_item button"></div>
+        <div class="color_stack_item button"></div>
+        <div class="color_stack_item button"></div>
+        <div class="color_stack_item button"></div>
+        <div class="color_stack_item button"></div>
+        <div class="color_stack_item button"></div>
+        <div class="color_stack_item button"></div>
+        <div class="color_stack_item button"></div>
+        <div class="color_stack_item button"></div>
+        <div class="color_stack_item button"></div>
+        <div class="color_stack_item button"></div>
+        <div class="color_stack_item button"></div>
+        <div class="color_stack_item button"></div>
+        <div class="color_stack_item button"></div>
+        <div class="color_stack_item button"></div>
+        <div class="color_stack_item button"></div>
+        <div class="color_stack_item button"></div>
+        <div class="color_stack_item button"></div>
+        <div class="color_stack_item button"></div>
+        <div class="color_stack_item button"></div>
+        <div class="color_stack_item button"></div>
+        <div class="color_stack_item button"></div>
+        <div class="color_stack_item button"></div>
+        <div class="color_stack_item button"></div>
+        <div class="color_stack_item button"></div>
+        <div class="color_stack_item button"></div>
+        <div class="color_stack_item button"></div>
+        <div class="color_stack_item button"></div>
+        <div class="color_stack_item button"></div>
+        <div class="color_stack_item button"></div>
+    </div>
+
     <input type="file" id="file_input" accept="image/png" />
 </body>
 

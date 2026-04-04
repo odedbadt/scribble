@@ -17,33 +17,174 @@ body {
 
 }
 
-#toolbar,
-#right-toolbar {
+/* ── Top bar ──────────────────────────────────────────────────────────────── */
+
+#top-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 22px;
     background-color: white;
-    visibility: visible;
-    border: 1px solid #dde;
-    width: 100px;
-    padding: 0;
-    margin: 0;
-    display: grid;
-    grid-template-columns: repeat(2, 50px);
-    grid-template-rows: 25px 25px repeat(11, 50px) 200px 1em;
-    grid-gap: 0;
+    border-bottom: 1px solid #dde;
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    z-index: 50;
+    box-sizing: border-box;
+    font-family: monospace;
+    font-size: 12px;
+}
+
+.top-menu-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.top-menu-label {
+    padding: 0 8px;
+    height: 22px;
+    line-height: 22px;
+    cursor: default;
+    user-select: none;
+    color: #333;
+}
+
+.top-menu-item:hover .top-menu-label {
+    background-color: rgb(100, 100, 210);
+    color: white;
+}
+
+.top-menu-dropdown {
+    display: none;
+    position: absolute;
+    top: 22px;
+    left: 0;
+    background: white;
+    border: 1px solid #bbb;
+    box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.2);
+    z-index: 200;
+    min-width: 100px;
+}
+
+.top-menu-item:hover .top-menu-dropdown {
+    display: block;
+}
+
+.top-menu-action {
+    padding: 3px 16px;
+    cursor: pointer;
+    white-space: nowrap;
+    color: #222;
+    user-select: none;
+}
+
+.top-menu-action:hover {
+    background-color: rgb(100, 100, 210);
+    color: white;
+}
+
+/* ── Bottom bar ───────────────────────────────────────────────────────────── */
+
+#bottom-bar {
+    position: absolute;
+    bottom: 0;
+    left: 100px;
+    right: 50px;
+    height: 35px;
+    background-color: white;
+    border-top: 1px solid #dde;
+    display: flex;
+    flex-direction: row;
+    z-index: 50;
     box-sizing: border-box;
 }
+
+#bottom-bar .color_stack_item {
+    flex: 1;
+    height: 35px;
+    width: auto;
+}
+
+/* ── Left toolbar (tools only) ───────────────────────────────────────────── */
 
 #toolbar {
     position: absolute;
     left: 0px;
+    top: 22px;
+    width: 100px;
+    height: calc(100vh - 57px);
+    background-color: white;
+    border: 1px solid #dde;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+    overflow: visible;
 }
+
+#toolbar-page-1,
+#toolbar-page-2 {
+    display: grid;
+    grid-template-columns: repeat(2, 50px);
+    flex-shrink: 0;
+}
+
+#toolbar-page-1.hidden {
+    display: none;
+}
+
+#toolbar-page-2 {
+    display: none;
+}
+
+#toolbar-page-2.open {
+    display: grid;
+}
+
+#toolbar-fold-btn {
+    width: 100px;
+    height: 35px;
+    margin-top: auto;
+    font-family: monospace;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-sizing: border-box;
+}
+
+/* ── Right toolbar (controls only) ───────────────────────────────────────── */
 
 #right-toolbar {
     grid-template-columns: repeat(1, 50px);
-    grid-template-rows: repeat(5, 50px) repeat(6, 30px) 200px 100px 50px;
+    grid-template-rows: repeat(9, 50px) 200px 100px 50px;
     position: absolute;
+    top: 22px;
     width: 50px;
     right: 0px;
+    height: calc(100vh - 57px);
+    background-color: white;
+    border: 1px solid #dde;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-gap: 0;
+    box-sizing: border-box;
     overflow: visible;
+}
+
+#tool-controls-slot {
+    width: 50px;
+    height: 50px;
+    position: relative;
+}
+
+#heart-south-btn {
+    display: none; /* shown by JS only when heart tool is active */
 }
 
 .button,
@@ -63,7 +204,6 @@ body {
 .color_stack_item {
     width: 50px;
     height: 30px;
-
 }
 
 .button.tool-disabled {
@@ -81,9 +221,10 @@ body {
 #canvas-area {
     background-color: white;
     width: calc(100vw - 151px);
-    height: 100vh;
+    height: calc(100vh - 57px);
     position: absolute;
     left: 101px;
+    top: 22px;
     overflow: hidden;
     padding: 0;
     margin: 0;
@@ -167,9 +308,6 @@ body {
     display: flex;
     align-items: center;
     color: #444;
-    grid-column: span 2;
-    width: 100px;
-    height: 25px;
 }
 
 #color-selector-div-back {
@@ -208,17 +346,6 @@ body {
     border: 1px solid black inset;
     background-color: rgba(0, 0, 0, 255);
     cursor: crosshair;
-}
-
-#colorswap {
-    font-family: monospace;
-    width: 100px;
-    height: 2em;
-    cursor: pointer;
-    justify-content: center;
-    display: flex;
-    align-items: center;
-    color: #444;
 }
 
 .scribble {
@@ -319,22 +446,6 @@ body {
     /* Emboss effect */
 }
 
-.save,
-.load {
-    height: 25px;
-    cursor: pointer;
-    font-family: monospace;
-    text-align: center;
-    font-size: 16px;
-}
-
-.gdrive {
-    grid-column: span 2;
-    height: 25px;
-    width: 100px;
-    background-color: #ee9;
-}
-
 .undo {
     background-image: url("undoredo.png");
     background-size: 100px 100px;
@@ -364,7 +475,7 @@ body {
     display: none;
     position: absolute;
     right: 50px;
-    top: 0;
+    top: 50px; /* mandala is row 2 (layers is row 1) */
     width: 90px;
     background: rgb(210, 210, 200);
     border: 1px solid #bbb;
@@ -406,7 +517,7 @@ body {
 
 #layer-panel {
     position: absolute;
-    top: 100px; /* aligned with anchor-btn row + layers-btn row */
+    top: 0; /* layers-btn is now row 1 */
     right: 50px; /* flush with left edge of right-toolbar */
     width: 180px;
     background: rgb(235, 235, 226);
