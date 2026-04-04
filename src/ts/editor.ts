@@ -13,6 +13,7 @@ import { PolygonTool } from "./polygon";
 import { TopoHullTool } from "./topo_hull";
 import { HeartTool } from "./heart";
 import { CloudStampTool } from "./cloud_stamp";
+import { BezierTool } from "./bezier";
 import { CursorSize } from './cursor_size'
 //import { FillStyleToggler } from './styletogglers'
 //import { mandala } from "./mandala";
@@ -31,6 +32,7 @@ const tool_classes = new Map<string, new (...args: any[]) => EditingTool>
         , ["rect", RectTool]
         , ["scribble", ScribbleTool]
         , ["line", LineTool]
+        , ["bezier", BezierTool]
         , ["circle", CircleTool]
         , ["dropper", Dropper]
         , ["floodfill", Floodfill]

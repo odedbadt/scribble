@@ -415,7 +415,8 @@ body {
 .polygon,
 .topo_hull,
 .heart,
-.cloud_stamp {
+.cloud_stamp,
+.bezier {
     font-family: monospace;
     font-size: 20px;
     display: flex;
