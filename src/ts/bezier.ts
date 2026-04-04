@@ -4,11 +4,21 @@ import { Vector2 } from "./types";
 import { drawLine, drawThickLine, parseColor, setPixel, RGBA } from "./pixel_utils";
 import { parse_RGBA, tool_to_document } from "./utils";
 
-// ── Shared math ────────────────────────────────────────────────────────────
+// ── Types ──────────────────────────────────────────────────────────────────
 
 type BezierPhase = 'idle' | 'set-endpoints' | 'set-cp1' | 'set-cp2';
 
-const CLOSE_RADIUS = 10; // doc-px snap radius to close multi-section spline
+/** Anchor point for the multi-section spline. `tangent` is the outgoing half-chord vector;
+ *  when present it overrides the auto Catmull-Rom computation for this anchor. */
+interface SplineAnchor {
+    pt: Vector2;
+    tangent?: Vector2;
+}
+
+const CLOSE_RADIUS = 10;     // px — snap to close multi-section spline
+const TANGENT_MIN = 2;       // px — minimum drag to register a manual tangent
+
+// ── Math helpers ───────────────────────────────────────────────────────────
 
 function bezier_pt(p0: Vector2, p1: Vector2, p2: Vector2, p3: Vector2, t: number): Vector2 {
     const mt = 1 - t, mt2 = mt * mt, mt3 = mt2 * mt, t2 = t * t, t3 = t2 * t;
@@ -35,38 +45,64 @@ function draw_bezier_curve(
     }
 }
 
-/**
- * Draw a Catmull-Rom segment from p1→p2 given neighbours p0 and p3.
- * Converts to cubic Bézier control points internally.
- */
-function draw_catmull_segment(
+/** Catmull-Rom outgoing CP at anchor i (uses tangent override if present). */
+function catmull_cp1(anchors: SplineAnchor[], i: number, n: number, closed: boolean): Vector2 {
+    const a = anchors[i];
+    if (a.tangent) return { x: a.pt.x + a.tangent.x, y: a.pt.y + a.tangent.y };
+    const prev = closed ? anchors[(i - 1 + n) % n].pt : (i > 0 ? anchors[i - 1].pt : a.pt);
+    const next = anchors[(i + 1) % n].pt;
+    return { x: a.pt.x + (next.x - prev.x) / 6, y: a.pt.y + (next.y - prev.y) / 6 };
+}
+
+/** Catmull-Rom incoming CP at anchor i (mirrors tangent override if present). */
+function catmull_cp2(anchors: SplineAnchor[], i: number, n: number, closed: boolean): Vector2 {
+    const a = anchors[i];
+    if (a.tangent) return { x: a.pt.x - a.tangent.x, y: a.pt.y - a.tangent.y };
+    const prev = anchors[(i - 1 + n) % n].pt; // only used when closed, safe
+    const after = closed ? anchors[(i + 1) % n].pt : (i + 1 < n ? anchors[i + 1].pt : a.pt);
+    return { x: a.pt.x - (after.x - prev.x) / 6, y: a.pt.y - (after.y - prev.y) / 6 };
+}
+
+function draw_spline_segment(
     imageData: ImageData,
-    p0: Vector2, p1: Vector2, p2: Vector2, p3: Vector2,
+    anchors: SplineAnchor[], from: number, to: number, n: number, closed: boolean,
     radius: number, color: RGBA
 ) {
-    const cp1: Vector2 = { x: p1.x + (p2.x - p0.x) / 6, y: p1.y + (p2.y - p0.y) / 6 };
-    const cp2: Vector2 = { x: p2.x - (p3.x - p1.x) / 6, y: p2.y - (p3.y - p1.y) / 6 };
-    draw_bezier_curve(imageData, p1, cp1, cp2, p2, radius, color);
+    const cp1 = catmull_cp1(anchors, from, n, closed);
+    const cp2 = catmull_cp2(anchors, to, n, closed);
+    draw_bezier_curve(imageData, anchors[from].pt, cp1, cp2, anchors[to].pt, radius, color);
 }
 
-/** Draw a closed Catmull-Rom spline through all points. */
-function draw_catmull_closed(imageData: ImageData, pts: Vector2[], radius: number, color: RGBA) {
-    const n = pts.length;
-    for (let i = 0; i < n; i++) {
-        draw_catmull_segment(
-            imageData,
-            pts[(i - 1 + n) % n], pts[i], pts[(i + 1) % n], pts[(i + 2) % n],
-            radius, color
-        );
-    }
+/** Draw all segments of a closed spline. */
+function draw_spline_closed(imageData: ImageData, anchors: SplineAnchor[], radius: number, color: RGBA) {
+    const n = anchors.length;
+    for (let i = 0; i < n; i++) draw_spline_segment(imageData, anchors, i, (i + 1) % n, n, true, radius, color);
 }
 
-/** Draw an open Catmull-Rom spline through pts (endpoints duplicated for natural tangents). */
-function draw_catmull_open(imageData: ImageData, pts: Vector2[], radius: number, color: RGBA) {
-    if (pts.length < 2) return;
-    const ext = [pts[0], ...pts, pts[pts.length - 1]]; // duplicate first and last
-    for (let i = 1; i < pts.length; i++) {
-        draw_catmull_segment(imageData, ext[i - 1], ext[i], ext[i + 1], ext[i + 2], radius, color);
+/** Draw all segments of an open spline. */
+function draw_spline_open(imageData: ImageData, anchors: SplineAnchor[], radius: number, color: RGBA) {
+    const n = anchors.length;
+    if (n < 2) return;
+    for (let i = 0; i < n - 1; i++) draw_spline_segment(imageData, anchors, i, i + 1, n, false, radius, color);
+}
+
+/** Flood-fill an ImageData in-place from seed (x,y) replacing transparent pixels with color. */
+function flood_fill_transparent(imageData: ImageData, x: number, y: number, color: RGBA) {
+    const { width: w, height: h, data } = imageData;
+    const ix = Math.round(x), iy = Math.round(y);
+    if (ix < 0 || iy < 0 || ix >= w || iy >= h) return;
+    const off0 = (iy * w + ix) * 4;
+    if (data[off0 + 3] !== 0) return; // seed already filled
+    const [fr, fg, fb] = color;
+    const stack: number[] = [iy * w + ix];
+    while (stack.length > 0) {
+        const idx = stack.pop()!;
+        const px = idx % w, py = Math.floor(idx / w);
+        if (px < 0 || py < 0 || px >= w || py >= h) continue;
+        const off = idx * 4;
+        if (data[off + 3] !== 0) continue; // already filled or outline pixel
+        data[off] = fr; data[off + 1] = fg; data[off + 2] = fb; data[off + 3] = 255;
+        stack.push(idx + 1, idx - 1, idx + w, idx - w);
     }
 }
 
@@ -89,7 +125,7 @@ const CLOSE_RING_COLOR: RGBA = [0, 200, 0, 220];
 // ── Tool ───────────────────────────────────────────────────────────────────
 
 export class BezierTool extends EditingTool {
-    // ── single-segment state (Filled = false) ──
+    // ── single-segment state (BezierClosed = false) ──
     private _p0: Vector2 | null = null;
     private _p3: Vector2 | null = null;
     private _p1: Vector2 | null = null;
@@ -97,9 +133,10 @@ export class BezierTool extends EditingTool {
     private _phase: BezierPhase = 'idle';
     private _in_drag = false;
 
-    // ── multi-section state (Filled = true) ──
-    private _anchors: Vector2[] = [];
+    // ── multi-section state (BezierClosed = true) ──
+    private _anchors: SplineAnchor[] = [];
     private _last_click_ms = 0;
+    private _dragging_tangent = false; // true while dragging an anchor to set tangent
 
     // ── shared ──
     private _stroke_color: RGBA = [0, 0, 0, 255];
@@ -109,14 +146,14 @@ export class BezierTool extends EditingTool {
     deselect() { this._reset(); }
 
     // ─────────────────────────────────────────────────────────────────────
-    //  Dispatch based on mode
+    //  Dispatch
     // ─────────────────────────────────────────────────────────────────────
 
     start(at: Vector2, buttons: number) {
         this._start_buttons = buttons;
         const is_right = (buttons & 2) !== 0;
         this._stroke_color = parseColor(settings.peek<string>(is_right ? SettingName.BackColor : SettingName.ForeColor));
-        if (settings.peek<boolean>(SettingName.Filled)) {
+        if (settings.peek<boolean>(SettingName.BezierClosed)) {
             this._multi_start(at);
         } else {
             this._single_start(at);
@@ -124,30 +161,31 @@ export class BezierTool extends EditingTool {
     }
 
     drag(at: Vector2) {
-        if (settings.peek<boolean>(SettingName.Filled)) {
-            this._multi_render(at); // rubber-band preview while mouse held
+        if (settings.peek<boolean>(SettingName.BezierClosed)) {
+            this._multi_drag(at);
         } else {
             this._single_drag(at);
         }
     }
 
     stop(at: Vector2) {
-        if (!settings.peek<boolean>(SettingName.Filled)) {
+        if (settings.peek<boolean>(SettingName.BezierClosed)) {
+            this._multi_stop(at);
+        } else {
             this._single_stop(at);
         }
-        // multi-section: stop is handled in start (click-based, not drag-based)
     }
 
     hover(at: Vector2) {
-        if (settings.peek<boolean>(SettingName.Filled)) {
-            this._multi_render(at);
+        if (settings.peek<boolean>(SettingName.BezierClosed)) {
+            if (this._anchors.length > 0 && !this._dragging_tangent) this._multi_render(at);
         } else {
             if (this._phase !== 'idle' && !this._in_drag) this._single_render(at);
         }
     }
 
     pointer_leave() {
-        if (settings.peek<boolean>(SettingName.Filled)) {
+        if (settings.peek<boolean>(SettingName.BezierClosed)) {
             if (this._anchors.length > 0) this._multi_render(null);
         } else {
             if (this._phase !== 'idle') this._single_render(null);
@@ -155,15 +193,13 @@ export class BezierTool extends EditingTool {
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    //  Single-segment cubic Bézier (Filled = false)
+    //  Single-segment cubic Bézier (BezierClosed = false)
     // ─────────────────────────────────────────────────────────────────────
 
     private _single_start(at: Vector2) {
         const pt = { x: Math.round(at.x), y: Math.round(at.y) };
         if (this._phase === 'idle') {
-            this._p0 = pt;
-            this._p3 = pt;
-            this._phase = 'set-endpoints';
+            this._p0 = pt; this._p3 = pt; this._phase = 'set-endpoints';
         }
         this._in_drag = true;
         this._single_render(pt);
@@ -188,12 +224,9 @@ export class BezierTool extends EditingTool {
             this._phase = 'set-cp1';
             this._single_render(pt);
         } else if (this._phase === 'set-cp1') {
-            this._p1 = pt;
-            this._phase = 'set-cp2';
-            this._single_render(pt);
+            this._p1 = pt; this._phase = 'set-cp2'; this._single_render(pt);
         } else if (this._phase === 'set-cp2') {
-            this._p2 = pt;
-            this._single_commit();
+            this._p2 = pt; this._single_commit();
         }
     }
 
@@ -238,7 +271,7 @@ export class BezierTool extends EditingTool {
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    //  Multi-section closed Catmull-Rom spline (Filled = true)
+    //  Multi-section Catmull-Rom spline (BezierClosed = true)
     // ─────────────────────────────────────────────────────────────────────
 
     private _multi_start(at: Vector2) {
@@ -247,16 +280,40 @@ export class BezierTool extends EditingTool {
         const is_double = now - this._last_click_ms < 300;
         this._last_click_ms = now;
 
+        // Check close / double-click conditions first
         if (this._anchors.length >= 3) {
-            const first = this._anchors[0];
+            const first = this._anchors[0].pt;
             const near = Math.hypot(pt.x - first.x, pt.y - first.y) < CLOSE_RADIUS;
             if (near || is_double) {
                 this._multi_commit();
                 return;
             }
         }
-        this._anchors.push(pt);
+
+        // Add new anchor
+        const anchor: SplineAnchor = { pt };
+        this._anchors.push(anchor);
+
+        if (settings.peek<boolean>(SettingName.BezierManualCP)) {
+            this._dragging_tangent = true;
+        }
         this._multi_render(pt);
+    }
+
+    private _multi_drag(at: Vector2) {
+        const pt = { x: Math.round(at.x), y: Math.round(at.y) };
+        if (this._dragging_tangent && this._anchors.length > 0) {
+            const last = this._anchors[this._anchors.length - 1];
+            const tx = pt.x - last.pt.x, ty = pt.y - last.pt.y;
+            // Only set tangent if dragged enough
+            last.tangent = Math.hypot(tx, ty) >= TANGENT_MIN ? { x: tx, y: ty } : undefined;
+        }
+        this._multi_render(pt);
+    }
+
+    private _multi_stop(at: Vector2) {
+        this._dragging_tangent = false;
+        this._multi_render(at);
     }
 
     private _multi_render(cursor: Vector2 | null) {
@@ -267,20 +324,20 @@ export class BezierTool extends EditingTool {
         const imageData = new ImageData(docW, docH);
         const radius = Math.floor((settings.peek<number>(SettingName.LineWidth) ?? 1) / 2);
 
-        // Draw committed segments as open Catmull-Rom through placed anchors
+        // Draw committed segments as open spline
         if (this._anchors.length >= 2) {
-            draw_catmull_open(imageData, this._anchors, radius, this._stroke_color);
+            draw_spline_open(imageData, this._anchors, radius, this._stroke_color);
         }
 
         // Rubber-band: preview next segment from last anchor to cursor
-        if (cursor && this._anchors.length >= 1) {
-            const last = this._anchors[this._anchors.length - 1];
+        if (cursor && this._anchors.length >= 1 && !this._dragging_tangent) {
+            const last = this._anchors[this._anchors.length - 1].pt;
             drawLine(imageData, last.x, last.y, Math.round(cursor.x), Math.round(cursor.y), this._stroke_color);
         }
 
-        // Highlight first anchor when cursor is close enough to close
-        if (cursor && this._anchors.length >= 3) {
-            const first = this._anchors[0];
+        // Close-ring on first anchor when close enough
+        if (cursor && this._anchors.length >= 3 && !this._dragging_tangent) {
+            const first = this._anchors[0].pt;
             if (Math.hypot(cursor.x - first.x, cursor.y - first.y) < CLOSE_RADIUS) {
                 const r = 4;
                 for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
@@ -292,7 +349,17 @@ export class BezierTool extends EditingTool {
         }
 
         // Anchor markers
-        for (const a of this._anchors) draw_handle_square(imageData, a, ENDPOINT_COLOR);
+        const show_handles = settings.peek<boolean>(SettingName.BezierManualCP);
+        for (const a of this._anchors) {
+            draw_handle_square(imageData, a.pt, ENDPOINT_COLOR);
+            if (show_handles && a.tangent) {
+                const hx = a.pt.x + a.tangent.x, hy = a.pt.y + a.tangent.y;
+                const hx2 = a.pt.x - a.tangent.x, hy2 = a.pt.y - a.tangent.y;
+                drawLine(imageData, Math.round(hx2), Math.round(hy2), Math.round(hx), Math.round(hy), HANDLE_COLOR);
+                draw_handle_square(imageData, { x: hx, y: hy }, HANDLE_COLOR);
+                draw_handle_square(imageData, { x: hx2, y: hy2 }, HANDLE_COLOR);
+            }
+        }
 
         this.context.putImageData(imageData, 0, 0);
         this.publish_signals();
@@ -304,7 +371,16 @@ export class BezierTool extends EditingTool {
         const { docW, docH } = dims;
         const imageData = new ImageData(docW, docH);
         const radius = Math.floor((settings.peek<number>(SettingName.LineWidth) ?? 1) / 2);
-        draw_catmull_closed(imageData, this._anchors, radius, this._stroke_color);
+        draw_spline_closed(imageData, this._anchors, radius, this._stroke_color);
+
+        // Flood-fill from centroid when Filled is on
+        if (settings.peek<boolean>(SettingName.Filled)) {
+            let cx = 0, cy = 0;
+            for (const a of this._anchors) { cx += a.pt.x; cy += a.pt.y; }
+            cx /= this._anchors.length; cy /= this._anchors.length;
+            flood_fill_transparent(imageData, cx, cy, this._stroke_color);
+        }
+
         this.context!.putImageData(imageData, 0, 0);
         this._do_commit();
     }
@@ -316,8 +392,7 @@ export class BezierTool extends EditingTool {
     private _setup_canvas() {
         if (!this.canvas || !this.context || !this.document_canvas) return null;
         const docW = this.document_canvas.width, docH = this.document_canvas.height;
-        this.canvas.width = docW;
-        this.canvas.height = docH;
+        this.canvas.width = docW; this.canvas.height = docH;
         this.canvas_bounds_mapping = { from: { x: 0, y: 0, w: 1, h: 1 }, to: { x: 0, y: 0, w: docW, h: docH } };
         return { docW, docH };
     }
@@ -337,8 +412,9 @@ export class BezierTool extends EditingTool {
         this._in_drag = false;
         this._anchors = [];
         this._last_click_ms = 0;
+        this._dragging_tangent = false;
         this.canvas_bounds_mapping = null;
         if (this.canvas) { this.canvas.width = 1; this.canvas.height = 1; }
-        this.canvas_signal!.value = null;
+        if (this.canvas_signal) this.canvas_signal.value = null;
     }
 }

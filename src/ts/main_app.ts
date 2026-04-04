@@ -288,11 +288,14 @@ export class MainApp {
             }
         })
 
-        // Single contextual tool control button.
-        // Each entry defines the icon and toggle action for a specific tool.
+        // Contextual tool control buttons (up to two per tool).
+        // Each entry defines icon, toggle, and optional pressed-state check.
         // Add entries here when a tool needs a contextual control.
-        type ToolCtrl = { icon: () => string; toggle: () => void };
+        type ToolCtrl = { icon: () => string; toggle: () => void; is_pressed?: () => boolean };
         settings.set(SettingName.HeartSouth, 'smooth');
+        settings.set(SettingName.BezierClosed, false);
+        settings.set(SettingName.BezierManualCP, false);
+
         const tool_ctrl_defs: Record<string, ToolCtrl> = {
             'heart': {
                 icon: () => settings.peek<string>(SettingName.HeartSouth) === 'straight' ? '♥V' : '♥∪',
@@ -300,6 +303,12 @@ export class MainApp {
                     const straight = settings.peek<string>(SettingName.HeartSouth) !== 'straight';
                     settings.set(SettingName.HeartSouth, straight ? 'straight' : 'smooth');
                 },
+                is_pressed: () => settings.peek<string>(SettingName.HeartSouth) === 'straight',
+            },
+            'bezier': {
+                icon: () => settings.peek<boolean>(SettingName.BezierManualCP) ? '⌃●' : '⌃○',
+                toggle: () => settings.set(SettingName.BezierManualCP, !settings.peek<boolean>(SettingName.BezierManualCP)),
+                is_pressed: () => settings.peek<boolean>(SettingName.BezierManualCP),
             },
         };
         const tool_ctrl_btn = document.getElementById('tool-ctrl-btn') as HTMLElement;
@@ -310,8 +319,25 @@ export class MainApp {
             if (!ctrl) return;
             ctrl.toggle();
             tool_ctrl_btn.textContent = ctrl.icon();
-            tool_ctrl_btn.classList.toggle('pressed',
-                settings.peek<string>(SettingName.HeartSouth) === 'straight');
+            tool_ctrl_btn.classList.toggle('pressed', ctrl.is_pressed?.() ?? false);
+        });
+
+        const tool_ctrl_2_defs: Record<string, ToolCtrl> = {
+            'bezier': {
+                icon: () => settings.peek<boolean>(SettingName.BezierClosed) ? '⊃●' : '⊃○',
+                toggle: () => settings.set(SettingName.BezierClosed, !settings.peek<boolean>(SettingName.BezierClosed)),
+                is_pressed: () => settings.peek<boolean>(SettingName.BezierClosed),
+            },
+        };
+        const tool_ctrl_btn_2 = document.getElementById('tool-ctrl-btn-2') as HTMLElement;
+        tool_ctrl_btn_2.style.display = 'none';
+        tool_ctrl_btn_2.addEventListener('click', () => {
+            const current_tool = state_registry.peek<string>(StateValue.SelectedToolName) ?? '';
+            const ctrl2 = tool_ctrl_2_defs[current_tool];
+            if (!ctrl2) return;
+            ctrl2.toggle();
+            tool_ctrl_btn_2.textContent = ctrl2.icon();
+            tool_ctrl_btn_2.classList.toggle('pressed', ctrl2.is_pressed?.() ?? false);
         });
 
         const select_tool_signal = state_registry.use_signal<string>(StateValue.SelectedToolName, 'scribble');
@@ -320,7 +346,13 @@ export class MainApp {
             tool_ctrl_btn.style.display = ctrl ? 'flex' : 'none';
             if (ctrl) {
                 tool_ctrl_btn.textContent = ctrl.icon();
-                tool_ctrl_btn.classList.remove('pressed');
+                tool_ctrl_btn.classList.toggle('pressed', ctrl.is_pressed?.() ?? false);
+            }
+            const ctrl2 = tool_ctrl_2_defs[tool_name];
+            tool_ctrl_btn_2.style.display = ctrl2 ? 'flex' : 'none';
+            if (ctrl2) {
+                tool_ctrl_btn_2.textContent = ctrl2.icon();
+                tool_ctrl_btn_2.classList.toggle('pressed', ctrl2.is_pressed?.() ?? false);
             }
             this._perform_select_tool(tool_name);
         })

@@ -5,7 +5,9 @@ export enum SettingName {
     BackColor = 'back_color',
     LineWidth = 'line_width',
     Filled = 'filled',
-    HeartSouth = 'heart_south'   // 'smooth' | 'straight'
+    HeartSouth = 'heart_south',  // 'smooth' | 'straight'
+    BezierClosed = 'bezier_closed',   // boolean: multi-section closed spline mode
+    BezierManualCP = 'bezier_manual_cp', // boolean: click+drag sets tangent handles
 }
 type GenericSettingName = SettingName | string
 class SettingsRegistry {
