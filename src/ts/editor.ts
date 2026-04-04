@@ -50,6 +50,10 @@ export class Editor {
     placing_anchor: boolean = false;
     anchor_edit_mode: boolean = false;
     layer_stack: LayerStack;
+
+    // Layer pan state
+    private _pan_start: Vector2 | null = null;
+    private _pan_origin_data: ImageData | null = null;
     view_canvas: HTMLCanvasElement;
     tool_canvas_signal: Signal<HTMLCanvasElement>;
     tool_bounds_signal: Signal<RectToRectMapping>;
@@ -138,6 +142,15 @@ export class Editor {
             if (was_center) mandala_mode.center = null;
             if (removed) return;
         }
+        // Layer pan mode: start panning the designated layer
+        if (this.layer_stack.pan_layer_index !== null) {
+            const layer = this.layer_stack.layers.peek()[this.layer_stack.pan_layer_index];
+            if (layer) {
+                this._pan_start = raw;
+                this._pan_origin_data = layer.context.getImageData(0, 0, layer.canvas.width, layer.canvas.height);
+            }
+            return;
+        }
         // Anchor edit mode: drag existing or place new; never start a draw stroke
         if (this.anchor_edit_mode) {
             const idx = anchor_manager.nearest_idx(raw, radius);
@@ -162,6 +175,18 @@ export class Editor {
         this._last_hover_spot = { x: event.offsetX, y: event.offsetY }
         const raw = this.view_coords_to_doc_coords({ x: event.offsetX, y: event.offsetY });
         this._last_doc_pos = raw;
+        // Layer pan move
+        if (this.layer_stack.pan_layer_index !== null && this._pan_start && event.buttons && this._pan_origin_data) {
+            const dx = Math.round(raw.x - this._pan_start.x);
+            const dy = Math.round(raw.y - this._pan_start.y);
+            const layer = this.layer_stack.layers.peek()[this.layer_stack.pan_layer_index];
+            if (layer) {
+                layer.context.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
+                layer.context.putImageData(this._pan_origin_data, dx, dy);
+                this._mark_dirty();
+            }
+            return;
+        }
         // Dragging an existing anchor — just move it, no tool cursor
         if (this._dragging_anchor_idx >= 0) {
             anchor_manager.move(this._dragging_anchor_idx, raw);
@@ -340,6 +365,26 @@ export class Editor {
     }
 
     pointerup(event: MouseEvent) {
+        // Finish layer pan
+        if (this.layer_stack.pan_layer_index !== null && this._pan_start && this._pan_origin_data) {
+            const raw = this.view_coords_to_doc_coords({ x: event.offsetX, y: event.offsetY });
+            const dx = Math.round(raw.x - this._pan_start.x);
+            const dy = Math.round(raw.y - this._pan_start.y);
+            const idx = this.layer_stack.pan_layer_index;
+            const layer = this.layer_stack.layers.peek()[idx];
+            if (layer && (dx !== 0 || dy !== 0)) {
+                const before = this._pan_origin_data;
+                const after = layer.context.getImageData(0, 0, layer.canvas.width, layer.canvas.height);
+                const mark = () => this._mark_dirty();
+                this._history.push({
+                    undo() { layer.context.putImageData(before, 0, 0); mark(); },
+                    redo() { layer.context.putImageData(after, 0, 0); mark(); },
+                });
+            }
+            this._pan_start = null;
+            this._pan_origin_data = null;
+            return;
+        }
         if (this._dragging_anchor_idx >= 0) {
             this._dragging_anchor_idx = -1;
             return;

@@ -494,6 +494,22 @@ body {
     opacity: 0.45;
 }
 
+.layer-pan-btn {
+    background: none;
+    border: 1px solid transparent;
+    cursor: pointer;
+    font-size: 10px;
+    padding: 0 1px;
+    flex-shrink: 0;
+    line-height: 1;
+    border-radius: 2px;
+}
+
+.layer-pan-btn.active {
+    background: rgba(60, 120, 220, 0.25);
+    border-color: #669;
+}
+
 .layer-name {
     flex: 1;
     font-family: monospace;

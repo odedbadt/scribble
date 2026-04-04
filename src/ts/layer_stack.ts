@@ -130,6 +130,12 @@ export class LayerStack {
     preview_order: Layer[] | null = null;
 
     /**
+     * Index of the layer currently in pan mode, or null.
+     * When set, canvas pointer events pan this layer instead of drawing.
+     */
+    pan_layer_index: number | null = null;
+
+    /**
      * Composites visible layers onto two canvases split by the active layer:
      *  - composite_canvas      ← layers at or below the active layer
      *  - above_composite_canvas ← layers strictly above the active layer

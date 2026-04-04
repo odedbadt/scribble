@@ -50,6 +50,7 @@ export class LayerPanel {
     toggle(): void {
         this._open = !this._open;
         this._container.classList.toggle('open', this._open);
+        if (!this._open) this._clear_pan();
     }
 
     open(): void {
@@ -60,23 +61,29 @@ export class LayerPanel {
     close(): void {
         this._open = false;
         this._container.classList.remove('open');
+        this._clear_pan();
+    }
+
+    private _clear_pan(): void {
+        if (this._layer_stack.pan_layer_index !== null) {
+            this._layer_stack.pan_layer_index = null;
+            this._rebuild();
+        }
     }
 
     private _rebuild(): void {
         const layers = this._layer_stack.layers.peek();
         const active_idx = this._layer_stack.active_index.peek();
+        const pan_idx = this._layer_stack.pan_layer_index;
 
-        // Remove existing items
         this._list.innerHTML = '';
-
-        // Display in reverse so the visually-topmost layer (highest index) is at the top of the panel
         for (let idx = layers.length - 1; idx >= 0; idx--) {
-            const item = this._make_item(layers[idx], idx, active_idx === idx);
+            const item = this._make_item(layers[idx], idx, active_idx === idx, pan_idx === idx);
             this._list.appendChild(item);
         }
     }
 
-    private _make_item(layer: Layer, index: number, is_active: boolean): HTMLElement {
+    private _make_item(layer: Layer, index: number, is_active: boolean, is_panning: boolean): HTMLElement {
         const item = document.createElement('div');
         item.className = 'layer-item' + (is_active ? ' active' : '');
         item.dataset.index = String(index);
@@ -95,6 +102,17 @@ export class LayerPanel {
         eye.addEventListener('click', (e) => {
             e.stopPropagation();
             this._toggle_visibility(index);
+        });
+
+        // Pan toggle
+        const pan_btn = document.createElement('button');
+        pan_btn.className = 'layer-pan-btn' + (is_panning ? ' active' : '');
+        pan_btn.textContent = '⤢';
+        pan_btn.title = is_panning ? 'Stop panning' : 'Pan layer';
+        pan_btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this._layer_stack.pan_layer_index = is_panning ? null : index;
+            this._rebuild();
         });
 
         // Name — double-click to rename; dir=auto handles RTL (Hebrew etc.)
@@ -165,6 +183,7 @@ export class LayerPanel {
 
         item.appendChild(drag_handle);
         item.appendChild(eye);
+        item.appendChild(pan_btn);
         item.appendChild(name_input);
         item.appendChild(del_btn);
 
