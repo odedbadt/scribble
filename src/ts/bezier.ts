@@ -53,6 +53,20 @@ function draw_handle_square(imageData: ImageData, pt: Vector2, color: RGBA) {
 const HANDLE_COLOR: RGBA = [80, 120, 220, 200];
 const ENDPOINT_COLOR: RGBA = [220, 80, 80, 200];
 
+/** Draw the closing segment (P3→P0) using control points mirrored around P3 and P0
+ *  for G1 continuity at both junctions. */
+function draw_closing_segment(
+    imageData: ImageData,
+    p0: Vector2, p1: Vector2, p2: Vector2, p3: Vector2,
+    radius: number, color: RGBA
+) {
+    // Mirror CP2 around P3 → tangent continues smoothly out of P3
+    const cp3: Vector2 = { x: 2 * p3.x - p2.x, y: 2 * p3.y - p2.y };
+    // Mirror CP1 around P0 → tangent arrives smoothly into P0
+    const cp4: Vector2 = { x: 2 * p0.x - p1.x, y: 2 * p0.y - p1.y };
+    draw_bezier_curve(imageData, p3, cp3, cp4, p0, radius, color);
+}
+
 export class BezierTool extends EditingTool {
     private _p0: Vector2 | null = null;
     private _p3: Vector2 | null = null;
@@ -178,6 +192,11 @@ export class BezierTool extends EditingTool {
 
         draw_bezier_curve(imageData, p0, p1, p2, p3, radius, this._stroke_color);
 
+        // In closed mode, draw the mirrored return segment for a smooth closed curve.
+        if (settings.peek<boolean>(SettingName.Filled) && this._phase !== 'set-endpoints') {
+            draw_closing_segment(imageData, p0, p1, p2, p3, radius, this._stroke_color);
+        }
+
         // Draw handle guides and markers during control-point phases
         if (this._phase !== 'set-endpoints') {
             drawLine(imageData, Math.round(p0.x), Math.round(p0.y), Math.round(p1.x), Math.round(p1.y), HANDLE_COLOR);
@@ -204,6 +223,9 @@ export class BezierTool extends EditingTool {
         const lw = settings.peek<number>(SettingName.LineWidth);
         const radius = Math.floor(lw / 2);
         draw_bezier_curve(imageData, this._p0, this._p1, this._p2, this._p3, radius, this._stroke_color);
+        if (settings.peek<boolean>(SettingName.Filled)) {
+            draw_closing_segment(imageData, this._p0, this._p1, this._p2, this._p3, radius, this._stroke_color);
+        }
         this.context!.putImageData(imageData, 0, 0);
 
         const color_arr = parse_RGBA(settings.peek<string>((this._start_buttons & 2) ? SettingName.BackColor : SettingName.ForeColor));
