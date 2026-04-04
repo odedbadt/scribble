@@ -304,6 +304,13 @@ export class MainApp {
             event.preventDefault();
         });
 
+        // Commit the stroke even if pointerup fires outside the canvas
+        document.addEventListener('pointerup', (ev) => {
+            if (this.editor.tool?.drag_start) {
+                this.editor.pointerup(ev as MouseEvent);
+            }
+        });
+
         // body
         document.body.addEventListener("keydown", (ev) =>
             this.editor.keydown(ev))

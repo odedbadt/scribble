@@ -201,7 +201,7 @@ export class ScribRenderer {
             aboveTexture.needsUpdate = true;
 
             // Update overlay mesh — reuse texture when canvas dimensions are unchanged
-            if (overlay_canvas != null) {
+            if (overlay_canvas != null && bounds_mapping != null) {
                 const to_rect = bounds_mapping.to;
 
                 if (overlayTexture && overlay_canvas.width === overlayTexW && overlay_canvas.height === overlayTexH) {

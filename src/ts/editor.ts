@@ -321,6 +321,15 @@ export class Editor {
         const did_redo = this._history.redo();
         if (did_redo) this._mark_dirty();
     }
+
+    _mark_dirty(): void {
+        this.layer_stack.recomposite();
+        this.document_dirty_signal.value++;
+    }
+
+    push_layer_action(action: UndoableAction): void {
+        this._history.push(action);
+    }
     keydown(event: KeyboardEvent) {
         if (event.code == 'KeyU') {
             this.undo();
