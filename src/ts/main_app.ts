@@ -295,6 +295,7 @@ export class MainApp {
         settings.set(SettingName.HeartSouth, 'smooth');
         settings.set(SettingName.BezierClosed, false);
         settings.set(SettingName.BezierManualCP, false);
+        settings.set(SettingName.EraserMode, 'backcolor');
 
         const tool_ctrl_defs: Record<string, ToolCtrl> = {
             'heart': {
@@ -309,6 +310,14 @@ export class MainApp {
                 icon: () => settings.peek<boolean>(SettingName.BezierManualCP) ? '⌃●' : '⌃○',
                 toggle: () => settings.set(SettingName.BezierManualCP, !settings.peek<boolean>(SettingName.BezierManualCP)),
                 is_pressed: () => settings.peek<boolean>(SettingName.BezierManualCP),
+            },
+            'eraser': {
+                icon: () => settings.peek<string>(SettingName.EraserMode) === 'hole' ? '⊘' : '⬜',
+                toggle: () => {
+                    const next = settings.peek<string>(SettingName.EraserMode) === 'hole' ? 'backcolor' : 'hole';
+                    settings.set(SettingName.EraserMode, next);
+                },
+                is_pressed: () => settings.peek<string>(SettingName.EraserMode) === 'hole',
             },
         };
         const tool_ctrl_btn = document.getElementById('tool-ctrl-btn') as HTMLElement;

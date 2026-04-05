@@ -8,6 +8,7 @@ export enum SettingName {
     HeartSouth = 'heart_south',  // 'smooth' | 'straight'
     BezierClosed = 'bezier_closed',   // boolean: multi-section closed spline mode
     BezierManualCP = 'bezier_manual_cp', // boolean: click+drag sets tangent handles
+    EraserMode = 'eraser_mode',          // 'backcolor' | 'hole'
 }
 type GenericSettingName = SettingName | string
 class SettingsRegistry {
