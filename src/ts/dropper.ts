@@ -7,8 +7,9 @@ export class Dropper extends EditingTool {
     private _buttons: number = 0;
 
     private _pick(at: Vector2) {
-        if (this.document_context == null) return;
-        const data = this.document_context.getImageData(at.x, at.y, 1, 1).data;
+        const result = this.layer_stack?.topmost_layer_at(at.x, at.y);
+        if (!result) return; // fully transparent at this pixel
+        const data = result.layer.context.getImageData(at.x, at.y, 1, 1).data;
         const color_string = `rgba(${data[0]},${data[1]},${data[2]},255)`;
         const is_fore = !!(this._buttons & 1);
         settings.set(is_fore ? SettingName.ForeColor : SettingName.BackColor, color_string);

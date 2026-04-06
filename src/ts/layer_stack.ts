@@ -49,6 +49,9 @@ export class LayerStack {
         this._above_composite_context.imageSmoothingEnabled = false;
 
         const initial_layer = make_layer(width, height, 'Layer 1');
+        // Start with a white background so the canvas doesn't show as transparent.
+        initial_layer.context.fillStyle = '#ffffff';
+        initial_layer.context.fillRect(0, 0, width, height);
         _layer_counter = 1; // reset so first explicit add_layer yields "Layer 2"
         this.layers = signal<Layer[]>([initial_layer]);
         this.active_index = signal<number>(0);
@@ -165,6 +168,62 @@ export class LayerStack {
                 }
             }
         }
+    }
+
+    /**
+     * Returns the topmost visible layer (and its index) that has a non-transparent
+     * pixel at (x, y), or null if all layers are transparent there.
+     */
+    topmost_layer_at(x: number, y: number): { layer: Layer; index: number } | null {
+        const layers = this.layers.peek();
+        for (let i = layers.length - 1; i >= 0; i--) {
+            if (!layers[i].visible) continue;
+            const data = layers[i].context.getImageData(x, y, 1, 1).data;
+            if (data[3] > 0) return { layer: layers[i], index: i };
+        }
+        return null;
+    }
+
+    /**
+     * Returns the topmost visible layer (and its index) that has any non-transparent
+     * pixel within a circle of `radius` pixels around (cx, cy).
+     * This is more robust than `topmost_layer_at` when the drag_start may be slightly
+     * off a stroke — it finds the highest layer with paint anywhere in the brush area.
+     * Falls back to `topmost_layer_at` when radius <= 0.
+     */
+    topmost_layer_in_radius(cx: number, cy: number, radius: number, min_index = 0): { layer: Layer; index: number } | null {
+        if (radius <= 0) return this.topmost_layer_at(cx, cy);
+        const layers = this.layers.peek();
+        const r = Math.ceil(radius);
+        const x0 = Math.max(0, cx - r);
+        const y0 = Math.max(0, cy - r);
+        // Clamp to canvas bounds (use first layer's size as reference)
+        const cw = layers[0]?.canvas.width ?? 0;
+        const ch = layers[0]?.canvas.height ?? 0;
+        const x1 = Math.min(cw, cx + r + 1);
+        const y1 = Math.min(ch, cy + r + 1);
+        if (x1 <= x0 || y1 <= y0) return this.topmost_layer_at(cx, cy);
+        const fw = x1 - x0;
+        const fh = y1 - y0;
+        const r2 = radius * radius;
+
+        // Scan from topmost layer downward; return the first (topmost) layer
+        // that has any non-transparent pixel within the circle.
+        for (let i = layers.length - 1; i >= min_index; i--) {
+            if (!layers[i].visible) continue;
+            const data = layers[i].context.getImageData(x0, y0, fw, fh).data;
+            for (let py = 0; py < fh; py++) {
+                for (let px = 0; px < fw; px++) {
+                    const dx = (x0 + px) - cx;
+                    const dy = (y0 + py) - cy;
+                    if (dx * dx + dy * dy > r2) continue;
+                    if (data[(py * fw + px) * 4 + 3] > 0) {
+                        return { layer: layers[i], index: i };
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     /**

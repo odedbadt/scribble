@@ -1,6 +1,6 @@
 
 import { WebGLRenderer, Scene, OrthographicCamera, ShaderMaterial, DoubleSide, Mesh, PlaneGeometry, CanvasTexture, NearestFilter } from "three"
-import { FRAGMENT_SHADER_CODE, VERTEX_SHADER_CODE } from "./glsl_shader_code"
+import { FRAGMENT_SHADER_CODE, VERTEX_SHADER_CODE, CHECKER_FRAGMENT_SHADER_CODE } from "./glsl_shader_code"
 import { effect, Signal } from "@preact/signals";
 import { Rect, RectToRectMapping } from "./types";
 import { LayerStack } from "./layer_stack";
@@ -75,11 +75,24 @@ export class ScribRenderer {
             uniforms: { uTexture: { value: docTexture } },
             vertexShader: VERTEX_SHADER_CODE,
             fragmentShader: FRAGMENT_SHADER_CODE,
+            transparent: true,
             side: DoubleSide,
         });
         let docGeometry = new PlaneGeometry(docTexW, docTexH);
         const docMesh = new Mesh(docGeometry, docMaterial);
         docMesh.position.set(docTexW * 0.5, docTexH * 0.5, -5);
+
+        // Checkerboard background mesh — sits behind docMesh at z=-8.
+        // Shows through transparent holes punched in the bottommost layer.
+        const checkerMaterial = new ShaderMaterial({
+            uniforms: { uDocSize: { value: { x: docTexW, y: docTexH } } },
+            vertexShader: VERTEX_SHADER_CODE,
+            fragmentShader: CHECKER_FRAGMENT_SHADER_CODE,
+            side: DoubleSide,
+        });
+        let checkerGeometry = new PlaneGeometry(docTexW, docTexH);
+        const checkerMesh = new Mesh(checkerGeometry, checkerMaterial);
+        checkerMesh.position.set(docTexW * 0.5, docTexH * 0.5, -8);
 
         // Above-active-layer mesh — renders on top of the overlay stroke
         let aboveTexture = makeAboveTexture();
@@ -128,6 +141,7 @@ export class ScribRenderer {
         let renderPending = false;
 
         const scene = new Scene();
+        scene.add(checkerMesh);
         scene.add(docMesh);
         scene.add(anchorMesh);
         scene.add(overlayMesh);
@@ -182,6 +196,12 @@ export class ScribRenderer {
                 docGeometry = new PlaneGeometry(docTexW, docTexH);
                 docMesh.geometry = docGeometry;
                 docMesh.position.set(docTexW * 0.5, docTexH * 0.5, -5);
+                // Keep checker mesh in sync with document size
+                checkerGeometry.dispose();
+                checkerGeometry = new PlaneGeometry(docTexW, docTexH);
+                checkerMesh.geometry = checkerGeometry;
+                checkerMesh.position.set(docTexW * 0.5, docTexH * 0.5, -8);
+                checkerMaterial.uniforms.uDocSize.value = { x: docTexW, y: docTexH };
             }
 
             docTexture.needsUpdate = true;

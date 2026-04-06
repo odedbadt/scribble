@@ -1,11 +1,12 @@
 import { ActionHistory, UndoableAction } from "./action_history"
-import { LayerStack } from "./layer_stack"
+import { LayerStack, Layer } from "./layer_stack"
 import { EditingTool, NopTool } from './editing_tool'
 import { ScribbleTool } from "./scribble";
 import { CircleTool } from "./circle";
 import { ClearAllTool } from "./clearall";
 import { Dropper } from "./dropper";
 import { EraserTool } from "./eraser";
+import { ScraperTool } from "./scraper";
 import { Floodfill } from "./floodfill";
 import { LineTool } from "./line";
 import { RectTool } from "./rect";
@@ -37,6 +38,7 @@ const tool_classes = new Map<string, new (...args: any[]) => EditingTool>
         , ["dropper", Dropper]
         , ["floodfill", Floodfill]
         , ["eraser", EraserTool]
+        , ["scraper", ScraperTool]
         , ["clearall", ClearAllTool]
         , ["cursor_size", CursorSize]
         // , ["fillstyle", FillStyleToggler]
@@ -45,6 +47,10 @@ const tool_classes = new Map<string, new (...args: any[]) => EditingTool>
 export class Editor {
     private _history: ActionHistory = new ActionHistory();
     private _undo_before: { x: number; y: number; data: ImageData } | null = null;
+    private _undo_before_layer: { layer: Layer; data: ImageData } | null = null;
+    private _undo_before_layers: Array<{ layer: Layer; data: ImageData }> | null = null;
+    /** True while any Alt key is held. Updated in pointer event handlers. */
+    alt_key: boolean = false;
     tool: any;
     private _last_hover_spot: Vector2 | null;
     _last_doc_pos: Vector2 | null = null;
@@ -56,6 +62,10 @@ export class Editor {
     // Layer pan state
     private _pan_start: Vector2 | null = null;
     private _pan_origin_data: ImageData | null = null;
+
+    // Alt-click layer selection: deferred to pointerup so alt+drag tools work.
+    private _alt_pending_layer_select: boolean = false;
+    private _alt_drag_started: boolean = false;
     view_canvas: HTMLCanvasElement;
     tool_canvas_signal: Signal<HTMLCanvasElement>;
     tool_bounds_signal: Signal<RectToRectMapping>;
@@ -136,6 +146,7 @@ export class Editor {
     }
     pointerdown(event: MouseEvent) {
         event.preventDefault();
+        this.alt_key = event.altKey;
         const raw = this.view_coords_to_doc_coords({ x: event.offsetX, y: event.offsetY });
         const radius = this.snap_radius_doc();
         // Right-click near anchor removes it; otherwise fall through to draw with back color
@@ -143,6 +154,11 @@ export class Editor {
             const { removed, was_center } = anchor_manager.remove_nearest(raw, radius);
             if (was_center) mandala_mode.center = null;
             if (removed) return;
+        }
+        // Alt-click: defer layer selection to pointerup (so alt+drag tools still receive the stroke).
+        if (event.altKey) {
+            this._alt_pending_layer_select = true;
+            this._alt_drag_started = false;
         }
         // Layer pan mode: start panning the designated layer
         if (this.layer_stack.pan_layer_index !== null) {
@@ -174,8 +190,14 @@ export class Editor {
         this.tool.start(at, event.buttons);
     }
     pointermove(event: MouseEvent) {
+        this.alt_key = event.altKey;
         this._last_hover_spot = { x: event.offsetX, y: event.offsetY }
         const raw = this.view_coords_to_doc_coords({ x: event.offsetX, y: event.offsetY });
+        this._last_doc_pos = raw;
+        // If button is held and alt was pending (alt+drag scenario), mark drag started.
+        if (event.buttons && this._alt_pending_layer_select && !this._alt_drag_started) {
+            this._alt_drag_started = true;
+        }
         this._last_doc_pos = raw;
         // Layer pan move
         if (this.layer_stack.pan_layer_index !== null && this._pan_start && event.buttons && this._pan_origin_data) {
@@ -327,6 +349,14 @@ export class Editor {
         this._undo_before = { x, y, data: this.document_context.getImageData(x, y, w, h) };
     }
 
+    /** Capture a full-canvas before-snapshot for a specific (possibly non-active) layer. */
+    begin_undo_capture_layer(layer: Layer) {
+        this._undo_before_layer = {
+            layer,
+            data: layer.context.getImageData(0, 0, layer.canvas.width, layer.canvas.height),
+        };
+    }
+
     push_undo_snapshot() {
         if (!this._undo_before) return;
         const { x, y, data: before } = this._undo_before;
@@ -336,6 +366,44 @@ export class Editor {
         this._history.push({
             undo() { ctx.putImageData(before, x, y); },
             redo() { ctx.putImageData(after, x, y); },
+        });
+    }
+
+    /** Push an undo/redo snapshot for a specific (possibly non-active) layer. */
+    push_undo_snapshot_layer(layer: Layer) {
+        if (!this._undo_before_layer || this._undo_before_layer.layer !== layer) return;
+        const before = this._undo_before_layer.data;
+        this._undo_before_layer = null;
+        const after = layer.context.getImageData(0, 0, layer.canvas.width, layer.canvas.height);
+        const ctx = layer.context;
+        const mark = () => this._mark_dirty();
+        this._history.push({
+            undo() { ctx.putImageData(before, 0, 0); mark(); },
+            redo() { ctx.putImageData(after, 0, 0); mark(); },
+        });
+    }
+
+    /** Capture full-canvas before-snapshots for multiple layers (for multi-layer undo). */
+    begin_undo_capture_layers(layers: Layer[]) {
+        this._undo_before_layers = layers.map(layer => ({
+            layer,
+            data: layer.context.getImageData(0, 0, layer.canvas.width, layer.canvas.height),
+        }));
+    }
+
+    /** Push a compound undo/redo entry for all previously captured layers. */
+    push_undo_snapshot_layers() {
+        if (!this._undo_before_layers) return;
+        const snapshots = this._undo_before_layers.map(({ layer, data: before }) => ({
+            layer,
+            before,
+            after: layer.context.getImageData(0, 0, layer.canvas.width, layer.canvas.height),
+        }));
+        this._undo_before_layers = null;
+        const mark = () => this._mark_dirty();
+        this._history.push({
+            undo() { for (const s of snapshots) s.layer.context.putImageData(s.before, 0, 0); mark(); },
+            redo() { for (const s of snapshots) s.layer.context.putImageData(s.after, 0, 0); mark(); },
         });
     }
 
@@ -367,11 +435,25 @@ export class Editor {
     }
 
     pointerup(event: MouseEvent) {
+        this.alt_key = event.altKey;
+        const up_pos = this.view_coords_to_doc_coords({ x: event.offsetX, y: event.offsetY });
+        // Alt-click (no drag): select topmost layer under cursor.
+        if (this._alt_pending_layer_select && !this._alt_drag_started) {
+            this._alt_pending_layer_select = false;
+            const result = this.layer_stack.topmost_layer_at(up_pos.x, up_pos.y);
+            if (result) {
+                this.layer_stack.set_active(result.index);
+                this._mark_dirty();
+            }
+            this.tool.stop(up_pos);
+            return;
+        }
+        this._alt_pending_layer_select = false;
+        this._alt_drag_started = false;
         // Finish layer pan
         if (this.layer_stack.pan_layer_index !== null && this._pan_start && this._pan_origin_data) {
-            const raw = this.view_coords_to_doc_coords({ x: event.offsetX, y: event.offsetY });
-            const dx = Math.round(raw.x - this._pan_start.x);
-            const dy = Math.round(raw.y - this._pan_start.y);
+            const dx = Math.round(up_pos.x - this._pan_start.x);
+            const dy = Math.round(up_pos.y - this._pan_start.y);
             const idx = this.layer_stack.pan_layer_index;
             const layer = this.layer_stack.layers.peek()[idx];
             if (layer && (dx !== 0 || dy !== 0)) {
@@ -394,8 +476,7 @@ export class Editor {
         if (this.anchor_edit_mode) {
             return;
         }
-        const raw = this.view_coords_to_doc_coords({ x: event.offsetX, y: event.offsetY });
-        const { pt: at } = anchor_manager.snap(raw, this.snap_radius_doc());
+        const { pt: at } = anchor_manager.snap(up_pos, this.snap_radius_doc());
         this.tool.stop(at);
         this.tool.hover(at);
     }

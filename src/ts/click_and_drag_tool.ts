@@ -61,8 +61,9 @@ export abstract class ClickAndDragTool extends EditingTool {
     hover_action(at: Vector2) {
         const lw = settings.peek<number>(SettingName.LineWidth);
         const radius = Math.floor(lw / 2);
-        const colorStr = settings.peek<string>(SettingName.ForeColor);
-        const color = parseColor(colorStr);
+        const hoverColor = this.hover_color();
+        const colorStr = `rgba(${hoverColor[0]},${hoverColor[1]},${hoverColor[2]},${hoverColor[3]})`;
+        const color = hoverColor;
         const ctx = this.context!;
 
         if (mandala_mode.enabled && this.document_canvas) {
