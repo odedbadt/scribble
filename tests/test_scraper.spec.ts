@@ -22,43 +22,35 @@ async function waitForApp(page: Page) {
     );
 }
 
+// App starts with:
+//   layer 0 — white, locked (permanent base)
+//   layer 1 — blank, unlocked, active (drawing layer)
+
 test.describe('Scraper tool', () => {
-    // The app starts with one white layer (index 0).
-    // Each test adds a second layer (index 1) and draws a red stroke on it,
-    // then uses the scraper to erase it and verifies the pixel state.
 
     test('alt mode peels topmost layer, reveals layer below (not checkers)', async ({ page }) => {
         await waitForApp(page);
-
-        // Add second layer (becomes active)
-        await page.evaluate(() => (window as any).app.layer_stack.add_layer());
+        // Layer 1 is already the active drawing layer — no add_layer() needed.
         await page.evaluate(() => (window as any).app.select_tool('scribble'));
 
         const canvas = page.locator('#view-canvas');
         const box = (await canvas.boundingBox())!;
-
-        // Draw-point at the centre of the canvas
         const drawOffX = Math.floor(box.width / 2);
         const drawOffY = Math.floor(box.height / 2);
         const pageCx = box.x + drawOffX;
         const pageCy = box.y + drawOffY;
 
-        // Draw a short horizontal stroke with the default red fore-colour
+        // Draw a short horizontal red stroke on layer 1.
         await page.mouse.move(pageCx - 30, pageCy);
         await page.mouse.down();
         await page.mouse.move(pageCx + 30, pageCy);
         await page.mouse.up();
 
-        // Confirm red was painted on layer 1 — check both the centre AND the scraper's
-        // drag-start point (drawOffX - 30) so we know topmost_layer_in_radius has red to find.
-        const beforeScrapeCenter = await getLayerPixel(page, 1, drawOffX, drawOffY);
-        expect(beforeScrapeCenter?.r, 'layer 1 should be red at centre before scraping').toBeGreaterThan(150);
-        expect(beforeScrapeCenter?.a, 'layer 1 should be opaque at centre before scraping').toBe(255);
-        const beforeScrapeStart = await getLayerPixel(page, 1, drawOffX - 30, drawOffY);
-        expect(beforeScrapeStart?.r, 'layer 1 should be red at drag-start before scraping').toBeGreaterThan(150);
-        expect(beforeScrapeStart?.a, 'layer 1 should be opaque at drag-start before scraping').toBe(255);
+        const beforeCenter = await getLayerPixel(page, 1, drawOffX, drawOffY);
+        expect(beforeCenter?.r, 'layer 1 should be red at centre before scraping').toBeGreaterThan(150);
+        expect(beforeCenter?.a, 'layer 1 should be opaque at centre before scraping').toBe(255);
 
-        // Switch to scraper and alt-drag over the same stroke
+        // Alt-scrape over the same stroke.
         await page.evaluate(() => (window as any).app.select_tool('scraper'));
         await page.keyboard.down('Alt');
         await page.mouse.move(pageCx - 30, pageCy);
@@ -67,25 +59,23 @@ test.describe('Scraper tool', () => {
         await page.mouse.up();
         await page.keyboard.up('Alt');
 
-        // Layer 1: the red stroke must now be transparent
+        // Layer 1: red stroke must now be transparent.
         const layer1 = await getLayerPixel(page, 1, drawOffX, drawOffY);
         expect(layer1?.a, 'layer 1 pixel must be transparent after alt-scrape').toBe(0);
 
-        // Layer 0: the white background must be untouched — NOT scraped to checkers
+        // Layer 0: white base must be untouched (it is locked).
         const layer0 = await getLayerPixel(page, 0, drawOffX, drawOffY);
-        expect(layer0, 'layer 0 (white bg) must still be white — scraper must not punch through').toEqual(
+        expect(layer0, 'layer 0 (white bg) must still be white — locked, scraper must not touch it').toEqual(
             { r: 255, g: 255, b: 255, a: 255 },
         );
     });
 
-    test('alt mode with drag-start off stroke: both layer 0 and layer 1 erased per-pixel topmost', async ({ page }) => {
-        // Scenario: red stroke is vertical on layer 1; scraper starts 60px LEFT of the stroke.
-        // At drag_start: only white (layer 0) is present → layer 0 is erased to transparent there.
-        // As brush crosses the red stroke (layer 1 is topmost): layer 1 is erased at the intersection.
-        // Per-pixel topmost: each pixel is independently targeted by its topmost layer.
+    test('alt mode with drag-start off stroke: locked base stays white, drawing layer erased at intersection', async ({ page }) => {
+        // Red vertical stroke on layer 1. Scraper starts 60px LEFT (blank area).
+        // At drag_start: layer 1 is transparent, layer 0 is locked → nothing to erase there.
+        // As brush crosses the red stroke: layer 1 is topmost+unlocked → erased.
+        // Layer 0 stays white everywhere (locked).
         await waitForApp(page);
-
-        await page.evaluate(() => (window as any).app.layer_stack.add_layer());
         await page.evaluate(() => (window as any).app.select_tool('scribble'));
 
         const canvas = page.locator('#view-canvas');
@@ -95,48 +85,47 @@ test.describe('Scraper tool', () => {
         const docCx = Math.floor(box.width / 2);
         const docCy = Math.floor(box.height / 2);
 
-        // Draw a vertical red stroke at x=cx (doc x = docCx).
+        // Draw a vertical red stroke on layer 1.
         await page.mouse.move(cx, cy - 50);
         await page.mouse.down();
         await page.mouse.move(cx, cy + 50);
         await page.mouse.up();
 
-        // Confirm centre of stroke is red on layer 1.
         const before = await getLayerPixel(page, 1, docCx, docCy);
         expect(before?.r, 'layer 1 must be red at stroke centre').toBeGreaterThan(150);
         expect(before?.a, 'layer 1 must be opaque at stroke centre').toBe(255);
 
-        // Alt-scrape horizontally starting 60px left of the stroke.
-        // Use two intermediate moves to simulate real browser mouse movement —
-        // this generates multiple editing_drag calls with overlapping thick-line segments,
-        // which is what causes the double-erase bug without the visited bitmap.
+        // Alt-scrape with two moves to generate overlapping segments (regression for double-erase).
         await page.evaluate(() => (window as any).app.select_tool('scraper'));
         await page.keyboard.down('Alt');
         await page.mouse.move(cx - 60, cy);
         await page.mouse.down();
-        await page.mouse.move(cx - 10, cy); // first drag: crosses into stroke
-        await page.mouse.move(cx + 60, cy); // second drag: continues through
+        await page.mouse.move(cx - 10, cy);
+        await page.mouse.move(cx + 60, cy);
         await page.mouse.up();
         await page.keyboard.up('Alt');
 
-        // At drag_start (60px left of stroke): layer 0 was topmost → erased to transparent.
+        // Drag_start area (60px left): layer 1 was blank → nothing erased. Layer 0 still white.
         const layer0_at_start = await getLayerPixel(page, 0, docCx - 60, docCy);
-        expect(layer0_at_start?.a, 'layer 0 must be transparent at drag-start — it was topmost there').toBe(0);
+        expect(layer0_at_start, 'layer 0 must still be white at drag-start (locked)').toEqual(
+            { r: 255, g: 255, b: 255, a: 255 },
+        );
+        const layer1_at_start = await getLayerPixel(page, 1, docCx - 60, docCy);
+        expect(layer1_at_start?.a, 'layer 1 must still be transparent at drag-start (was blank)').toBe(0);
 
-        // At the intersection (red stroke): layer 1 was topmost → layer 1 erased.
+        // Intersection: layer 1 (red) was topmost+unlocked → erased.
         const layer1_at_center = await getLayerPixel(page, 1, docCx, docCy);
-        expect(layer1_at_center?.a, 'layer 1 must be transparent at intersection — it was topmost there').toBe(0);
+        expect(layer1_at_center?.a, 'layer 1 must be transparent at intersection — erased').toBe(0);
 
-        // Layer 0 at intersection center: still white — layer 1 was topmost there, not layer 0.
+        // Layer 0 at intersection: locked, must remain white.
         const layer0_at_center = await getLayerPixel(page, 0, docCx, docCy);
-        expect(layer0_at_center, 'layer 0 must still be white at intersection center').toEqual(
+        expect(layer0_at_center, 'layer 0 must still be white at intersection (locked)').toEqual(
             { r: 255, g: 255, b: 255, a: 255 },
         );
 
-        // KEY regression check: docCx-5 is on the red stroke AND in the overlap zone between
-        // segment 1 (ending at cx-10, radius 5 → reaches docCx-5) and segment 2 (starting at
-        // cx-10, radius 5 → also reaches docCx-5). Without the visited bitmap this pixel gets
-        // processed twice: first erases layer 1 (red topmost), then layer 0 (now topmost) → checkers.
+        // Double-erase regression: overlap zone (docCx-5). Layer 1 erased first visit;
+        // second visit must NOT descend to layer 0 (which is locked anyway, but the visited
+        // bitmap provides an extra guarantee).
         const layer0_at_overlap = await getLayerPixel(page, 0, docCx - 5, docCy);
         expect(layer0_at_overlap, 'layer 0 must be white in overlap zone (double-erase regression)').toEqual(
             { r: 255, g: 255, b: 255, a: 255 },
@@ -145,12 +134,10 @@ test.describe('Scraper tool', () => {
         await page.screenshot({ path: 'dbg/scraper_off_stroke_test.png' });
     });
 
-    test('alt mode scrapes base layer (layer 0) to transparent when it is the only layer', async ({ page }) => {
-        // Scenario: no extra layers — only the default white layer 0.
-        // Alt-scraping directly on white should punch transparent holes (checkers).
+    test('alt mode on blank drawing layer with locked base does nothing', async ({ page }) => {
+        // Layer 0: white, locked. Layer 1: blank, active.
+        // Alt-scraping over a blank area should not modify anything — no unlocked layer has paint.
         await waitForApp(page);
-
-        // Do NOT add any extra layer — only layer 0 exists.
         await page.evaluate(() => (window as any).app.select_tool('scraper'));
 
         const canvas = page.locator('#view-canvas');
@@ -160,11 +147,13 @@ test.describe('Scraper tool', () => {
         const docCx = Math.floor(box.width / 2);
         const docCy = Math.floor(box.height / 2);
 
-        // Verify layer 0 is white before scraping.
-        const before = await getLayerPixel(page, 0, docCx, docCy);
-        expect(before, 'layer 0 must be white before scraping').toEqual({ r: 255, g: 255, b: 255, a: 255 });
+        // Verify state before.
+        const before0 = await getLayerPixel(page, 0, docCx, docCy);
+        expect(before0, 'layer 0 must be white before').toEqual({ r: 255, g: 255, b: 255, a: 255 });
+        const before1 = await getLayerPixel(page, 1, docCx, docCy);
+        expect(before1?.a, 'layer 1 must be transparent before').toBe(0);
 
-        // Alt-scrape across the centre.
+        // Alt-scrape.
         await page.keyboard.down('Alt');
         await page.mouse.move(cx - 30, cy);
         await page.mouse.down();
@@ -172,15 +161,16 @@ test.describe('Scraper tool', () => {
         await page.mouse.up();
         await page.keyboard.up('Alt');
 
-        // Layer 0 at centre: must now be transparent (checkers).
-        const after = await getLayerPixel(page, 0, docCx, docCy);
-        expect(after?.a, 'layer 0 must be transparent after alt-scrape (checkers)').toBe(0);
+        // Nothing should have changed.
+        const after0 = await getLayerPixel(page, 0, docCx, docCy);
+        expect(after0, 'layer 0 must still be white — locked').toEqual({ r: 255, g: 255, b: 255, a: 255 });
+        const after1 = await getLayerPixel(page, 1, docCx, docCy);
+        expect(after1?.a, 'layer 1 must still be transparent — was blank').toBe(0);
     });
 
     test('simple mode (no alt) erases only the active layer', async ({ page }) => {
         await waitForApp(page);
-
-        await page.evaluate(() => (window as any).app.layer_stack.add_layer());
+        // Layer 1 is already the active drawing layer.
         await page.evaluate(() => (window as any).app.select_tool('scribble'));
 
         const canvas = page.locator('#view-canvas');
@@ -195,19 +185,119 @@ test.describe('Scraper tool', () => {
         await page.mouse.move(pageCx + 30, pageCy);
         await page.mouse.up();
 
-        // Scrape without Alt — should erase the active layer (index 1)
+        // Scrape without Alt — erases active layer (1).
         await page.evaluate(() => (window as any).app.select_tool('scraper'));
         await page.mouse.move(pageCx - 30, pageCy);
         await page.mouse.down();
         await page.mouse.move(pageCx + 30, pageCy);
         await page.mouse.up();
 
-        // Layer 1: transparent
         const layer1 = await getLayerPixel(page, 1, drawOffX, drawOffY);
         expect(layer1?.a, 'layer 1 must be transparent after simple scrape').toBe(0);
 
-        // Layer 0: white — simple mode must not touch other layers
         const layer0 = await getLayerPixel(page, 0, drawOffX, drawOffY);
-        expect(layer0, 'layer 0 must still be white').toEqual({ r: 255, g: 255, b: 255, a: 255 });
+        expect(layer0, 'layer 0 must still be white — not touched by simple scrape').toEqual(
+            { r: 255, g: 255, b: 255, a: 255 },
+        );
+    });
+});
+
+test.describe('Layer lock', () => {
+    test('locked active layer cannot be drawn on (scribble tool)', async ({ page }) => {
+        await waitForApp(page);
+        // Lock layer 1 (the active drawing layer).
+        await page.evaluate(() => (window as any).app.layer_stack.set_locked(1, true));
+        await page.evaluate(() => (window as any).app.select_tool('scribble'));
+
+        const canvas = page.locator('#view-canvas');
+        const box = (await canvas.boundingBox())!;
+        const docCx = Math.floor(box.width / 2);
+        const docCy = Math.floor(box.height / 2);
+        const pageCx = box.x + docCx;
+        const pageCy = box.y + docCy;
+
+        // Try to draw — must be blocked.
+        await page.mouse.move(pageCx - 30, pageCy);
+        await page.mouse.down();
+        await page.mouse.move(pageCx + 30, pageCy);
+        await page.mouse.up();
+
+        const pixel = await getLayerPixel(page, 1, docCx, docCy);
+        expect(pixel?.a, 'locked layer 1 must remain transparent — draw must be blocked').toBe(0);
+    });
+
+    test('scraper alt mode skips locked layers', async ({ page }) => {
+        // Layer 0: white, locked. Layer 1: red stroke, then locked. → alt-scrape finds nothing to erase.
+        await waitForApp(page);
+        await page.evaluate(() => (window as any).app.select_tool('scribble'));
+
+        const canvas = page.locator('#view-canvas');
+        const box = (await canvas.boundingBox())!;
+        const docCx = Math.floor(box.width / 2);
+        const docCy = Math.floor(box.height / 2);
+        const pageCx = box.x + docCx;
+        const pageCy = box.y + docCy;
+
+        // Draw red on layer 1.
+        await page.mouse.move(pageCx - 30, pageCy);
+        await page.mouse.down();
+        await page.mouse.move(pageCx + 30, pageCy);
+        await page.mouse.up();
+
+        // Now lock layer 1 too — all layers locked.
+        await page.evaluate(() => (window as any).app.layer_stack.set_locked(1, true));
+
+        // Alt-scrape over layer 1's red stroke — must skip it (locked).
+        await page.evaluate(() => (window as any).app.select_tool('scraper'));
+        await page.keyboard.down('Alt');
+        await page.mouse.move(pageCx - 30, pageCy);
+        await page.mouse.down();
+        await page.mouse.move(pageCx + 30, pageCy);
+        await page.mouse.up();
+        await page.keyboard.up('Alt');
+
+        // Layer 1: still red — locked, skipped.
+        const layer1 = await getLayerPixel(page, 1, docCx, docCy);
+        expect(layer1?.r, 'layer 1 must still be red — locked, scraper must skip it').toBeGreaterThan(150);
+        expect(layer1?.a, 'layer 1 must still be opaque').toBe(255);
+
+        // Layer 0: still white — also locked.
+        const layer0 = await getLayerPixel(page, 0, docCx, docCy);
+        expect(layer0, 'layer 0 must still be white — also locked').toEqual(
+            { r: 255, g: 255, b: 255, a: 255 },
+        );
+    });
+
+    test('scraper simple mode does not erase a locked active layer', async ({ page }) => {
+        await waitForApp(page);
+        await page.evaluate(() => (window as any).app.select_tool('scribble'));
+
+        const canvas = page.locator('#view-canvas');
+        const box = (await canvas.boundingBox())!;
+        const docCx = Math.floor(box.width / 2);
+        const docCy = Math.floor(box.height / 2);
+        const pageCx = box.x + docCx;
+        const pageCy = box.y + docCy;
+
+        // Draw red on layer 1.
+        await page.mouse.move(pageCx - 30, pageCy);
+        await page.mouse.down();
+        await page.mouse.move(pageCx + 30, pageCy);
+        await page.mouse.up();
+
+        const before = await getLayerPixel(page, 1, docCx, docCy);
+        expect(before?.r, 'layer 1 must be red before scrape').toBeGreaterThan(150);
+
+        // Lock layer 1, then try to scrape (simple mode).
+        await page.evaluate(() => (window as any).app.layer_stack.set_locked(1, true));
+        await page.evaluate(() => (window as any).app.select_tool('scraper'));
+        await page.mouse.move(pageCx - 30, pageCy);
+        await page.mouse.down();
+        await page.mouse.move(pageCx + 30, pageCy);
+        await page.mouse.up();
+
+        const after = await getLayerPixel(page, 1, docCx, docCy);
+        expect(after?.r, 'layer 1 must still be red — locked, simple scrape must be blocked').toBeGreaterThan(150);
+        expect(after?.a, 'layer 1 must still be opaque').toBe(255);
     });
 });
