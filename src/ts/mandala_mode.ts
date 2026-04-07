@@ -9,6 +9,12 @@ function rotate(v: Vector2, center: Vector2, angle: number): Vector2 {
     };
 }
 
+export interface StampTransform {
+    center: Vector2;
+    angle: number;   // rotation angle in radians
+    flip: boolean;   // true if the stamp should be flipped horizontally before rotation
+}
+
 class MandalaMode {
     enabled: boolean = false;
     n: number = 8;
@@ -36,6 +42,20 @@ class MandalaMode {
             results.push(rotate(at, center, angle));
             if (this.mirror) {
                 results.push(rotate({ x: 2 * center.x - at.x, y: at.y }, center, angle));
+            }
+        }
+        return results;
+    }
+
+    /** Returns center position + rotation angle + flip flag for each symmetry copy of a stamp. */
+    get_stamp_transforms(at: Vector2, center: Vector2): StampTransform[] {
+        const results: StampTransform[] = [];
+        for (let i = 0; i < this.n; i++) {
+            const angle = (Math.PI * 2 * i) / this.n;
+            results.push({ center: rotate(at, center, angle), angle, flip: false });
+            if (this.mirror) {
+                const mat = { x: 2 * center.x - at.x, y: at.y };
+                results.push({ center: rotate(mat, center, angle), angle, flip: true });
             }
         }
         return results;
