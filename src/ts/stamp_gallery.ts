@@ -135,7 +135,7 @@ export class StampGallery {
 
         let files: string[];
         try {
-            const res = await fetch(new URL('stamps/index.json', document.baseURI).href);
+            const res = await fetch(new URL('static/stamps/index.json', document.baseURI).href);
             if (!res.ok) return;
             files = await res.json();
         } catch {
@@ -143,7 +143,7 @@ export class StampGallery {
         }
 
         for (const filename of files) {
-            const url = new URL(`stamps/${filename}`, document.baseURI).href;
+            const url = new URL(`static/stamps/${filename}`, document.baseURI).href;
             const item: SVGGlyph = { kind: 'svg', filename, url, label: filename_to_label(filename) };
 
             const el = make_item_el(item, () => this._pick(item));
