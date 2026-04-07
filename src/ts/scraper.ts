@@ -43,6 +43,10 @@ export class ScraperTool extends ScribbleTool {
             this._visited_doc_w = w;
             this._apply_hole_topmost_perpixel(this.drag_start!, this.drag_start!);
         } else if (!this._is_topmost_mode) {
+            if (this.layer_stack?.active_layer.locked) {
+                this._hole_active = false; // abort — layer is locked
+                return;
+            }
             this.begin_undo_capture?.();
             this._apply_hole_active_layer(this.drag_start!, this.drag_start!);
         }
@@ -118,6 +122,7 @@ export class ScraperTool extends ScribbleTool {
                 for (let li = layers.length - 1; li >= 0; li--) {
                     const ld = layer_datas[li];
                     if (!ld) continue;
+                    if (layers[li].locked) continue; // never erase locked layers
                     if (ld.data[idx + 3] > 0) {
                         ld.data[idx] = 0;
                         ld.data[idx + 1] = 0;
@@ -319,16 +324,18 @@ export class ScraperTool extends ScribbleTool {
                 // Determine which layer is being "punched through" at this pixel.
                 let target_idx: number;
                 if (is_alt) {
-                    // Alt mode: per-pixel topmost non-transparent layer.
+                    // Alt mode: per-pixel topmost non-locked, non-transparent layer.
                     target_idx = -1;
                     for (let i = layers.length - 1; i >= 0; i--) {
                         const ld = layer_imgs[i];
                         if (!ld) continue;
+                        if (layers[i].locked) continue;
                         if (ld[(lpy * fw + lpx) * 4 + 3] > 0) { target_idx = i; break; }
                     }
                 } else {
-                    // Simple mode: active layer only.
-                    target_idx = ls.active_index.peek();
+                    // Simple mode: active layer only (if not locked).
+                    const ai = ls.active_index.peek();
+                    target_idx = layers[ai]?.locked ? -1 : ai;
                 }
 
                 if (target_idx <= 0) {

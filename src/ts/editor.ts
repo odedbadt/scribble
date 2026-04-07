@@ -16,6 +16,8 @@ import { HeartTool } from "./heart";
 import { CloudStampTool } from "./cloud_stamp";
 import { BezierTool } from "./bezier";
 import { CursorSize } from './cursor_size'
+import { SelectionTool } from "./selection"
+import { StampTool } from "./stamp"
 //import { FillStyleToggler } from './styletogglers'
 //import { mandala } from "./mandala";
 import { Vector2, Rect, RectToRectMapping } from "./types"
@@ -41,6 +43,8 @@ const tool_classes = new Map<string, new (...args: any[]) => EditingTool>
         , ["scraper", ScraperTool]
         , ["clearall", ClearAllTool]
         , ["cursor_size", CursorSize]
+        , ["selection", SelectionTool]
+        , ["stamp", StampTool]
         // , ["fillstyle", FillStyleToggler]
         // , ["mandala", mandala]
     ])
@@ -185,6 +189,11 @@ export class Editor {
             const idx = anchor_manager.add(at);
             anchor_manager.set_mandala_center(idx);
             mandala_mode.center = at;
+            return;
+        }
+        // Don't start drawing if the active layer is locked (except scraper alt mode which
+        // targets layers explicitly — it handles locking itself per-pixel).
+        if (this.layer_stack.active_layer.locked && !(event.altKey && this.tool?.constructor?.name === 'ScraperTool')) {
             return;
         }
         this.tool.start(at, event.buttons);
@@ -432,6 +441,7 @@ export class Editor {
         if (event.code == 'KeyR') {
             this.redo();
         }
+        this.tool.keydown?.(event);
     }
 
     pointerup(event: MouseEvent) {

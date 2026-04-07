@@ -11,6 +11,7 @@ import { SettingName, settings } from './settings_registry'
 import { StateValue, state_registry } from "./state_registry";
 import { mandala_mode } from "./mandala_mode";
 import { anchor_manager } from "./anchor_manager";
+import { SelectionTool } from "./selection";
 function click_for_a_second(id: string, callback: Function) {
     const elem = document.getElementById(id);
     if (elem) {
@@ -204,12 +205,10 @@ export class MainApp {
     init_undo_redo_buttons() {
         click_for_a_second('undo_button', () => {
             this.editor.undo()
-        }
-        )
+        })
         click_for_a_second('redo_button', () => {
             this.editor.redo()
-        }
-        )
+        })
     }
 
     init_buttons() {
@@ -313,6 +312,14 @@ export class MainApp {
             'scraper': {
                 icon: () => '⊘',
                 toggle: () => {},
+                is_pressed: () => false,
+            },
+            'selection': {
+                icon: () => '✂',
+                toggle: () => {
+                    const tool = this.editor.tool;
+                    if (tool instanceof SelectionTool) tool.cut();
+                },
                 is_pressed: () => false,
             },
         };

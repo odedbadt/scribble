@@ -81,6 +81,7 @@ export abstract class EditingTool {
     abstract hover(at: Vector2): void;
     pointer_leave(): void {}
     deselect(): void {}
+    keydown?(ev: KeyboardEvent): void;
     /** Called when the document canvas origin shifts (grow left/top). Shift stored doc coords. */
     on_doc_origin_shift(_dx: number, _dy: number): void {}
 

@@ -85,7 +85,7 @@ export class LayerPanel {
 
     private _make_item(layer: Layer, index: number, is_active: boolean, is_panning: boolean): HTMLElement {
         const item = document.createElement('div');
-        item.className = 'layer-item' + (is_active ? ' active' : '');
+        item.className = 'layer-item' + (is_active ? ' active' : '') + (layer.locked ? ' locked-layer' : '');
         item.dataset.index = String(index);
 
         // Drag handle
@@ -93,6 +93,16 @@ export class LayerPanel {
         drag_handle.className = 'layer-drag-handle';
         drag_handle.textContent = '⣿';
         drag_handle.addEventListener('pointerdown', (e) => this._on_drag_start(e, index));
+
+        // Lock toggle
+        const lock_btn = document.createElement('button');
+        lock_btn.className = 'layer-lock' + (layer.locked ? ' locked' : '');
+        lock_btn.textContent = layer.locked ? '🔒' : '🔓';
+        lock_btn.title = layer.locked ? 'Unlock layer' : 'Lock layer';
+        lock_btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this._toggle_lock(index);
+        });
 
         // Visibility toggle
         const eye = document.createElement('button');
@@ -182,6 +192,7 @@ export class LayerPanel {
         });
 
         item.appendChild(drag_handle);
+        item.appendChild(lock_btn);
         item.appendChild(eye);
         item.appendChild(pan_btn);
         item.appendChild(name_input);
@@ -199,6 +210,11 @@ export class LayerPanel {
         const was_visible = this._layer_stack.layers.peek()[index].visible;
         this._layer_stack.set_visible(index, !was_visible);
         this._editor['_mark_dirty']();
+    }
+
+    private _toggle_lock(index: number): void {
+        const was_locked = this._layer_stack.layers.peek()[index].locked;
+        this._layer_stack.set_locked(index, !was_locked);
     }
 
     private _delete_layer(index: number): void {

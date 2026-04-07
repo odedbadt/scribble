@@ -4,6 +4,7 @@ export interface Layer {
     id: string;
     name: string;
     visible: boolean;
+    locked: boolean;
     canvas: HTMLCanvasElement;
     context: CanvasRenderingContext2D;
 }
@@ -21,6 +22,7 @@ function make_layer(width: number, height: number, name?: string): Layer {
         id: `layer-${_layer_counter}`,
         name: name ?? `Layer ${_layer_counter}`,
         visible: true,
+        locked: false,
         canvas,
         context,
     };
@@ -49,12 +51,15 @@ export class LayerStack {
         this._above_composite_context.imageSmoothingEnabled = false;
 
         const initial_layer = make_layer(width, height, 'Layer 1');
-        // Start with a white background so the canvas doesn't show as transparent.
+        // Start with a white background, locked so it acts as a permanent base.
         initial_layer.context.fillStyle = '#ffffff';
         initial_layer.context.fillRect(0, 0, width, height);
-        _layer_counter = 1; // reset so first explicit add_layer yields "Layer 2"
-        this.layers = signal<Layer[]>([initial_layer]);
-        this.active_index = signal<number>(0);
+        initial_layer.locked = true;
+
+        const drawing_layer = make_layer(width, height, 'Layer 2');
+        _layer_counter = 2; // reset so next add_layer yields "Layer 3"
+        this.layers = signal<Layer[]>([initial_layer, drawing_layer]);
+        this.active_index = signal<number>(1);
     }
 
     get active_layer(): Layer {
@@ -119,6 +124,12 @@ export class LayerStack {
     set_visible(index: number, visible: boolean): void {
         const layers = this.layers.peek().slice();
         layers[index] = { ...layers[index], visible };
+        this.layers.value = layers;
+    }
+
+    set_locked(index: number, locked: boolean): void {
+        const layers = this.layers.peek().slice();
+        layers[index] = { ...layers[index], locked };
         this.layers.value = layers;
     }
 
