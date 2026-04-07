@@ -487,6 +487,18 @@ body {
 
 }
 
+.fill_pattern_toggle {
+    font-size: 18px;
+    opacity: 0.4;
+    transition: opacity 0.15s;
+}
+
+.fill_pattern_toggle.active {
+    opacity: 1;
+    outline: 2px solid #4af;
+    outline-offset: -2px;
+}
+
 #file_input {
     display: none;
 }

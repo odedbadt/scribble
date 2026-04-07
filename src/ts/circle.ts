@@ -2,8 +2,9 @@ import { Editor } from "./editor"
 import { ClickAndDragTool } from "./click_and_drag_tool"
 import { SettingName, settings } from "./settings_registry";
 import { Vector2 } from "./types";
-import { drawCircle, drawFilledCircle, drawThickCircle, parseColor, RGBA } from "./pixel_utils";
+import { drawCircle, drawFilledCircle, drawThickCircle, parseColor, RGBA, applyPatternFill } from "./pixel_utils";
 import { mandala_mode } from "./mandala_mode";
+import { fill_pattern } from "./fill_pattern";
 
 export class CircleTool extends ClickAndDragTool {
     protected _line_color: RGBA;
@@ -53,6 +54,9 @@ export class CircleTool extends ClickAndDragTool {
             for (const c of mandala_mode.get_point_transforms(from, center)) {
                 drawAt(imageData, Math.round(c.x), Math.round(c.y));
             }
+            if (this._fill && fill_pattern.enabled.value && fill_pattern.data) {
+                applyPatternFill(imageData, 0, 0, fill_pattern.data, this._fill_color);
+            }
             context.putImageData(imageData, 0, 0);
         } else {
             const margin = 2;
@@ -63,6 +67,9 @@ export class CircleTool extends ClickAndDragTool {
             this.canvas_bounds_mapping = { from: { x: 0, y: 0, w: 1, h: 1 }, to: br };
             const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
             drawAt(imageData, rb, rb);
+            if (this._fill && fill_pattern.enabled.value && fill_pattern.data) {
+                applyPatternFill(imageData, Math.floor(br.x), Math.floor(br.y), fill_pattern.data, this._fill_color);
+            }
             context.putImageData(imageData, 0, 0);
         }
 

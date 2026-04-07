@@ -13,6 +13,7 @@ import { mandala_mode } from "./mandala_mode";
 import { anchor_manager } from "./anchor_manager";
 import { SelectionTool } from "./selection";
 import { StampGallery } from "./stamp_gallery";
+import { fill_pattern } from "./fill_pattern";
 function click_for_a_second(id: string, callback: Function) {
     const elem = document.getElementById(id);
     if (elem) {
@@ -272,6 +273,17 @@ export class MainApp {
             Array.from(fillable_buttons).forEach(btn => btn.classList.toggle('filled', filled));
         });
 
+        // Pattern fill toggle button
+        const fill_pattern_toggle_btn = document.getElementsByClassName('fill_pattern_toggle')[0] as HTMLElement;
+        fill_pattern_toggle_btn.addEventListener('click', () => {
+            fill_pattern.enabled.value = !fill_pattern.enabled.value;
+            fill_pattern_toggle_btn.classList.toggle('active', fill_pattern.enabled.value);
+        });
+        // Keep button state in sync with programmatic changes (e.g. TileFillTool activates it)
+        effect(() => {
+            fill_pattern_toggle_btn.classList.toggle('active', fill_pattern.enabled.value);
+        });
+
         // Layers button: toggles the layer panel
         const layers_btn = document.getElementById('layers-btn')!;
         layers_btn.addEventListener('click', () => {
@@ -282,7 +294,7 @@ export class MainApp {
         const button_list = document.getElementsByClassName('button');
         Array.from(button_list).forEach(button => {
             const button_class_list = button.classList;
-            if (button_class_list[0] != 'button' && button_class_list[0] != 'mandala' && button_class_list[0] != 'fillstyle') {
+            if (button_class_list[0] != 'button' && button_class_list[0] != 'mandala' && button_class_list[0] != 'fillstyle' && button_class_list[0] != 'fill_pattern_toggle') {
                 button.addEventListener('click', event => {
                     if (mandala_mode.enabled && button_class_list[0] === 'rect') return;
                     this.select_tool(button_class_list[0])

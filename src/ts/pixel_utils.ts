@@ -563,6 +563,52 @@ export function drawGlyphSVG(url: string, imageData: ImageData, cx: number, cy: 
 }
 
 
+/**
+ * For every pixel in `imageData` that is non-transparent (alpha > 0) and,
+ * if `matchColor` is provided, matches that color exactly — replace it with
+ * the corresponding pixel from the tiled `pattern`.
+ *
+ * `docOffX` / `docOffY` are the document-space coordinates of `imageData`'s
+ * top-left corner, so the pattern tiles consistently across the whole canvas.
+ */
+export function applyPatternFill(
+    imageData: ImageData,
+    docOffX: number,
+    docOffY: number,
+    pattern: ImageData,
+    matchColor?: RGBA
+): void {
+    const pw = pattern.width;
+    const ph = pattern.height;
+    const d = imageData.data;
+    const pd = pattern.data;
+    const iw = imageData.width;
+    const ih = imageData.height;
+    // Pre-clamp matchColor to Uint8 range — ImageData.data stores clamped bytes,
+    // but RGBA tuples from parseColor may hold out-of-range alpha (e.g. 65025).
+    const hasMatch = matchColor !== undefined;
+    const mc0 = hasMatch ? Math.min(255, Math.max(0, Math.round(matchColor![0]))) : 0;
+    const mc1 = hasMatch ? Math.min(255, Math.max(0, Math.round(matchColor![1]))) : 0;
+    const mc2 = hasMatch ? Math.min(255, Math.max(0, Math.round(matchColor![2]))) : 0;
+    const mc3 = hasMatch ? Math.min(255, Math.max(0, Math.round(matchColor![3]))) : 0;
+    for (let y = 0; y < ih; y++) {
+        for (let x = 0; x < iw; x++) {
+            const i = (y * iw + x) * 4;
+            if (d[i + 3] === 0) continue; // transparent — not filled
+            if (hasMatch) {
+                if (d[i] !== mc0 || d[i + 1] !== mc1 || d[i + 2] !== mc2 || d[i + 3] !== mc3) continue;
+            }
+            const px = ((docOffX + x) % pw + pw) % pw;
+            const py = ((docOffY + y) % ph + ph) % ph;
+            const pi = (py * pw + px) * 4;
+            d[i]     = pd[pi];
+            d[i + 1] = pd[pi + 1];
+            d[i + 2] = pd[pi + 2];
+            d[i + 3] = pd[pi + 3];
+        }
+    }
+}
+
 /** Copy a sub-rectangle out of a full-canvas ImageData without touching the DOM. */
 export function extract_sub_image(source: ImageData, rect: Rect): ImageData {
     const result = new ImageData(rect.w, rect.h);

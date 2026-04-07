@@ -4,6 +4,7 @@ import { Rect, Vector2 } from "./types";
 import { parse_RGBA, rect_union } from "./utils";
 import { mandala_mode } from "./mandala_mode";
 import { drawFilledCircle, parseColor, setPixel, RGBA } from "./pixel_utils";
+import { fill_pattern } from "./fill_pattern";
 
 function _equal_colors(c1: Uint8ClampedArray, c2: Uint8ClampedArray): boolean {
     return c1[0] == c2[0] &&
@@ -15,12 +16,16 @@ function _equal_colors(c1: Uint8ClampedArray, c2: Uint8ClampedArray): boolean {
 /** Returns the bounding rect of pixels that were changed, or null if nothing was filled. */
 function _floodfill(context: CanvasRenderingContext2D,
     replaced_color: Uint8ClampedArray, fill_color: Uint8ClampedArray,
-    x: number, y: number, w: number, h: number): Rect | null {
+    x: number, y: number, w: number, h: number,
+    pattern?: ImageData): Rect | null {
     const image_data = context.getImageData(0, 0, w, h);
     const data = image_data.data;
     let safety = w * h * 4;
     const stack = [{ x: Math.floor(x), y: Math.floor(y) }];
     let minX = w, minY = h, maxX = -1, maxY = -1;
+    const pw = pattern ? pattern.width : 0;
+    const ph = pattern ? pattern.height : 0;
+    const pd = pattern ? pattern.data : null;
     while (stack.length > 0 && safety-- > 0) {
         const dot = stack.pop()!;
         const px = dot.x;
@@ -29,10 +34,20 @@ function _floodfill(context: CanvasRenderingContext2D,
         const offset = (w * py + px) * 4;
         const color_at = data.slice(offset, offset + 4) as unknown as Uint8ClampedArray;
         if (!_equal_colors(replaced_color, color_at)) continue;
-        data[offset + 0] = fill_color[0];
-        data[offset + 1] = fill_color[1];
-        data[offset + 2] = fill_color[2];
-        data[offset + 3] = 255;
+        if (pd) {
+            const ppx = (px % pw + pw) % pw;
+            const ppy = (py % ph + ph) % ph;
+            const pi = (ppy * pw + ppx) * 4;
+            data[offset]     = pd[pi];
+            data[offset + 1] = pd[pi + 1];
+            data[offset + 2] = pd[pi + 2];
+            data[offset + 3] = pd[pi + 3] > 0 ? pd[pi + 3] : 255;
+        } else {
+            data[offset + 0] = fill_color[0];
+            data[offset + 1] = fill_color[1];
+            data[offset + 2] = fill_color[2];
+            data[offset + 3] = 255;
+        }
         if (px < minX) minX = px;
         if (px > maxX) maxX = px;
         if (py < minY) minY = py;
@@ -117,12 +132,13 @@ export class Floodfill extends ClickTool {
         // Capture full canvas before fill; we'll clip to the actual dirty rect after.
         this.begin_undo_capture?.();
         let dirty: Rect | null = null;
+        const pattern = fill_pattern.enabled.value ? fill_pattern.data ?? undefined : undefined;
         for (const pos of positions) {
             const replaced_color = this.document_context!.getImageData(
                 Math.floor(pos.x), Math.floor(pos.y), 1, 1
             ).data;
             if (_equal_colors(replaced_color, fill_color)) continue;
-            const bbox = _floodfill(this.document_context!, replaced_color, fill_color, pos.x, pos.y, w, h);
+            const bbox = _floodfill(this.document_context!, replaced_color, fill_color, pos.x, pos.y, w, h, pattern);
             if (bbox) dirty = dirty ? rect_union(dirty, bbox) : bbox;
         }
         if (dirty) {

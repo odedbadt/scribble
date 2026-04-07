@@ -1,11 +1,16 @@
 import { EditingTool } from "./editing_tool";
 import { clipboard } from "./clipboard";
+import { fill_pattern } from "./fill_pattern";
 import { Vector2 } from "./types";
 import { setPixel, RGBA } from "./pixel_utils";
 
 export class TileFillTool extends EditingTool {
     select(): void {
-        // Show the tiled preview immediately when the tool is selected
+        // Immediately save clipboard as the active fill pattern and enable it
+        if (clipboard.data) {
+            fill_pattern.data = clipboard.data;
+            fill_pattern.enabled.value = true;
+        }
         this._render_preview();
     }
 
@@ -17,6 +22,9 @@ export class TileFillTool extends EditingTool {
         if (!clipboard.data || !this.document_canvas) return;
         const docW = this.document_canvas.width;
         const docH = this.document_canvas.height;
+        // Update pattern data to latest clipboard before committing
+        fill_pattern.data = clipboard.data;
+        fill_pattern.enabled.value = true;
         const tmp = _make_tmp(clipboard.data);
         this.begin_undo_capture!({ x: 0, y: 0, w: docW, h: docH });
         _tile(this.document_context!, tmp, docW, docH);

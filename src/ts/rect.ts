@@ -2,7 +2,8 @@ import { ClickAndDragTool } from "./click_and_drag_tool"
 import { Editor } from "./editor";
 import { SettingName, settings } from "./settings_registry";
 import { Vector2, bounding_rect } from "./types";
-import { drawFilledRect, drawRect, drawThickRect, parseColor, RGBA } from "./pixel_utils";
+import { drawFilledRect, drawRect, drawThickRect, parseColor, RGBA, applyPatternFill } from "./pixel_utils";
+import { fill_pattern } from "./fill_pattern";
 
 export class RectTool extends ClickAndDragTool {
     protected _line_color: RGBA;
@@ -39,6 +40,9 @@ export class RectTool extends ClickAndDragTool {
 
         if (this._fill) {
             drawFilledRect(imageData, 0, 0, w, h, this._fill_color);
+            if (fill_pattern.enabled.value && fill_pattern.data) {
+                applyPatternFill(imageData, Math.floor(br.x), Math.floor(br.y), fill_pattern.data, this._fill_color);
+            }
             drawThickRect(imageData, 0, 0, w, h, thickness, this._line_color);
         } else {
             drawThickRect(imageData, 0, 0, w, h, thickness, this._line_color);
