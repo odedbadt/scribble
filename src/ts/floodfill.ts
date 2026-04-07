@@ -17,7 +17,7 @@ function _equal_colors(c1: Uint8ClampedArray, c2: Uint8ClampedArray): boolean {
 function _floodfill(context: CanvasRenderingContext2D,
     replaced_color: Uint8ClampedArray, fill_color: Uint8ClampedArray,
     x: number, y: number, w: number, h: number,
-    pattern?: ImageData): Rect | null {
+    pattern?: ImageData, back_color?: Uint8ClampedArray): Rect | null {
     const image_data = context.getImageData(0, 0, w, h);
     const data = image_data.data;
     let safety = w * h * 4;
@@ -38,10 +38,18 @@ function _floodfill(context: CanvasRenderingContext2D,
             const ppx = (px % pw + pw) % pw;
             const ppy = (py % ph + ph) % ph;
             const pi = (ppy * pw + ppx) * 4;
-            data[offset]     = pd[pi];
-            data[offset + 1] = pd[pi + 1];
-            data[offset + 2] = pd[pi + 2];
-            data[offset + 3] = pd[pi + 3] > 0 ? pd[pi + 3] : 255;
+            if (pd[pi + 3] === 0 && back_color) {
+                // Transparent pattern pixel → use back color
+                data[offset]     = back_color[0];
+                data[offset + 1] = back_color[1];
+                data[offset + 2] = back_color[2];
+                data[offset + 3] = 255;
+            } else {
+                data[offset]     = pd[pi];
+                data[offset + 1] = pd[pi + 1];
+                data[offset + 2] = pd[pi + 2];
+                data[offset + 3] = pd[pi + 3] > 0 ? pd[pi + 3] : 255;
+            }
         } else {
             data[offset + 0] = fill_color[0];
             data[offset + 1] = fill_color[1];
@@ -133,12 +141,13 @@ export class Floodfill extends ClickTool {
         this.begin_undo_capture?.();
         let dirty: Rect | null = null;
         const pattern = fill_pattern.enabled.value ? fill_pattern.data ?? undefined : undefined;
+        const back_color = pattern ? parse_RGBA(settings.peek<string>(SettingName.BackColor)) : undefined;
         for (const pos of positions) {
             const replaced_color = this.document_context!.getImageData(
                 Math.floor(pos.x), Math.floor(pos.y), 1, 1
             ).data;
             if (_equal_colors(replaced_color, fill_color)) continue;
-            const bbox = _floodfill(this.document_context!, replaced_color, fill_color, pos.x, pos.y, w, h, pattern);
+            const bbox = _floodfill(this.document_context!, replaced_color, fill_color, pos.x, pos.y, w, h, pattern, back_color);
             if (bbox) dirty = dirty ? rect_union(dirty, bbox) : bbox;
         }
         if (dirty) {
