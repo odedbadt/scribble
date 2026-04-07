@@ -12,6 +12,7 @@ import { StateValue, state_registry } from "./state_registry";
 import { mandala_mode } from "./mandala_mode";
 import { anchor_manager } from "./anchor_manager";
 import { SelectionTool } from "./selection";
+import { StampGallery } from "./stamp_gallery";
 function click_for_a_second(id: string, callback: Function) {
     const elem = document.getElementById(id);
     if (elem) {
@@ -140,7 +141,7 @@ export class MainApp {
                 other_button.classList.remove('pressed');
             }
         });
-        button.classList.add('pressed')
+        button?.classList.add('pressed')
         this.editor.select_tool(tool_name)
     }
     select_tool(tool_name: string) {
@@ -288,6 +289,10 @@ export class MainApp {
                 })
             }
         })
+
+        // Stamp gallery button (not a drawing tool — handled separately)
+        const stamp_gallery = new StampGallery((toolName) => this.select_tool(toolName));
+        document.getElementById('stamp-gallery-btn')!.addEventListener('click', () => stamp_gallery.open());
 
         // Contextual tool control buttons (up to two per tool).
         // Each entry defines icon, toggle, and optional pressed-state check.

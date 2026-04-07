@@ -469,6 +469,135 @@ export function drawRainbow(imageData: ImageData, x1: number, y1: number, x2: nu
 }
 
 
+// ─── Stamp Glyph drawing functions ───────────────────────────────────────────
+// Each takes (imageData, cx, cy, r) and paints a fixed-colour glyph that fits
+// entirely within ±r pixels of (cx, cy).  r is treated as the half-bounding-box.
+
+/**
+ * Cloud stamp glyph. Fits within ±r.
+ * Internally uses size≈0.65r so the widest cloud circle (at ±1.4×size) stays within r.
+ */
+export function drawGlyphCloud(imageData: ImageData, cx: number, cy: number, r: number): void {
+    const size = Math.max(3, Math.round(r * 0.65));
+    const shadow: RGBA = [150, 155, 175, 255];
+    const body: RGBA   = [235, 240, 255, 255];
+    drawCloud(imageData, cx, cy, size, shadow);
+    const inner = Math.max(2, Math.floor(size * 0.86));
+    drawCloud(imageData, cx, cy - Math.floor(size * 0.07), inner, body);
+}
+
+const _CONCENTRIC_HEART_COLORS: RGBA[] = [
+    [220,   0,   0, 255],  // outermost – red
+    [255, 110,   0, 255],  // orange
+    [245, 220,   0, 255],  // yellow
+    [  0, 180,   0, 255],  // green
+    [  0,  80, 220, 255],  // blue
+    [150,   0, 220, 255],  // innermost – purple
+];
+
+/**
+ * Concentric-band heart glyph. Six rainbow-coloured filled hearts.
+ * Outermost heart drawn at 0.65×r so total extent ≈ 1.5×0.65r = r.
+ */
+export function drawGlyphConcentricHeart(imageData: ImageData, cx: number, cy: number, r: number): void {
+    const n = _CONCENTRIC_HEART_COLORS.length;
+    const outerR = Math.max(2, Math.round(r * 0.65));
+    for (let i = 0; i < n; i++) {
+        const ri = Math.max(1, Math.round(outerR * (n - i) / n));
+        drawFilledHeart(imageData, cx, cy, ri, _CONCENTRIC_HEART_COLORS[i]);
+    }
+}
+
+// ─── Butterfly SVG cache ──────────────────────────────────────────────────────
+// The butterfly glyph is rendered by loading butterfly.svg via the browser's
+// native SVG renderer.  The image is fetched once; subsequent calls blit from
+// the cached element.  Until the image loads a simple ellipse fallback is used.
+
+let _butterflyImg: HTMLImageElement | null = null;
+
+/**
+ * Start loading butterfly.svg from the server.  Call once at app startup.
+ * `onReady` is invoked when the image is decoded and ready to draw.
+ */
+export function preloadButterflyGlyph(onReady?: () => void): void {
+    if (_butterflyImg) { onReady?.(); return; }
+    const img = new Image();
+    img.onload = () => { _butterflyImg = img; onReady?.(); };
+    img.src = new URL('butterfly.svg', document.baseURI).href;
+}
+
+/**
+ * Butterfly glyph.  When butterfly.svg is loaded (via preloadButterflyGlyph)
+ * the SVG is rendered at exactly (2r × 2r) pixels using the browser's native
+ * SVG renderer, so the actual paths and colours from the file are used.
+ * Before the image loads, a Monarch-coloured ellipse pair is drawn as a
+ * placeholder so the tool is always usable.
+ */
+export function drawGlyphButterfly(imageData: ImageData, cx: number, cy: number, r: number): void {
+    cx = Math.floor(cx); cy = Math.floor(cy); r = Math.max(6, Math.floor(r));
+
+    if (_butterflyImg) {
+        // Render the SVG into a tiny off-screen canvas and sample its pixels.
+        const d = r * 2;
+        const tmp = document.createElement('canvas');
+        tmp.width = d; tmp.height = d;
+        const ctx = tmp.getContext('2d')!;
+        ctx.drawImage(_butterflyImg, 0, 0, d, d);
+        const src = ctx.getImageData(0, 0, d, d);
+        for (let dy = 0; dy < d; dy++) {
+            for (let dx = 0; dx < d; dx++) {
+                const si = (dy * d + dx) * 4;
+                if (src.data[si + 3] < 64) continue; // skip transparent bg
+                setPixel(imageData, cx - r + dx, cy - r + dy,
+                    [src.data[si], src.data[si + 1], src.data[si + 2], 255]);
+            }
+        }
+        return;
+    }
+
+    // ── Fallback: Monarch ellipses until SVG loads ────────────────────────────
+    const darkVein: RGBA = [ 19,  16,  14, 255];
+    const orange:   RGBA = [233, 122,  36, 255];
+    const golden:   RGBA = [246, 181,  28, 255];
+    const cream:    RGBA = [238, 229, 210, 255];
+
+    const uOffX = r * 0.36, uOffY = r * -0.16;
+    const uRx   = r * 0.44, uRy   = r * 0.28;
+    const cosU = Math.cos(22 * Math.PI / 180), sinU = Math.sin(22 * Math.PI / 180);
+    const lOffX = r * 0.25, lOffY = r * 0.30;
+    const lRx   = r * 0.28, lRy   = r * 0.22;
+    const cosL = Math.cos(8 * Math.PI / 180),  sinL = Math.sin(8 * Math.PI / 180);
+
+    const drawPair = (offX: number, offY: number, rx: number, ry: number,
+                      cosA: number, sinA: number, spot: boolean) => {
+        const bnd = Math.ceil(Math.max(rx, ry)) + 2;
+        for (let side = -1; side <= 1; side += 2) {
+            const ocx = side * offX;
+            for (let dy = -bnd; dy <= bnd; dy++) {
+                for (let dx = -bnd; dx <= bnd; dx++) {
+                    const rx2 = dx - ocx, ry2 = dy - offY;
+                    const lx = rx2 * cosA + ry2 * (side * sinA);
+                    const ly = -rx2 * (side * sinA) + ry2 * cosA;
+                    const e = (lx / rx) ** 2 + (ly / ry) ** 2;
+                    if (e > 1.0) continue;
+                    const col = e > 0.88 ? darkVein : e > 0.68 ? orange
+                               : (e > 0.30 || !spot) ? golden : cream;
+                    setPixel(imageData, cx + dx, cy + dy, col);
+                }
+            }
+        }
+    };
+    drawPair(lOffX, lOffY, lRx, lRy, cosL, sinL, false);
+    drawPair(uOffX, uOffY, uRx, uRy, cosU, sinU, true);
+    const bRx = Math.max(1, Math.round(r * 0.06)), bRy = Math.round(r * 0.38);
+    for (let dy = -bRy; dy <= bRy; dy++)
+        for (let dx = -bRx; dx <= bRx; dx++)
+            if ((dx / bRx) ** 2 + (dy / bRy) ** 2 <= 1.0)
+                setPixel(imageData, cx + dx, cy + dy, darkVein);
+    drawFilledCircle(imageData, cx, cy - Math.round(r * 0.42),
+        Math.max(1, Math.round(r * 0.085)), darkVein);
+}
+
 /** Copy a sub-rectangle out of a full-canvas ImageData without touching the DOM. */
 export function extract_sub_image(source: ImageData, rect: Rect): ImageData {
     const result = new ImageData(rect.w, rect.h);

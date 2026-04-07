@@ -14,6 +14,7 @@ import { PolygonTool } from "./polygon";
 import { TopoHullTool } from "./topo_hull";
 import { HeartTool } from "./heart";
 import { CloudStampTool } from "./cloud_stamp";
+import { GlyphSizingTool } from "./glyph_sizing_tool";
 import { BezierTool } from "./bezier";
 import { CursorSize } from './cursor_size'
 import { SelectionTool } from "./selection"
@@ -45,6 +46,7 @@ const tool_classes = new Map<string, new (...args: any[]) => EditingTool>
         , ["cursor_size", CursorSize]
         , ["selection", SelectionTool]
         , ["stamp", StampTool]
+        , ["glyph_sizing", GlyphSizingTool]
         // , ["fillstyle", FillStyleToggler]
         // , ["mandala", mandala]
     ])

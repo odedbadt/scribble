@@ -5,7 +5,7 @@
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="https://apis.google.com/js/api.js"></script>
     
-    <script src="/ts/bundle.js"></script>
+    <script src="/ts/main.bundle.js"></script>
 
     <% if (dbg) { %>
       <style>
@@ -63,7 +63,10 @@
 
 
       <div id="colorswap" class="button">Swap colors</div>
+      <div id="stamp-gallery-btn" class="button" title="Stamp Gallery">🖼</div>
+      <div id="toolbar-fold-btn" class="button">▼</div>
   </div>
+  <div id="toolbar-page-2" style="display:none"></div>
   <div id="canvas-area">
     <% if (dbg) { %><span>view</span><% } %>
       <canvas id="view-canvas"></canvas>
@@ -115,6 +118,31 @@
 
   </div>        
   <input type="file" id="file_input" accept="image/png"/>
+
+  <!-- STAMP GALLERY MODAL -->
+  <div id="stamp-gallery-modal" class="gallery-modal-overlay">
+      <div class="gallery-modal-inner">
+          <div class="gallery-modal-header">
+              <span>Stamp Gallery</span>
+              <button class="gallery-close-btn" onclick="document.getElementById('stamp-gallery-modal').classList.remove('open')">✕</button>
+          </div>
+          <p class="gallery-hint">Click a stamp, then drag on the canvas to set its size.</p>
+          <div class="gallery-grid">
+              <div class="gallery-item" id="gallery-item-cloud">
+                  <span class="gallery-label">Cloud ☁</span>
+              </div>
+              <div class="gallery-item" id="gallery-item-butterfly">
+                  <span class="gallery-label">Butterfly 🦋</span>
+              </div>
+              <div class="gallery-item" id="gallery-item-concentric_heart">
+                  <span class="gallery-label">Heart ♥</span>
+              </div>
+              <div class="gallery-item" id="gallery-item-selection">
+                  <span class="gallery-label">Selection ⬚</span>
+              </div>
+          </div>
+      </div>
+  </div>
 </body>
 </html>
 
