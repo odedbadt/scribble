@@ -1,104 +1,178 @@
 import { set_pending_glyph, GlyphFn } from "./glyph_sizing_tool";
-import { drawGlyphCloud, drawGlyphButterfly, drawGlyphConcentricHeart, preloadButterflyGlyph } from "./pixel_utils";
-import { state_registry, StateValue } from "./state_registry";
+import { drawGlyphCloud, drawGlyphConcentricHeart, drawGlyphSVG, preloadSVG } from "./pixel_utils";
 
-const THUMBNAIL_SIZE = 64;
-const THUMB_RADIUS   = 28; // radius inside 64×64 thumbnail
+const THUMBNAIL_SIZE = 80;
+const THUMB_RADIUS   = 36;
 
-interface GlyphDef {
+// ── Coded (pixel-drawn) glyphs ────────────────────────────────────────────────
+interface CodedGlyph {
+    kind: 'coded';
     id: string;
     label: string;
-    fn?: GlyphFn;  // undefined → selection tool shortcut
+    fn: GlyphFn;
 }
 
-const GLYPHS: GlyphDef[] = [
-    { id: 'cloud',            label: 'Cloud ☁',             fn: drawGlyphCloud },
-    { id: 'butterfly',        label: 'Butterfly 🦋',         fn: drawGlyphButterfly },
-    { id: 'concentric_heart', label: 'Heart ♥',              fn: drawGlyphConcentricHeart },
-    { id: 'selection',        label: 'Selection ⬚',          fn: undefined },
+interface SelectionGlyph {
+    kind: 'selection';
+    id: string;
+    label: string;
+}
+
+interface SVGGlyph {
+    kind: 'svg';
+    filename: string;  // e.g. "butterfly.svg"
+    url: string;       // absolute URL for fetch/img
+    label: string;
+}
+
+type GalleryItem = CodedGlyph | SelectionGlyph | SVGGlyph;
+
+const CODED_GLYPHS: (CodedGlyph | SelectionGlyph)[] = [
+    { kind: 'coded',     id: 'cloud',            label: 'Cloud',      fn: drawGlyphCloud },
+    { kind: 'coded',     id: 'concentric_heart', label: 'Heart',      fn: drawGlyphConcentricHeart },
+    { kind: 'selection', id: 'selection',        label: 'Selection' },
 ];
 
-function render_thumbnail(fn: GlyphFn): HTMLCanvasElement {
+function filename_to_label(filename: string): string {
+    return filename.replace(/\.svg$/i, '').replace(/[-_]/g, ' ')
+        .replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function render_coded_thumbnail(fn: GlyphFn): HTMLCanvasElement {
     const canvas = document.createElement('canvas');
-    canvas.width  = THUMBNAIL_SIZE;
-    canvas.height = THUMBNAIL_SIZE;
-    const ctx = canvas.getContext('2d')!;
+    canvas.width = canvas.height = THUMBNAIL_SIZE;
     const imageData = new ImageData(THUMBNAIL_SIZE, THUMBNAIL_SIZE);
     fn(imageData, THUMBNAIL_SIZE / 2, THUMBNAIL_SIZE / 2, THUMB_RADIUS);
-    ctx.putImageData(imageData, 0, 0);
+    canvas.getContext('2d')!.putImageData(imageData, 0, 0);
     return canvas;
 }
 
 function render_selection_thumbnail(): HTMLCanvasElement {
     const canvas = document.createElement('canvas');
-    canvas.width  = THUMBNAIL_SIZE;
-    canvas.height = THUMBNAIL_SIZE;
+    canvas.width = canvas.height = THUMBNAIL_SIZE;
     const ctx = canvas.getContext('2d')!;
-    ctx.strokeStyle = '#333';
+    ctx.strokeStyle = '#555';
     ctx.setLineDash([4, 4]);
     ctx.lineWidth = 2;
-    ctx.strokeRect(10, 10, 44, 44);
-    // corner handles
-    ctx.fillStyle = '#333';
-    for (const [hx, hy] of [[10,10],[54,10],[10,54],[54,54],[32,10],[32,54],[10,32],[54,32]]) {
-        ctx.fillRect(hx - 2, hy - 2, 4, 4);
-    }
+    const m = 12;
+    ctx.strokeRect(m, m, THUMBNAIL_SIZE - m * 2, THUMBNAIL_SIZE - m * 2);
+    ctx.fillStyle = '#555';
+    for (const hx of [m, THUMBNAIL_SIZE / 2, THUMBNAIL_SIZE - m])
+        for (const hy of [m, THUMBNAIL_SIZE / 2, THUMBNAIL_SIZE - m])
+            ctx.fillRect(hx - 2, hy - 2, 4, 4);
     return canvas;
+}
+
+function render_svg_thumbnail(url: string): HTMLCanvasElement {
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = THUMBNAIL_SIZE;
+    const imageData = new ImageData(THUMBNAIL_SIZE, THUMBNAIL_SIZE);
+    drawGlyphSVG(url, imageData, THUMBNAIL_SIZE / 2, THUMBNAIL_SIZE / 2, THUMB_RADIUS);
+    canvas.getContext('2d')!.putImageData(imageData, 0, 0);
+    return canvas;
+}
+
+function make_item_el(item: GalleryItem, onClick: () => void): HTMLElement {
+    const el = document.createElement('div');
+    el.className = 'gallery-item';
+
+    let thumb: HTMLCanvasElement;
+    if (item.kind === 'coded') {
+        thumb = render_coded_thumbnail(item.fn);
+    } else if (item.kind === 'selection') {
+        thumb = render_selection_thumbnail();
+    } else {
+        thumb = render_svg_thumbnail(item.url);
+    }
+    thumb.className = 'gallery-thumbnail';
+    el.appendChild(thumb);
+
+    const label = document.createElement('span');
+    label.className = 'gallery-label';
+    label.textContent = item.label;
+    el.appendChild(label);
+
+    el.addEventListener('click', onClick);
+    return el;
 }
 
 export class StampGallery {
     private _modal: HTMLElement;
+    private _grid: HTMLElement;
 
-    constructor(private _on_activate_glyph: (toolName: string) => void) {
+    constructor(private _on_activate: (toolName: string) => void) {
         this._modal = document.getElementById('stamp-gallery-modal')!;
-        this._build_thumbnails();
+        this._grid  = this._modal.querySelector('.gallery-grid')!;
         this._modal.addEventListener('click', (e) => {
             if (e.target === this._modal) this.close();
         });
-        // Re-render the butterfly thumbnail once the SVG is loaded from the server.
-        preloadButterflyGlyph(() => this._refresh_butterfly_thumbnail());
+        this._build_coded();
     }
 
     open(): void {
         this._modal.classList.add('open');
+        // Refresh SVG stamps each time (picks up any newly added files)
+        this._load_svg_stamps();
     }
 
     close(): void {
         this._modal.classList.remove('open');
     }
 
-    private _build_thumbnails(): void {
-        for (const glyph of GLYPHS) {
-            const slot = document.getElementById(`gallery-item-${glyph.id}`);
-            if (!slot) continue;
-            const thumb = glyph.fn
-                ? render_thumbnail(glyph.fn)
-                : render_selection_thumbnail();
-            thumb.className = 'gallery-thumbnail';
-            slot.prepend(thumb);
-            slot.addEventListener('click', () => this._pick(glyph));
+    private _build_coded(): void {
+        // Clear any existing coded items first
+        this._grid.querySelectorAll('.gallery-item-coded').forEach(el => el.remove());
+        for (const g of CODED_GLYPHS) {
+            const el = make_item_el(g, () => this._pick(g));
+            el.classList.add('gallery-item-coded');
+            this._grid.appendChild(el);
         }
     }
 
-    /** Replace the butterfly thumbnail once the SVG has loaded. */
-    private _refresh_butterfly_thumbnail(): void {
-        const slot = document.getElementById('gallery-item-butterfly');
-        if (!slot) return;
-        const old = slot.querySelector('.gallery-thumbnail');
-        if (old) slot.removeChild(old);
-        const thumb = render_thumbnail(drawGlyphButterfly);
-        thumb.className = 'gallery-thumbnail';
-        slot.prepend(thumb);
+    private async _load_svg_stamps(): Promise<void> {
+        // Remove old SVG items
+        this._grid.querySelectorAll('.gallery-item-svg').forEach(el => el.remove());
+
+        let files: string[];
+        try {
+            const res = await fetch(new URL('stamps-list', document.baseURI).href);
+            files = await res.json();
+        } catch {
+            return; // server may not support it (e.g. Playwright python server)
+        }
+
+        for (const filename of files) {
+            const url = new URL(`stamps/${filename}`, document.baseURI).href;
+            const item: SVGGlyph = { kind: 'svg', filename, url, label: filename_to_label(filename) };
+
+            const el = make_item_el(item, () => this._pick(item));
+            el.classList.add('gallery-item-svg');
+            this._grid.appendChild(el);
+
+            // Pre-load SVG; refresh thumbnail when loaded
+            preloadSVG(url, () => {
+                const thumb = el.querySelector('.gallery-thumbnail') as HTMLCanvasElement;
+                if (!thumb) return;
+                const imageData = new ImageData(THUMBNAIL_SIZE, THUMBNAIL_SIZE);
+                drawGlyphSVG(url, imageData, THUMBNAIL_SIZE / 2, THUMBNAIL_SIZE / 2, THUMB_RADIUS);
+                thumb.getContext('2d')!.putImageData(imageData, 0, 0);
+            });
+        }
     }
 
-    private _pick(glyph: GlyphDef): void {
+    private _pick(item: GalleryItem): void {
         this.close();
-        if (!glyph.fn) {
-            // "Selection" → activate selection tool normally
-            this._on_activate_glyph('selection');
+        if (item.kind === 'selection') {
+            this._on_activate('selection');
             return;
         }
-        set_pending_glyph(glyph.fn);
-        this._on_activate_glyph('glyph_sizing');
+        if (item.kind === 'coded') {
+            set_pending_glyph(item.fn);
+        } else {
+            // SVG stamp: bind the URL into a closure
+            const url = item.url;
+            set_pending_glyph((imageData, cx, cy, r) => drawGlyphSVG(url, imageData, cx, cy, r));
+        }
+        this._on_activate('glyph_sizing');
     }
 }

@@ -1,5 +1,6 @@
 import express from "express";
 import path from "path";
+import fs from "fs";
 import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -11,8 +12,17 @@ const router = express.Router();
 
 // Static assets (css, js bundles, images like butterfly.svg)
 router.use(express.static(path.join(__dirname, "static")));
+router.use("/stamps", express.static(path.join(__dirname, "static/stamps")));
+
+// List available SVG stamp files
+router.get("/stamps-list", (req, res) => {
+  const stampsDir = path.join(__dirname, "static/stamps");
+  const files = fs.existsSync(stampsDir)
+    ? fs.readdirSync(stampsDir).filter(f => f.endsWith(".svg")).sort()
+    : [];
+  res.json(files);
+});
 router.use("/distro", express.static(path.join(__dirname, "distro")));
-router.use("/static", express.static(path.join(__dirname, "static")));
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "templates"));

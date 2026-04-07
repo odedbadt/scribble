@@ -746,7 +746,10 @@ body {
     border: 2px solid #888;
     border-radius: 6px;
     padding: 14px 16px;
-    min-width: 320px;
+    width: min(560px, 90vw);
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
     box-shadow: 0 8px 32px rgba(0,0,0,0.35);
     font-family: monospace;
 }
@@ -782,8 +785,11 @@ body {
 
 .gallery-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
     gap: 10px;
+    overflow-y: auto;
+    max-height: calc(80vh - 100px);
+    padding-right: 4px;
 }
 
 .gallery-item {
@@ -807,8 +813,8 @@ body {
 
 .gallery-thumbnail {
     display: block;
-    width: 64px;
-    height: 64px;
+    width: 80px;
+    height: 80px;
     image-rendering: pixelated;
     border: 1px solid #ccc;
     border-radius: 3px;
