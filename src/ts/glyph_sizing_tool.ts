@@ -2,6 +2,8 @@ import { ClickAndDragTool } from "./click_and_drag_tool";
 import { clipboard } from "./clipboard";
 import { Vector2 } from "./types";
 import { state_registry, StateValue } from "./state_registry";
+import { settings, SettingName } from "./settings_registry";
+import { drawFilledCircle, parseColor } from "./pixel_utils";
 
 export type GlyphFn = (imageData: ImageData, cx: number, cy: number, r: number) => void;
 
@@ -55,6 +57,26 @@ export class GlyphSizingTool extends ClickAndDragTool {
         this.canvas_signal!.value = null;
         // Switch to stamp tool
         state_registry.set(StateValue.SelectedToolName, 'stamp');
+    }
+
+    /** Ignore mandala mode — show a plain cursor during glyph sizing. */
+    hover_action(at: Vector2): void {
+        const lw = settings.peek<number>(SettingName.LineWidth);
+        const radius = Math.floor(lw / 2);
+        const color = parseColor(settings.peek<string>(SettingName.ForeColor));
+        const margin = 1;
+        const half = radius + margin;
+        const size = half * 2 + 1;
+        this.canvas!.width = size;
+        this.canvas!.height = size;
+        this.canvas_bounds_mapping = {
+            from: { x: 0, y: 0, w: 1, h: 1 },
+            to: { x: at.x - half, y: at.y - half, w: size, h: size },
+        };
+        const imageData = new ImageData(size, size);
+        drawFilledCircle(imageData, half, half, radius, color);
+        this.context!.putImageData(imageData, 0, 0);
+        this.publish_signals();
     }
 
     private _render_glyph_to_tool(center: Vector2, r: number): void {
