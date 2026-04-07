@@ -325,26 +325,30 @@ body {
     color: #444;
 }
 
-#color-selector-div-back {
-    position: relative;
-    width: 28px;
-    height: 28px;
-    padding: 10px;
-    border: solid 1px #aaa;
-    background-color: rgba(255, 255, 255, 255);
-    /* justify-content: center;
+#color-selector-div-line {
+    width: 48px;
+    height: 48px;
+    background-color: rgba(255, 0, 0, 255);
     display: flex;
-    align-items: center; */
-
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
 }
 
-#color-selector-div-fore {
-    position: relative;
-    width: 30px;
-    height: 30px;
-    background-color: rgba(0, 0, 0, 255);
-    z-index: 1;
+#color-selector-div-fill {
+    width: 32px;
+    height: 32px;
+    background-color: rgba(255, 255, 255, 255);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
 
+#color-selector-div-back {
+    width: 24px;
+    height: 24px;
+    background-color: rgba(255, 255, 255, 255);
 }
 
 #hl-selector-canvas {

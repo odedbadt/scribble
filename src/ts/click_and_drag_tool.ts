@@ -136,10 +136,10 @@ export abstract class ClickAndDragTool extends EditingTool {
         if (!this.canvas_bounds_mapping) {
             return;
         }
-        if (color == null) {
-            color = settings.peek<string>(SettingName.ForeColor);
-        }
-        const color_array = parse_RGBA(color)
+        // When no explicit color is given, use the actual pixel colors from the tool canvas
+        // (supports dual-color fill+outline rendering). Pass a layer_color only when
+        // callers explicitly request a specific color (e.g. scribble, eraser, topo_hull).
+        const color_array = color ? parse_RGBA(color) : undefined;
         tool_to_document(this.canvas!,
             this.canvas_bounds_mapping, this.document_context, color_array);
 

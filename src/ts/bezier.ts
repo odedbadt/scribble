@@ -2,7 +2,7 @@ import { EditingTool } from "./editing_tool";
 import { SettingName, settings } from "./settings_registry";
 import { Vector2 } from "./types";
 import { drawLine, drawThickLine, parseColor, setPixel, RGBA } from "./pixel_utils";
-import { parse_RGBA, tool_to_document } from "./utils";
+import { tool_to_document } from "./utils";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -140,6 +140,7 @@ export class BezierTool extends EditingTool {
 
     // ── shared ──
     private _stroke_color: RGBA = [0, 0, 0, 255];
+    private _fill_color: RGBA = [255, 255, 255, 255];
     private _start_buttons = 0;
 
     select() { this._reset(); }
@@ -153,6 +154,7 @@ export class BezierTool extends EditingTool {
         this._start_buttons = buttons;
         const is_right = (buttons & 2) !== 0;
         this._stroke_color = parseColor(settings.peek<string>(is_right ? SettingName.BackColor : SettingName.ForeColor));
+        this._fill_color = parseColor(settings.peek<string>(SettingName.FillColor));
         if (settings.peek<boolean>(SettingName.BezierClosed)) {
             this._multi_start(at);
         } else {
@@ -378,7 +380,7 @@ export class BezierTool extends EditingTool {
             let cx = 0, cy = 0;
             for (const a of this._anchors) { cx += a.pt.x; cy += a.pt.y; }
             cx /= this._anchors.length; cy /= this._anchors.length;
-            flood_fill_transparent(imageData, cx, cy, this._stroke_color);
+            flood_fill_transparent(imageData, cx, cy, this._fill_color);
         }
 
         this.context!.putImageData(imageData, 0, 0);
@@ -398,9 +400,8 @@ export class BezierTool extends EditingTool {
     }
 
     private _do_commit() {
-        const color_arr = parse_RGBA(settings.peek<string>((this._start_buttons & 2) ? SettingName.BackColor : SettingName.ForeColor));
         this.begin_undo_capture?.(this.canvas_bounds_mapping!.to);
-        tool_to_document(this.canvas!, this.canvas_bounds_mapping!, this.document_context!, color_arr);
+        tool_to_document(this.canvas!, this.canvas_bounds_mapping!, this.document_context!);
         this.document_dirty_signal!.value++;
         this.push_undo_snapshot?.();
         this._reset();

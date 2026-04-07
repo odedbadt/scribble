@@ -5,11 +5,13 @@ import { drawFilledHeart, drawHeartOutline, drawFilledStraightSouthHeart, drawSt
 import { mandala_mode } from "./mandala_mode";
 
 export class HeartTool extends ClickAndDragTool {
-    protected _stroke_color: RGBA = [0, 0, 0, 255];
+    protected _line_color: RGBA = [0, 0, 0, 255];
+    protected _fill_color: RGBA = [255, 255, 255, 255];
     protected _fill: boolean = true;
 
     editing_start() {
-        this._stroke_color = parseColor(settings.peek<string>(SettingName.ForeColor));
+        this._line_color = parseColor(settings.peek<string>(SettingName.ForeColor));
+        this._fill_color = parseColor(settings.peek<string>(SettingName.FillColor));
         this._fill = settings.peek<boolean>(SettingName.Filled) ?? true;
     }
 
@@ -23,11 +25,16 @@ export class HeartTool extends ClickAndDragTool {
         const straight = settings.peek<string>(SettingName.HeartSouth) === 'straight';
         const drawAt = (imageData: ImageData, cx: number, cy: number) => {
             if (this._fill) {
-                if (straight) drawFilledStraightSouthHeart(imageData, cx, cy, r, this._stroke_color);
-                else drawFilledHeart(imageData, cx, cy, r, this._stroke_color);
+                if (straight) {
+                    drawFilledStraightSouthHeart(imageData, cx, cy, r, this._fill_color);
+                    drawStraightSouthHeartOutline(imageData, cx, cy, r, thickness, this._line_color);
+                } else {
+                    drawFilledHeart(imageData, cx, cy, r, this._fill_color);
+                    drawHeartOutline(imageData, cx, cy, r, thickness, this._line_color);
+                }
             } else {
-                if (straight) drawStraightSouthHeartOutline(imageData, cx, cy, r, thickness, this._stroke_color);
-                else drawHeartOutline(imageData, cx, cy, r, thickness, this._stroke_color);
+                if (straight) drawStraightSouthHeartOutline(imageData, cx, cy, r, thickness, this._line_color);
+                else drawHeartOutline(imageData, cx, cy, r, thickness, this._line_color);
             }
         };
 

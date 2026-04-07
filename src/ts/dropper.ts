@@ -11,8 +11,12 @@ export class Dropper extends EditingTool {
         if (!result) return; // fully transparent at this pixel
         const data = result.layer.context.getImageData(at.x, at.y, 1, 1).data;
         const color_string = `rgba(${data[0]},${data[1]},${data[2]},255)`;
-        const is_fore = !!(this._buttons & 1);
-        settings.set(is_fore ? SettingName.ForeColor : SettingName.BackColor, color_string);
+        const settingName = (this._buttons & 4)
+            ? SettingName.FillColor
+            : (this._buttons & 1)
+            ? SettingName.ForeColor
+            : SettingName.BackColor;
+        settings.set(settingName, color_string);
     }
 
     start(at: Vector2, buttons: number) {

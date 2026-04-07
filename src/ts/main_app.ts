@@ -1,6 +1,6 @@
 import { Editor } from "./editor"
 import { Palette } from './palette'
-import { ColorStack } from "./color_stack";
+import { ColorStack, ColorSlot } from "./color_stack";
 import { LayerStack } from "./layer_stack";
 import { LayerPanel } from "./layer_panel";
 import { Rect, RectToRectMapping } from "./types";
@@ -73,12 +73,13 @@ export class MainApp {
         this.palette_hl_canvas = document.getElementById('hl-selector-canvas')! as HTMLCanvasElement
         this.palette_sat_canvas = document.getElementById('sat-selector-canvas')! as HTMLCanvasElement
         this.color_stack = new ColorStack(this, 36, 100, 10000,
-            document.getElementById('color-selector-div-fore')!,
+            document.getElementById('color-selector-div-line')!,
+            document.getElementById('color-selector-div-fill')!,
             document.getElementById('color-selector-div-back')!,
             document.getElementsByClassName('color_stack_item')
         )
         // Seed the stack with the initial foreground color so it appears from the start.
-        this.color_stack.select_color(this.palette.get_rgb_color(), true, true, true);
+        this.color_stack.select_color(this.palette.get_rgb_color(), 'line', true, true, true);
         this.tool_canvas_signal = signal<HTMLCanvasElement>()
         this.document_dirty_signal = signal<number>(0)
         this.tool_bounds_signal = signal<RectToRectMapping>(
@@ -110,6 +111,7 @@ export class MainApp {
 
         settings.bulkSet({
             fore_color: 'rgba(255,0,0,255)',
+            fill_color: 'rgba(255,255,255,255)',
             back_color: 'rgba(255,255,255,255)',
             line_width: 10,
             filled: true,
@@ -380,8 +382,9 @@ export class MainApp {
                 ev.preventDefault();
                 if (ename === 'pointerdown') {
                     // Commit staged palette color to history the moment a stroke begins.
-                    const is_fore = !((ev as MouseEvent).button === 2);
-                    this.color_stack.commit_pending(is_fore);
+                    const btn = (ev as MouseEvent).button;
+                    const slot: ColorSlot = btn === 2 ? 'back' : btn === 1 ? 'fill' : 'line';
+                    this.color_stack.commit_pending(slot);
                 }
                 const method = ename as keyof Editor
                 if (this.editor[method]) {
@@ -420,6 +423,8 @@ export class MainApp {
         const palette = this.palette;
         // Tracks which canvas owns the current drag gesture; null means no drag in progress.
         let activeCanvas: 'hl' | 'sat' | null = null;
+        // Slot captured on pointerdown — reused for move/up so the released button is remembered.
+        let activeSlot: ColorSlot = 'line';
         // When false (default), colors are only pushed to the stack on pointer release.
         // When true, every drag position is pushed (old behavior).
         let trackColorOnDrag = false;
@@ -430,31 +435,31 @@ export class MainApp {
             trackToggleBtn.classList.toggle('pressed', trackColorOnDrag);
         });
 
+        const slot_from_button = (btn: number): ColorSlot =>
+            btn === 1 ? 'fill' : btn === 2 ? 'back' : 'line';
+
         const apply_hl = (event: MouseEvent, commit: boolean) => {
             palette.hl_click(event.offsetX, event.offsetY);
             const rgb_color = palette.get_rgb_color();
-            const is_fore = !!(event.buttons & 1);
             if (trackColorOnDrag) {
-                // Live mode: push on every interaction with distance filtering.
-                this.color_stack.select_color(rgb_color, is_fore, true, false);
+                this.color_stack.select_color(rgb_color, activeSlot, true, false);
             } else {
-                // Default mode: just set the color and stage it; push when stroke starts.
-                this.color_stack.select_color(rgb_color, is_fore, false);
+                this.color_stack.select_color(rgb_color, activeSlot, false);
             }
         };
         const apply_sat = (event: MouseEvent, commit: boolean) => {
             palette.sat_click(event.offsetX, event.offsetY);
             const rgb_color = palette.get_rgb_color();
-            const is_fore = !!(event.buttons & 1);
             if (trackColorOnDrag) {
-                this.color_stack.select_color(rgb_color, is_fore, true, false);
+                this.color_stack.select_color(rgb_color, activeSlot, true, false);
             } else {
-                this.color_stack.select_color(rgb_color, is_fore, false);
+                this.color_stack.select_color(rgb_color, activeSlot, false);
             }
         };
 
         this.palette_hl_canvas.addEventListener('pointerdown', (event: MouseEvent) => {
             activeCanvas = 'hl';
+            activeSlot = slot_from_button(event.button);
             event.preventDefault();
             apply_hl(event, false);
         });
@@ -479,6 +484,7 @@ export class MainApp {
 
         this.palette_sat_canvas.addEventListener('pointerdown', (event: MouseEvent) => {
             activeCanvas = 'sat';
+            activeSlot = slot_from_button(event.button);
             event.preventDefault();
             apply_sat(event, false);
         });
@@ -509,22 +515,28 @@ export class MainApp {
         this.palette_sat_canvas.addEventListener('contextmenu', (event: MouseEvent) => {
             event.preventDefault();
         });
-        document.getElementById('color-selector-div-back')!!.addEventListener('click', () => {
+        document.getElementById('color-selector-div-line')!!.addEventListener('click', () => {
             const tmp_back = settings.peek(SettingName.BackColor);
             settings.set(SettingName.BackColor, settings.peek(SettingName.ForeColor));
             settings.set(SettingName.ForeColor, tmp_back);
-            document.getElementById('color-selector-div-fore')!.style.backgroundColor = settings.peek(SettingName.ForeColor);
-            document.getElementById('color-selector-div-back')!.style.backgroundColor = settings.peek(SettingName.BackColor);
         })
+        // Prevent inner swatch clicks from bubbling up to the line swatch.
+        document.getElementById('color-selector-div-fill')!.addEventListener('click', (e) => e.stopPropagation());
+        document.getElementById('color-selector-div-back')!.addEventListener('click', (e) => e.stopPropagation());
         settings.get(SettingName.ForeColor).subscribe((color_string: string) => {
-            document.getElementById('color-selector-div-fore')!.style.backgroundColor = color_string;
+            document.getElementById('color-selector-div-line')!.style.backgroundColor = color_string;
             const rgb = parse_rgba_string(color_string);
-            if (rgb) this.color_stack.stage_from_signal(rgb, true);
+            if (rgb) this.color_stack.stage_from_signal(rgb, 'line');
+        });
+        settings.get(SettingName.FillColor).subscribe((color_string: string) => {
+            document.getElementById('color-selector-div-fill')!.style.backgroundColor = color_string;
+            const rgb = parse_rgba_string(color_string);
+            if (rgb) this.color_stack.stage_from_signal(rgb, 'fill');
         });
         settings.get(SettingName.BackColor).subscribe((color_string: string) => {
             document.getElementById('color-selector-div-back')!.style.backgroundColor = color_string;
             const rgb = parse_rgba_string(color_string);
-            if (rgb) this.color_stack.stage_from_signal(rgb, false);
+            if (rgb) this.color_stack.stage_from_signal(rgb, 'back');
         });
     }
     clear_context(context: CanvasRenderingContext2D) {

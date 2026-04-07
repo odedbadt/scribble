@@ -5,17 +5,19 @@ import { Vector2, bounding_rect } from "./types";
 import { drawFilledRect, drawRect, drawThickRect, parseColor, RGBA } from "./pixel_utils";
 
 export class RectTool extends ClickAndDragTool {
-    protected _stroke_color: RGBA;
+    protected _line_color: RGBA;
+    protected _fill_color: RGBA;
     protected _fill: boolean = true;
 
     constructor() {
         super();
-        this._stroke_color = [0, 0, 0, 255];
+        this._line_color = [0, 0, 0, 255];
+        this._fill_color = [255, 255, 255, 255];
     }
 
     editing_start() {
-        const colorStr = settings.peek<string>(SettingName.ForeColor);
-        this._stroke_color = parseColor(colorStr);
+        this._line_color = parseColor(settings.peek<string>(SettingName.ForeColor));
+        this._fill_color = parseColor(settings.peek<string>(SettingName.FillColor));
         this._fill = settings.peek<boolean>(SettingName.Filled) ?? true;
     }
 
@@ -32,12 +34,14 @@ export class RectTool extends ClickAndDragTool {
         this.canvas_bounds_mapping = { from: { x: 0, y: 0, w: 1, h: 1 }, to: br };
 
         const imageData = context.getImageData(0, 0, w, h);
+        const lw = settings.peek<number>(SettingName.LineWidth);
+        const thickness = Math.max(1, lw);
 
         if (this._fill) {
-            drawFilledRect(imageData, 0, 0, w, h, this._stroke_color);
+            drawFilledRect(imageData, 0, 0, w, h, this._fill_color);
+            drawThickRect(imageData, 0, 0, w, h, thickness, this._line_color);
         } else {
-            const lw = settings.peek<number>(SettingName.LineWidth);
-            drawThickRect(imageData, 0, 0, w, h, Math.max(1, lw), this._stroke_color);
+            drawThickRect(imageData, 0, 0, w, h, thickness, this._line_color);
         }
 
         context.putImageData(imageData, 0, 0);

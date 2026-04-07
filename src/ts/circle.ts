@@ -6,17 +6,19 @@ import { drawCircle, drawFilledCircle, drawThickCircle, parseColor, RGBA } from 
 import { mandala_mode } from "./mandala_mode";
 
 export class CircleTool extends ClickAndDragTool {
-    protected _stroke_color: RGBA;
+    protected _line_color: RGBA;
+    protected _fill_color: RGBA;
     protected _fill: boolean = true;
 
     constructor() {
         super();
-        this._stroke_color = [0, 0, 0, 255];
+        this._line_color = [0, 0, 0, 255];
+        this._fill_color = [255, 255, 255, 255];
     }
 
     editing_start() {
-        const colorStr = settings.peek<string>(SettingName.ForeColor);
-        this._stroke_color = parseColor(colorStr);
+        this._line_color = parseColor(settings.peek<string>(SettingName.ForeColor));
+        this._fill_color = parseColor(settings.peek<string>(SettingName.FillColor));
         this._fill = settings.peek<boolean>(SettingName.Filled) ?? true;
     }
 
@@ -33,9 +35,10 @@ export class CircleTool extends ClickAndDragTool {
 
         const drawAt = (imageData: ImageData, cx: number, cy: number) => {
             if (this._fill) {
-                drawFilledCircle(imageData, cx, cy, r, this._stroke_color);
+                drawFilledCircle(imageData, cx, cy, r, this._fill_color);
+                drawThickCircle(imageData, cx, cy, r, thickness, this._line_color);
             } else {
-                drawThickCircle(imageData, cx, cy, r, thickness, this._stroke_color);
+                drawThickCircle(imageData, cx, cy, r, thickness, this._line_color);
             }
         };
 

@@ -2,13 +2,14 @@ import { EditingTool } from "./editing_tool";
 import { SettingName, settings } from "./settings_registry";
 import { Vector2 } from "./types";
 import { drawLine, drawThickLine, drawFilledPolygon, drawPolygonOutline, parseColor, setPixel, RGBA } from "./pixel_utils";
-import { parse_RGBA, tool_to_document } from "./utils";
+import { tool_to_document } from "./utils";
 
 const CLOSE_RADIUS_DOC = 10; // doc pixels to snap-close the polygon
 
 export class PolygonTool extends EditingTool {
     private _vertices: Vector2[] = [];
-    private _stroke_color: RGBA = [0, 0, 0, 255];
+    private _line_color: RGBA = [0, 0, 0, 255];
+    private _fill_color: RGBA = [255, 255, 255, 255];
     private _fill: boolean = false;
     private _last_click_time: number = 0;
 
@@ -21,7 +22,8 @@ export class PolygonTool extends EditingTool {
         const is_double = now - this._last_click_time < 300;
         this._last_click_time = now;
 
-        this._stroke_color = parseColor(settings.peek<string>(SettingName.ForeColor));
+        this._line_color = parseColor(settings.peek<string>(SettingName.ForeColor));
+        this._fill_color = parseColor(settings.peek<string>(SettingName.FillColor));
         this._fill = settings.peek<boolean>(SettingName.Filled) ?? false;
 
         if (this._vertices.length >= 2) {
@@ -79,7 +81,7 @@ export class PolygonTool extends EditingTool {
         const imageData = ctx.getImageData(0, 0, docW, docH);
         const lw = settings.peek<number>(SettingName.LineWidth);
         const radius = Math.floor(lw / 2);
-        const color = this._stroke_color;
+        const color = this._line_color;
 
         // Draw committed edges
         for (let i = 1; i < this._vertices.length; i++) {
@@ -125,18 +127,18 @@ export class PolygonTool extends EditingTool {
         const ctx = this.context!;
         const imageData = ctx.getImageData(0, 0, docW, docH);
         const lw = settings.peek<number>(SettingName.LineWidth);
-        const color = this._stroke_color;
+        const color = this._line_color;
 
         if (this._fill) {
-            drawFilledPolygon(imageData, this._vertices, color);
+            drawFilledPolygon(imageData, this._vertices, this._fill_color);
+            drawPolygonOutline(imageData, this._vertices, Math.floor(lw / 2), color);
         } else {
             drawPolygonOutline(imageData, this._vertices, Math.floor(lw / 2), color);
         }
         ctx.putImageData(imageData, 0, 0);
 
-        const color_arr = parse_RGBA(settings.peek<string>(SettingName.ForeColor));
         this.begin_undo_capture?.(this.canvas_bounds_mapping!.to);
-        tool_to_document(this.canvas!, this.canvas_bounds_mapping!, this.document_context!, color_arr);
+        tool_to_document(this.canvas!, this.canvas_bounds_mapping!, this.document_context!);
         this.document_dirty_signal!.value++;
         this.push_undo_snapshot?.();
 

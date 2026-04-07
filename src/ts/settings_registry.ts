@@ -2,6 +2,7 @@ import { Signal, signal } from '@preact/signals';
 
 export enum SettingName {
     ForeColor = 'fore_color',
+    FillColor = 'fill_color',
     BackColor = 'back_color',
     LineWidth = 'line_width',
     Filled = 'filled',
