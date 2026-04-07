@@ -135,10 +135,11 @@ export class StampGallery {
 
         let files: string[];
         try {
-            const res = await fetch(new URL('stamps-list', document.baseURI).href);
+            const res = await fetch(new URL('stamps/index.json', document.baseURI).href);
+            if (!res.ok) return;
             files = await res.json();
         } catch {
-            return; // server may not support it (e.g. Playwright python server)
+            return;
         }
 
         for (const filename of files) {
