@@ -19,6 +19,7 @@ import { BezierTool } from "./bezier";
 import { CursorSize } from './cursor_size'
 import { SelectionTool } from "./selection"
 import { StampTool } from "./stamp"
+import { TileFillTool } from "./tile_fill"
 //import { FillStyleToggler } from './styletogglers'
 //import { mandala } from "./mandala";
 import { Vector2, Rect, RectToRectMapping } from "./types"
@@ -46,6 +47,7 @@ const tool_classes = new Map<string, new (...args: any[]) => EditingTool>
         , ["cursor_size", CursorSize]
         , ["selection", SelectionTool]
         , ["stamp", StampTool]
+        , ["tile_fill", TileFillTool]
         , ["glyph_sizing", GlyphSizingTool]
         // , ["fillstyle", FillStyleToggler]
         // , ["mandala", mandala]
