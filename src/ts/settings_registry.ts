@@ -5,6 +5,7 @@ export enum SettingName {
     FillColor = 'fill_color',
     BackColor = 'back_color',
     LineWidth = 'line_width',
+    FillOutline = 'fill_outline', // 0: both, 1: fill only, 2: outline only
     Filled = 'filled',
     HeartSouth = 'heart_south',  // 'smooth' | 'straight'
     BezierClosed = 'bezier_closed',   // boolean: multi-section closed spline mode

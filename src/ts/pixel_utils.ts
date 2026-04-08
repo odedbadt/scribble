@@ -13,10 +13,30 @@ export function setPixel(imageData: ImageData, x: number, y: number, color: RGBA
         return;
     }
     const offset = (y * imageData.width + x) * 4;
-    imageData.data[offset] = color[0];
-    imageData.data[offset + 1] = color[1];
-    imageData.data[offset + 2] = color[2];
-    imageData.data[offset + 3] = color[3];
+    const srcA = color[3] / 255;
+    if (srcA === 1) {
+        imageData.data[offset] = color[0];
+        imageData.data[offset + 1] = color[1];
+        imageData.data[offset + 2] = color[2];
+        imageData.data[offset + 3] = color[3];
+    } else if (srcA > 0) {
+        const dstR = imageData.data[offset];
+        const dstG = imageData.data[offset + 1];
+        const dstB = imageData.data[offset + 2];
+        const dstA = imageData.data[offset + 3] / 255;
+        const outA = srcA + dstA * (1 - srcA);
+        if (outA === 0) {
+            imageData.data[offset] = 0;
+            imageData.data[offset + 1] = 0;
+            imageData.data[offset + 2] = 0;
+            imageData.data[offset + 3] = 0;
+        } else {
+            imageData.data[offset] = Math.round((color[0] * srcA + dstR * dstA * (1 - srcA)) / outA);
+            imageData.data[offset + 1] = Math.round((color[1] * srcA + dstG * dstA * (1 - srcA)) / outA);
+            imageData.data[offset + 2] = Math.round((color[2] * srcA + dstB * dstA * (1 - srcA)) / outA);
+            imageData.data[offset + 3] = Math.round(outA * 255);
+        }
+    }
 }
 
 /**
@@ -154,7 +174,7 @@ export function drawFilledCircle(imageData: ImageData, cx: number, cy: number, r
             setPixel(imageData, cx + x, cy + y, color);
         }
     }
-}
+} // uses setPixel, which now blends alpha
 
 /**
  * Draw a filled rectangle - no anti-aliasing
@@ -170,7 +190,7 @@ export function drawFilledRect(imageData: ImageData, x: number, y: number, w: nu
             setPixel(imageData, px, py, color);
         }
     }
-}
+} // uses setPixel, which now blends alpha
 
 /**
  * Draw a rectangle outline - no anti-aliasing
@@ -299,7 +319,7 @@ export function drawFilledHeart(imageData: ImageData, cx: number, cy: number, r:
             if (_heartInside(dx / r, -dy / r)) setPixel(imageData, cx + dx, cy + dy, color);
         }
     }
-}
+} // uses setPixel, which now blends alpha
 
 export function drawHeartOutline(imageData: ImageData, cx: number, cy: number, r: number, thickness: number, color: RGBA): void {
     cx = Math.floor(cx); cy = Math.floor(cy); r = Math.floor(r);
@@ -345,7 +365,7 @@ export function drawFilledStraightSouthHeart(imageData: ImageData, cx: number, c
         const hw = _southHW(r, dy);
         for (let dx = -hw; dx <= hw; dx++) setPixel(imageData, cx + dx, cy + dy, color);
     }
-}
+} // uses setPixel, which now blends alpha
 
 export function drawStraightSouthHeartOutline(imageData: ImageData, cx: number, cy: number, r: number, thickness: number, color: RGBA): void {
     cx = Math.floor(cx); cy = Math.floor(cy); r = Math.floor(r);
@@ -409,7 +429,7 @@ export function drawFilledPolygon(imageData: ImageData, vertices: { x: number; y
             }
         }
     }
-}
+} // uses setPixel, which now blends alpha
 
 /** Draw a cloud shape (5 overlapping filled circles) centered at (cx, cy) */
 export function drawCloud(imageData: ImageData, cx: number, cy: number, size: number, color: RGBA): void {

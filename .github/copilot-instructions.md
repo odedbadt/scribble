@@ -70,3 +70,5 @@ Tools that support symmetry check `mandala_mode.enabled` and call `mandala_mode.
 
 ### `src/ts/old/` is excluded
 That directory is excluded from `tsconfig.json` and must be ignored entirely.
+
+Do whatever you can to avoid scrollbars in the UI altogether

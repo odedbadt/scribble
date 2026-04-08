@@ -28,6 +28,9 @@ export class LineTool extends ClickAndDragTool {
         const context = this.context!;
         const canvas = this.canvas!;
 
+        // Clear the tool canvas before drawing the new line
+        context.clearRect(0, 0, canvas.width, canvas.height);
+
         let pairs: Array<{ from: Vector2, to: Vector2 }>;
         if (mandala_mode.enabled && this.document_canvas) {
             const center = mandala_mode.center ?? { x: this.document_canvas.width / 2, y: this.document_canvas.height / 2 };

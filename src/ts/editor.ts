@@ -28,8 +28,11 @@ import { Signal } from "@preact/signals";
 import { mandala_mode } from "./mandala_mode"
 import { setPixel, RGBA, extract_sub_image } from "./pixel_utils"
 import { anchor_manager, SNAP_RADIUS_SCREEN_PX } from "./anchor_manager"
+import { settings, SettingName } from './settings_registry';
+import { nextFillOutlineState } from './FillOutlineState';
 const tool_classes = new Map<string, new (...args: any[]) => EditingTool>
     ([
+
         ["polygon", PolygonTool]
         , ["topo_hull", TopoHullTool]
         , ["heart", HeartTool]
@@ -444,6 +447,13 @@ export class Editor {
         }
         if (event.code == 'KeyR') {
             this.redo();
+        }
+        // Handle tristate fill/outline cycling with 'F' key
+        if (event.code === 'KeyF') {
+            let state = settings.peek<number>(SettingName.FillOutline) ?? 0;
+            state = nextFillOutlineState(state);
+            settings.set(SettingName.FillOutline, state);
+            // Optionally, update UI here if needed
         }
         this.tool.keydown?.(event);
     }

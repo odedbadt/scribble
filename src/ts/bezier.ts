@@ -93,7 +93,6 @@ function flood_fill_transparent(imageData: ImageData, x: number, y: number, colo
     if (ix < 0 || iy < 0 || ix >= w || iy >= h) return;
     const off0 = (iy * w + ix) * 4;
     if (data[off0 + 3] !== 0) return; // seed already filled
-    const [fr, fg, fb] = color;
     const stack: number[] = [iy * w + ix];
     while (stack.length > 0) {
         const idx = stack.pop()!;
@@ -101,7 +100,8 @@ function flood_fill_transparent(imageData: ImageData, x: number, y: number, colo
         if (px < 0 || py < 0 || px >= w || py >= h) continue;
         const off = idx * 4;
         if (data[off + 3] !== 0) continue; // already filled or outline pixel
-        data[off] = fr; data[off + 1] = fg; data[off + 2] = fb; data[off + 3] = 255;
+        // Use setPixel for alpha blending
+        setPixel(imageData, px, py, color);
         stack.push(idx + 1, idx - 1, idx + w, idx - w);
     }
 }
@@ -141,6 +141,7 @@ export class BezierTool extends EditingTool {
     // ── shared ──
     private _stroke_color: RGBA = [0, 0, 0, 255];
     private _fill_color: RGBA = [255, 255, 255, 255];
+    private _fill_outline: number = 0; // 0: both, 1: fill only, 2: outline only
     private _start_buttons = 0;
 
     select() { this._reset(); }
@@ -155,6 +156,7 @@ export class BezierTool extends EditingTool {
         const is_right = (buttons & 2) !== 0;
         this._stroke_color = parseColor(settings.peek<string>(is_right ? SettingName.BackColor : SettingName.ForeColor));
         this._fill_color = parseColor(settings.peek<string>(SettingName.FillColor));
+        this._fill_outline = settings.peek<number>(SettingName.FillOutline) ?? 0;
         if (settings.peek<boolean>(SettingName.BezierClosed)) {
             this._multi_start(at);
         } else {
@@ -267,7 +269,22 @@ export class BezierTool extends EditingTool {
         const { docW, docH } = dims;
         const imageData = new ImageData(docW, docH);
         const radius = Math.floor((settings.peek<number>(SettingName.LineWidth) ?? 1) / 2);
-        draw_bezier_curve(imageData, this._p0, this._p1, this._p2, this._p3, radius, this._stroke_color);
+        // 0: both, 1: fill only, 2: outline only
+        if (this._fill_outline === 0 || this._fill_outline === 1) {
+            // Fill: flood fill from center of curve
+            const cx = Math.round((this._p0.x + this._p3.x) / 2);
+            const cy = Math.round((this._p0.y + this._p3.y) / 2);
+            flood_fill_transparent(imageData, cx, cy, this._fill_color);
+        }
+        if (this._fill_outline === 0 || this._fill_outline === 2) {
+            draw_bezier_curve(imageData, this._p0, this._p1, this._p2, this._p3, radius, this._stroke_color);
+            // If OutlineOnly, clear fill area (center) to transparent
+            if (this._fill_outline === 2) {
+                const cx = Math.round((this._p0.x + this._p3.x) / 2);
+                const cy = Math.round((this._p0.y + this._p3.y) / 2);
+                flood_fill_transparent(imageData, cx, cy, [0,0,0,0]);
+            }
+        }
         this.context!.putImageData(imageData, 0, 0);
         this._do_commit();
     }
@@ -373,16 +390,24 @@ export class BezierTool extends EditingTool {
         const { docW, docH } = dims;
         const imageData = new ImageData(docW, docH);
         const radius = Math.floor((settings.peek<number>(SettingName.LineWidth) ?? 1) / 2);
-        draw_spline_closed(imageData, this._anchors, radius, this._stroke_color);
-
-        // Flood-fill from centroid when Filled is on
-        if (settings.peek<boolean>(SettingName.Filled)) {
+        // 0: both, 1: fill only, 2: outline only
+        if (this._fill_outline === 0 || this._fill_outline === 2) {
+            draw_spline_closed(imageData, this._anchors, radius, this._stroke_color);
+            // If OutlineOnly, clear fill area (centroid) to transparent
+            if (this._fill_outline === 2) {
+                let cx = 0, cy = 0;
+                for (const a of this._anchors) { cx += a.pt.x; cy += a.pt.y; }
+                cx /= this._anchors.length; cy /= this._anchors.length;
+                flood_fill_transparent(imageData, cx, cy, [0,0,0,0]);
+            }
+        }
+        if (this._fill_outline === 0 || this._fill_outline === 1) {
+            // Flood-fill from centroid
             let cx = 0, cy = 0;
             for (const a of this._anchors) { cx += a.pt.x; cy += a.pt.y; }
             cx /= this._anchors.length; cy /= this._anchors.length;
             flood_fill_transparent(imageData, cx, cy, this._fill_color);
         }
-
         this.context!.putImageData(imageData, 0, 0);
         this._do_commit();
     }
