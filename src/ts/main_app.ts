@@ -8,6 +8,7 @@ import { Rect, RectToRectMapping } from "./types";
 import { Signal, signal, computed, effect } from "@preact/signals";
 import { ScribRenderer } from "./scrib_renderer";
 import { SettingName, settings } from './settings_registry'
+import { FillOutlineState, nextFillOutlineState, fillOutlineClass } from './FillOutlineState'
 import { StateValue, state_registry } from "./state_registry";
 import { mandala_mode } from "./mandala_mode";
 import { anchor_manager } from "./anchor_manager";
@@ -37,6 +38,7 @@ function parse_rgba_string(s: string): number[] | null {
 }
 export class MainApp {
     public overlay_canvas_signal = signal<CanvasRenderingContext2D>();
+    public settings = settings;
     private scrib_renderer: ScribRenderer;
     private anchor_canvas_signal = signal<HTMLCanvasElement>(null as any);
     private _anchor_canvas: HTMLCanvasElement = document.createElement('canvas');
@@ -116,6 +118,7 @@ export class MainApp {
             fill_color: 'rgba(255,255,255,255)',
             back_color: 'rgba(255,255,255,255)',
             line_width: 10,
+            fill_outline: 0, // Both by default
             filled: true,
         });
         this.init_canvases();
@@ -266,12 +269,55 @@ export class MainApp {
 
         const fillstyle_button = document.getElementsByClassName('fillstyle')[0] as HTMLElement;
         const fillable_buttons = document.getElementsByClassName('fillable');
+
+        const updateFillstyleVisual = () => {
+            const state = (settings.peek<number>(SettingName.FillOutline) ?? 0) as FillOutlineState;
+            const foreColor = settings.peek<string>(SettingName.ForeColor);
+            const fillColor = settings.peek<string>(SettingName.FillColor);
+            fillstyle_button.style.backgroundImage = 'none';
+            switch (state) {
+                case FillOutlineState.Both:
+                    fillstyle_button.style.backgroundColor = fillColor;
+                    fillstyle_button.style.boxShadow = `inset 0 0 0 5px ${foreColor}`;
+                    break;
+                case FillOutlineState.FillOnly:
+                    fillstyle_button.style.backgroundColor = fillColor;
+                    fillstyle_button.style.boxShadow = 'none';
+                    break;
+                case FillOutlineState.OutlineOnly:
+                    fillstyle_button.style.backgroundColor = 'white';
+                    fillstyle_button.style.boxShadow = `inset 0 0 0 5px ${foreColor}`;
+                    break;
+            }
+        };
+
         fillstyle_button.addEventListener('click', () => {
-            const filled = !settings.peek<boolean>(SettingName.Filled);
-            settings.set(SettingName.Filled, filled);
-            fillstyle_button.classList.toggle('filled', filled);
-            Array.from(fillable_buttons).forEach(btn => btn.classList.toggle('filled', filled));
+            let state = settings.peek<number>(SettingName.FillOutline) ?? 0;
+            state = nextFillOutlineState(state);
+            settings.set(SettingName.FillOutline, state);
+            fillstyle_button.classList.remove('filled', 'tristate');
+            const cls = fillOutlineClass(state);
+            if (cls) fillstyle_button.classList.add(cls);
+            // Visual feedback for fillable tool buttons
+            Array.from(fillable_buttons).forEach(btn => {
+                btn.classList.remove('filled', 'tristate');
+                if (cls) btn.classList.add(cls);
+            });
         });
+        // Sync fillstyle button with setting
+        effect(() => {
+            let state = settings.peek<number>(SettingName.FillOutline) ?? 0;
+            fillstyle_button.classList.remove('filled', 'tristate');
+            const cls = fillOutlineClass(state);
+            if (cls) fillstyle_button.classList.add(cls);
+            Array.from(fillable_buttons).forEach(btn => {
+                btn.classList.remove('filled', 'tristate');
+                if (cls) btn.classList.add(cls);
+            });
+            updateFillstyleVisual();
+        });
+        settings.get(SettingName.ForeColor).subscribe(() => updateFillstyleVisual());
+        settings.get(SettingName.FillColor).subscribe(() => updateFillstyleVisual());
 
         // Pattern fill toggle button
         const fill_pattern_toggle_btn = document.getElementsByClassName('fill_pattern_toggle')[0] as HTMLElement;
@@ -532,14 +578,14 @@ export class MainApp {
         this.palette_sat_canvas.addEventListener('contextmenu', (event: MouseEvent) => {
             event.preventDefault();
         });
-        document.getElementById('color-selector-div-line')!!.addEventListener('click', () => {
+        document.getElementById('color-selector-div-back')!!.addEventListener('click', () => {
             const tmp_back = settings.peek(SettingName.BackColor);
             settings.set(SettingName.BackColor, settings.peek(SettingName.ForeColor));
             settings.set(SettingName.ForeColor, tmp_back);
         })
-        // Prevent inner swatch clicks from bubbling up to the line swatch.
+        // Prevent inner swatch clicks from bubbling up to the back swatch.
         document.getElementById('color-selector-div-fill')!.addEventListener('click', (e) => e.stopPropagation());
-        document.getElementById('color-selector-div-back')!.addEventListener('click', (e) => e.stopPropagation());
+        document.getElementById('color-selector-div-line')!.addEventListener('click', (e) => e.stopPropagation());
         settings.get(SettingName.ForeColor).subscribe((color_string: string) => {
             document.getElementById('color-selector-div-line')!.style.backgroundColor = color_string;
             const rgb = parse_rgba_string(color_string);
