@@ -6,3 +6,6 @@ static/ts/
 static/js/
 distro
 dbg
+static/icons/backup/
+static/icons/.ipynb_checkpoints/
+static/icons/Untitled.ipynb
