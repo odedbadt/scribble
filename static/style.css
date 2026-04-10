@@ -215,6 +215,9 @@ body {
         inset 0px -3px 5px rgb(112, 112, 103);
     cursor: pointer;
     user-select: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .color_stack_item {
@@ -380,9 +383,6 @@ body {
 }
 
 .scribble {
-    background-image: url("icons/pen-pencil.svg");
-    background-size: 65%;
-
 }
 
 .rect {
@@ -396,8 +396,6 @@ body {
 }
 
 .line {
-    background-image: url("icons/pen-tool-pen.svg");
-    background-size: 65%;
 }
 
 
@@ -412,8 +410,6 @@ body {
 }
 
 .dropper {
-    background-image: url("icons/dropper-tools-and-utensils.svg");
-    background-size: 65%;
 }
 
 .cursor_size {
@@ -439,43 +435,27 @@ body {
 }
 
 .bezier {
-    background-image: url("icons/pen-tool-2.svg");
-    background-size: 65%;
 }
 
 .anchor {
-    background-image: url("icons/magnet-magnet.svg");
-    background-size: 65%;
 }
 
 .floodfill {
-    background-image: url("icons/paint-bucket-2.svg");
-    background-size: 65%;
 }
 
 .selection {
-    background-image: url("icons/selection-rectangle.svg");
-    background-size: 65%;
 }
 
 .stamp {
-    background-image: url("icons/stamp.svg");
-    background-size: 65%;
 }
 
 .scraper {
-    background-image: url("icons/scraper.svg");
-    background-size: 65%;
 }
 
 .eraser {
-    background-image: url("icons/eraser-1.svg");
-    background-size: 65%;
 }
 
 .clearall {
-    background-image: url("icons/delete.svg");
-    background-size: 65%;
 }
 
 .menu-bar-button {
@@ -485,13 +465,15 @@ body {
 }
 
 .undo {
-    background-image: url("icons/undo-arrows.svg");
-    background-size: 65%;
 }
 
 .redo {
-    background-image: url("icons/redo-arrows.svg");
-    background-size: 65%;
+}
+
+.button .icon {
+    width: 65%;
+    height: 65%;
+    pointer-events: none;
 }
 
 .fillstyle {
