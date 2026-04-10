@@ -1,7 +1,7 @@
 __pycache__/
 *.pyc
 node_modules/
-.DS_Store/
+.DS_Store
 static/ts/
 static/js/
 distro
