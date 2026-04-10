@@ -22,19 +22,19 @@
     <!-- LEFT TOOLBAR: drawing tools only -->
     <div id="toolbar">
         <div id="toolbar-page-1">
-            <div class="scribble button"></div>
-            <div class="selection button">⬚</div>
-            <div class="stamp button">🖃</div>
-                        <div class="rect button filled fillable"></div>
-            <div class="line button"></div>
-            <div class="bezier button fillable">⌒</div>
+            <div class="scribble button"><svg class="icon"><use href="static/icons/sprite.svg#pen-pencil"/></svg></div>
+            <div class="selection button"><svg class="icon"><use href="static/icons/sprite.svg#selection-rectangle"/></svg></div>
+            <div class="stamp button"><svg class="icon"><use href="static/icons/sprite.svg#stamp"/></svg></div>
+            <div class="rect button filled fillable"></div>
+            <div class="line button"><svg class="icon"><use href="static/icons/sprite.svg#pen-tool-pen"/></svg></div>
+            <div class="bezier button fillable"><svg class="icon"><use href="static/icons/sprite.svg#pen-tool-2"/></svg></div>
             <div class="circle button filled fillable"></div>
-            <div class="polygon button filled fillable">⬡</div>
-            <div class="dropper button"></div>
-            <div class="floodfill button"></div>
-            <div class="eraser button"></div>
-            <div class="scraper button">⊘</div>
-            <div class="clearall button"></div>
+            <div class="polygon button filled fillable"></div>
+            <div class="dropper button"><svg class="icon"><use href="static/icons/sprite.svg#dropper-tools-and-utensils"/></svg></div>
+            <div class="floodfill button"><svg class="icon"><use href="static/icons/sprite.svg#paint-bucket-2"/></svg></div>
+            <div class="eraser button"><svg class="icon"><use href="static/icons/sprite.svg#eraser-1"/></svg></div>
+            <div class="scraper button"><svg class="icon"><use href="static/icons/sprite.svg#scraper"/></svg></div>
+            <div class="clearall button"><svg class="icon"><use href="static/icons/sprite.svg#delete"/></svg></div>
             <div class="topo_hull button filled fillable">⊂</div>
         </div>
         <!-- secondary tools, hidden until fold button is pressed -->
@@ -92,11 +92,11 @@
             </div>
         </div>
         <!-- anchor -->
-        <div id="anchor-btn" class="anchor button" title="Toggle anchor edit mode">⚓</div>
+        <div id="anchor-btn" class="anchor button" title="Toggle anchor edit mode"><svg class="icon"><use href="static/icons/sprite.svg#magnet-magnet"/></svg></div>
         <!-- fill style -->
         <div class="fillstyle filled button"></div>
         <!-- pattern fill toggle -->
-        <div class="fill_pattern_toggle button" title="Toggle pattern fill">⊠</div>
+        <div class="fill_pattern_toggle button" title="Toggle pattern fill"></div>
         <!-- line width (cursor size tool) -->
         <div class="cursor_size button"></div>
         <!-- contextual tool controls slot: one button, reconfigured per active tool -->
@@ -105,8 +105,8 @@
             <div id="tool-ctrl-btn-2" class="button"></div>
         </div>
         <!-- undo / redo -->
-        <div id="undo_button" class="undo button"></div>
-        <div id="redo_button" class="redo button"></div>
+        <div id="undo_button" class="undo button"><svg class="icon"><use href="static/icons/sprite.svg#undo-arrows"/></svg></div>
+        <div id="redo_button" class="redo button"><svg class="icon"><use href="static/icons/sprite.svg#redo-arrows"/></svg></div>
         <!-- debug -->
         <div id="debug_button" class="button debug-btn"
             onclick="document.getElementById('debug-modal').style.display='flex'">Debug</div>
@@ -122,7 +122,8 @@
 
     <!-- BOTTOM BAR: color history stack (36 slots) -->
     <div id="bottom-bar">
-        <button id="color-stack-live-track" class="button" title="Track color while dragging (off = track on release only)">◉</button>
+        <button id="color-stack-live-track" class="button"
+            title="Track color while dragging (off = track on release only)">◉</button>
         <div class="color_stack_item button"></div>
         <div class="color_stack_item button"></div>
         <div class="color_stack_item button"></div>
@@ -168,7 +169,8 @@
         <div class="gallery-modal-inner">
             <div class="gallery-modal-header">
                 <span>Stamp Gallery</span>
-                <button class="gallery-close-btn" onclick="document.getElementById('stamp-gallery-modal').classList.remove('open')">✕</button>
+                <button class="gallery-close-btn"
+                    onclick="document.getElementById('stamp-gallery-modal').classList.remove('open')">✕</button>
             </div>
             <p class="gallery-hint">Click a stamp, then drag on the canvas to set its size.</p>
             <div class="gallery-grid"></div>
