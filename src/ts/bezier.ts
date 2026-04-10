@@ -269,22 +269,8 @@ export class BezierTool extends EditingTool {
         const { docW, docH } = dims;
         const imageData = new ImageData(docW, docH);
         const radius = Math.floor((settings.peek<number>(SettingName.LineWidth) ?? 1) / 2);
-        // 0: both, 1: fill only, 2: outline only
-        if (this._fill_outline === 0 || this._fill_outline === 1) {
-            // Fill: flood fill from center of curve
-            const cx = Math.round((this._p0.x + this._p3.x) / 2);
-            const cy = Math.round((this._p0.y + this._p3.y) / 2);
-            flood_fill_transparent(imageData, cx, cy, this._fill_color);
-        }
-        if (this._fill_outline === 0 || this._fill_outline === 2) {
-            draw_bezier_curve(imageData, this._p0, this._p1, this._p2, this._p3, radius, this._stroke_color);
-            // If OutlineOnly, clear fill area (center) to transparent
-            if (this._fill_outline === 2) {
-                const cx = Math.round((this._p0.x + this._p3.x) / 2);
-                const cy = Math.round((this._p0.y + this._p3.y) / 2);
-                flood_fill_transparent(imageData, cx, cy, [0,0,0,0]);
-            }
-        }
+        // Single-segment bezier is an open curve — fill has no enclosed interior, so always draw outline only.
+        draw_bezier_curve(imageData, this._p0, this._p1, this._p2, this._p3, radius, this._stroke_color);
         this.context!.putImageData(imageData, 0, 0);
         this._do_commit();
     }
@@ -393,13 +379,6 @@ export class BezierTool extends EditingTool {
         // 0: both, 1: fill only, 2: outline only
         if (this._fill_outline === 0 || this._fill_outline === 2) {
             draw_spline_closed(imageData, this._anchors, radius, this._stroke_color);
-            // If OutlineOnly, clear fill area (centroid) to transparent
-            if (this._fill_outline === 2) {
-                let cx = 0, cy = 0;
-                for (const a of this._anchors) { cx += a.pt.x; cy += a.pt.y; }
-                cx /= this._anchors.length; cy /= this._anchors.length;
-                flood_fill_transparent(imageData, cx, cy, [0,0,0,0]);
-            }
         }
         if (this._fill_outline === 0 || this._fill_outline === 1) {
             // Flood-fill from centroid
