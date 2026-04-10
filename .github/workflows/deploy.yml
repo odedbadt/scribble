@@ -24,10 +24,16 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Assemble site
+        run: |
+          mkdir _site
+          cp index.html CNAME _site/
+          cp -r static _site/static
+          cp -r distro _site/distro
+
       - name: Deploy to gh-pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: .
+          publish_dir: _site
           publish_branch: gh-pages
-          exclude_assets: '.github,src,tests,node_modules,scripts,templates,dbg,__pycache__,*.py,*.ts,tsconfig.json,webpack.config.js,package*.json,playwright.config.ts,*.md,test-results'
