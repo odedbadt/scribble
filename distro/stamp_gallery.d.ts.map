@@ -1,0 +1,1 @@
+{"version":3,"file":"stamp_gallery.d.ts","sourceRoot":"","sources":["../src/ts/stamp_gallery.ts"],"names":[],"mappings":"AAkGA,qBAAa,YAAY;IAIT,OAAO,CAAC,YAAY;IAHhC,OAAO,CAAC,MAAM,CAAc;IAC5B,OAAO,CAAC,KAAK,CAAc;gBAEP,YAAY,EAAE,CAAC,QAAQ,EAAE,MAAM,KAAK,IAAI;IAS5D,IAAI,IAAI,IAAI;IAMZ,KAAK,IAAI,IAAI;IAIb,OAAO,CAAC,YAAY;YAUN,gBAAgB;IAgC9B,OAAO,CAAC,KAAK;CAehB"}
