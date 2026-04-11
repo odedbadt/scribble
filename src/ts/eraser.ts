@@ -2,7 +2,8 @@ import { ScribbleTool } from "./scribble";
 import { SettingName, settings } from "./settings_registry";
 import { parseColor, RGBA } from "./pixel_utils";
 import { color_token_registry } from "./color_token_registry";
-import { tool_erase_token_canvas } from "./utils";
+import { tool_erase_token_canvas, tool_erase_ghost_canvas } from "./utils";
+import { ghost_layer } from "./ghost_layer";
 
 export class EraserTool extends ScribbleTool {
     constructor() {
@@ -23,6 +24,13 @@ export class EraserTool extends ScribbleTool {
             const token = color_token_registry.tokens[active_token_idx];
             tool_erase_token_canvas(this.canvas!, this.canvas_bounds_mapping, token.context);
             token.dirty.value++;
+            return;
+        }
+        // In ghost mode, erase from the ghost canvas
+        if (ghost_layer.enabled.peek()) {
+            if (!this.canvas_bounds_mapping) return;
+            tool_erase_ghost_canvas(this.canvas!, this.canvas_bounds_mapping, ghost_layer.context);
+            ghost_layer.dirty.value++;
             return;
         }
         super.commit_to_document(settings.peek<string>(SettingName.BackColor));

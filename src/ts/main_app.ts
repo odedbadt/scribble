@@ -14,6 +14,7 @@ import { mandala_mode } from "./mandala_mode";
 import { anchor_manager } from "./anchor_manager";
 import { SelectionTool } from "./selection";
 import { color_token_registry, MAX_TOKENS } from "./color_token_registry";
+import { ghost_layer } from "./ghost_layer";
 import { RGBA } from "./pixel_utils";
 import { StampGallery } from "./stamp_gallery";
 import { fill_pattern } from "./fill_pattern";
@@ -133,6 +134,7 @@ export class MainApp {
         this.view_canvas.height = h;
         this.layer_stack.resize_all(w, h);
         color_token_registry.resize_all(w, h);
+        ghost_layer.resize(w, h);
         this.view_port_signal.value = { x: 0, y: 0, w, h };
     }
 
@@ -162,6 +164,7 @@ export class MainApp {
             const h = img.naturalHeight;
             this.layer_stack.resize_all(w, h);
             color_token_registry.resize_all(w, h);
+            ghost_layer.resize(w, h);
             this.layer_stack.active_layer.context.drawImage(img, 0, 0);
             // Keep current viewport size (zoom level); reset pan to origin
             const vp = this.view_port_signal.value;
@@ -439,6 +442,19 @@ export class MainApp {
         })
         this.init_undo_redo_buttons()
         this.init_load_save()
+        this.init_ghost_mode()
+    }
+    init_ghost_mode() {
+        const btn = document.getElementById('ghost-mode-btn');
+        if (!btn) return;
+        const update_btn = () => {
+            btn.classList.toggle('pressed', ghost_layer.enabled.peek());
+        };
+        btn.addEventListener('click', () => {
+            ghost_layer.enabled.value = !ghost_layer.enabled.peek();
+            update_btn();
+        });
+        update_btn();
     }
     forward_events_to_editor() {
         // canvas

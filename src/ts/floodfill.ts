@@ -6,6 +6,7 @@ import { mandala_mode } from "./mandala_mode";
 import { drawFilledCircle, parseColor, setPixel, RGBA } from "./pixel_utils";
 import { fill_pattern } from "./fill_pattern";
 import { color_token_registry } from "./color_token_registry";
+import { ghost_layer } from "./ghost_layer";
 
 function _equal_colors(c1: Uint8ClampedArray, c2: Uint8ClampedArray): boolean {
     return c1[0] == c2[0] &&
@@ -187,6 +188,48 @@ export class Floodfill extends ClickTool {
                 dirty = dirty ? rect_union(dirty, bbox) : bbox;
             }
             if (dirty) token.dirty.value++;
+            return;
+        }
+
+        // Ghost mode: fill with actual color into the ghost canvas
+        if (ghost_layer.enabled.peek()) {
+            let dirty: Rect | null = null;
+            for (const pos of positions) {
+                const replaced_color = this.document_context!.getImageData(
+                    Math.floor(pos.x), Math.floor(pos.y), 1, 1
+                ).data;
+                const scratch = document.createElement('canvas');
+                scratch.width = w; scratch.height = h;
+                const scratch_ctx = scratch.getContext('2d', { willReadFrequently: true })!;
+                (scratch_ctx as CanvasRenderingContext2D).imageSmoothingEnabled = false;
+                scratch_ctx.drawImage(this.document_canvas!, 0, 0);
+                const before = scratch_ctx.getImageData(0, 0, w, h);
+                const bbox = _floodfill(scratch_ctx as CanvasRenderingContext2D,
+                    replaced_color as Uint8ClampedArray, fill_color, pos.x, pos.y, w, h);
+                if (!bbox) continue;
+                const after = scratch_ctx.getImageData(bbox.x, bbox.y, bbox.w, bbox.h);
+                const before_chunk = before.data;
+                const after_data = after.data;
+                const ghost_data = ghost_layer.context.getImageData(bbox.x, bbox.y, bbox.w, bbox.h);
+                const bw = bbox.w, bh = bbox.h;
+                const bx = bbox.x, by = bbox.y;
+                for (let py = 0; py < bh; py++) {
+                    for (let px = 0; px < bw; px++) {
+                        const chunk_off = 4 * (py * bw + px);
+                        const full_off = 4 * ((by + py) * w + (bx + px));
+                        if (after_data[chunk_off + 3] !== before_chunk[full_off + 3] ||
+                            after_data[chunk_off] !== before_chunk[full_off]) {
+                            ghost_data.data[chunk_off + 0] = fill_color[0];
+                            ghost_data.data[chunk_off + 1] = fill_color[1];
+                            ghost_data.data[chunk_off + 2] = fill_color[2];
+                            ghost_data.data[chunk_off + 3] = 255;
+                        }
+                    }
+                }
+                ghost_layer.context.putImageData(ghost_data, bbox.x, bbox.y);
+                dirty = dirty ? rect_union(dirty, bbox) : bbox;
+            }
+            if (dirty) ghost_layer.dirty.value++;
             return;
         }
 

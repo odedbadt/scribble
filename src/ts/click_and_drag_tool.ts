@@ -4,11 +4,12 @@ import { MainApp } from "./main_app";
 import { Rect, Vector2, RectToRectMapping, unit_rect, vfloor } from "./types";
 
 import { signal, computed, effect } from "@preact/signals";
-import { parse_RGBA, tool_to_document, tool_to_token_canvas, clear_canvas, rect_union } from "./utils";
+import { parse_RGBA, tool_to_document, tool_to_token_canvas, tool_to_ghost_canvas, clear_canvas, rect_union } from "./utils";
 import { settings, SettingName } from "./settings_registry";
 import { drawFilledCircle, parseColor, RGBA, setPixel } from "./pixel_utils";
 import { mandala_mode } from "./mandala_mode";
 import { color_token_registry } from "./color_token_registry";
+import { ghost_layer } from "./ghost_layer";
 export abstract class ClickAndDragTool extends EditingTool {
     dirty: boolean = false;
     drag_start: Vector2 | null = null;
@@ -147,6 +148,14 @@ export abstract class ClickAndDragTool extends EditingTool {
             return;
         }
 
+        // When ghost mode is active, commit to the invisible ghost canvas.
+        if (ghost_layer.enabled.peek()) {
+            const color_array = color ? parse_RGBA(color) : undefined;
+            tool_to_ghost_canvas(this.canvas!, this.canvas_bounds_mapping, ghost_layer.context, color_array);
+            ghost_layer.dirty.value++;
+            return;
+        }
+
         // When no explicit color is given, use the actual pixel colors from the tool canvas
         // (supports dual-color fill+outline rendering). Pass a layer_color only when
         // callers explicitly request a specific color (e.g. scribble, eraser, topo_hull).
@@ -160,6 +169,9 @@ export abstract class ClickAndDragTool extends EditingTool {
             const active_token_idx = color_token_registry.active_index.peek();
             if (active_token_idx !== null) {
                 // Token mode: commit to token canvas; no undo entry on document
+                this.commit_to_document();
+            } else if (ghost_layer.enabled.peek()) {
+                // Ghost mode: commit to ghost canvas; no undo entry on document
                 this.commit_to_document();
             } else {
                 this.begin_undo_capture?.(this.canvas_bounds_mapping?.to);

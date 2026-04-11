@@ -420,6 +420,19 @@ body {
     color: #444;
 }
 
+#ghost-mode-btn {
+    font-size: 16px;
+}
+
+#ghost-mode-btn.pressed {
+    background: #3a1a6a;
+    color: #e0b0ff;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
+}
+
+.reveal_brush {
+    font-size: 16px;
+}
 
 .scribble {
 }

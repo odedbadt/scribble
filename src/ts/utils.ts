@@ -244,6 +244,91 @@ function _blit_tool_to_token(
 }
 
 
+/**
+ * Like tool_to_ghost_canvas but erases pixels from the ghost canvas
+ * wherever the tool canvas has non-transparent pixels.
+ */
+export function tool_erase_ghost_canvas(
+    tool_canvas: HTMLCanvasElement,
+    rect_to_rect_mapping: RectToRectMapping,
+    ghost_context: CanvasRenderingContext2D
+): void {
+    _blit_tool_to_token(tool_canvas, rect_to_rect_mapping, ghost_context, true);
+}
+
+/**
+ * Like tool_to_document but writes actual pixel colors to the ghost canvas.
+ * Used when ghost mode is active — strokes are stored invisible until revealed.
+ */
+export function tool_to_ghost_canvas(
+    tool_canvas: HTMLCanvasElement,
+    rect_to_rect_mapping: RectToRectMapping,
+    ghost_context: CanvasRenderingContext2D,
+    layer_color?: Uint8ClampedArray | undefined
+): void {
+    tool_to_document(tool_canvas, rect_to_rect_mapping, ghost_context, layer_color);
+}
+
+/**
+ * Reveal brush commit: for each pixel covered by the tool canvas,
+ * if the ghost canvas has a non-transparent pixel there, copy it to
+ * the document canvas and clear it from the ghost canvas.
+ */
+export function reveal_ghost_to_document(
+    tool_canvas: HTMLCanvasElement,
+    rect_to_rect_mapping: RectToRectMapping,
+    ghost_context: CanvasRenderingContext2D,
+    document_context: CanvasRenderingContext2D
+): void {
+    const tool_context = tool_canvas.getContext('2d', { willReadFrequently: true })! as CanvasRenderingContext2D;
+    const tw = tool_canvas.width;
+    const th = tool_canvas.height;
+    const pixel_from_rect = scale_rect(rect_to_rect_mapping.from, { x: tw, y: th });
+    const pixel_to_rect = rect_to_rect_mapping.to;
+    const doc_w = document_context.canvas.width;
+    const doc_h = document_context.canvas.height;
+    const clip_x1 = Math.max(0, pixel_to_rect.x);
+    const clip_y1 = Math.max(0, pixel_to_rect.y);
+    const clip_x2 = Math.min(pixel_to_rect.x + pixel_to_rect.w, doc_w);
+    const clip_y2 = Math.min(pixel_to_rect.y + pixel_to_rect.h, doc_h);
+    if (clip_x2 <= clip_x1 || clip_y2 <= clip_y1) return;
+    const clipped_w = clip_x2 - clip_x1;
+    const clipped_h = clip_y2 - clip_y1;
+    const src_x_off = clip_x1 - pixel_to_rect.x;
+    const src_y_off = clip_y1 - pixel_to_rect.y;
+    const tool_image_data = tool_context.getImageData(
+        pixel_from_rect.x, pixel_from_rect.y, pixel_from_rect.w, pixel_from_rect.h);
+    const tool_data = tool_image_data.data;
+    const ghost_image_data = ghost_context.getImageData(clip_x1, clip_y1, clipped_w, clipped_h);
+    const ghost_data = ghost_image_data.data;
+    const doc_image_data = document_context.getImageData(clip_x1, clip_y1, clipped_w, clipped_h);
+    const doc_data = doc_image_data.data;
+    let any_revealed = false;
+    for (let dy = 0; dy < clipped_h; ++dy) {
+        for (let dx = 0; dx < clipped_w; ++dx) {
+            const src_off = 4 * ((src_y_off + dy) * pixel_from_rect.w + (src_x_off + dx));
+            const dst_off = 4 * (dy * clipped_w + dx);
+            if (tool_data[src_off + 3] > 0 && ghost_data[dst_off + 3] > 0) {
+                // Copy ghost pixel to document
+                doc_data[dst_off + 0] = ghost_data[dst_off + 0];
+                doc_data[dst_off + 1] = ghost_data[dst_off + 1];
+                doc_data[dst_off + 2] = ghost_data[dst_off + 2];
+                doc_data[dst_off + 3] = ghost_data[dst_off + 3];
+                // Consume from ghost
+                ghost_data[dst_off + 0] = 0;
+                ghost_data[dst_off + 1] = 0;
+                ghost_data[dst_off + 2] = 0;
+                ghost_data[dst_off + 3] = 0;
+                any_revealed = true;
+            }
+        }
+    }
+    if (any_revealed) {
+        document_context.putImageData(doc_image_data, clip_x1, clip_y1);
+        ghost_context.putImageData(ghost_image_data, clip_x1, clip_y1);
+    }
+}
+
 export function init_canvas(tool: EditingTool, canvas_signal: Signal<HTMLCanvasElement>,
     canvas_bounds_mapping_signal: Signal<RectToRectMapping>) {
     tool.canvas_bounds_mapping_signal = canvas_bounds_mapping_signal;
