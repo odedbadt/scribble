@@ -168,6 +168,82 @@ export function tool_to_document(tool_canvas: HTMLCanvasElement,
     document_context.putImageData(document_image_data, clip_x1, clip_y1);
 }
 
+/**
+ * Like tool_to_document but writes to a color token canvas.
+ * Wherever the tool canvas has a non-transparent pixel, writes [255,255,255,255] to the token canvas.
+ * The token canvas stores a white alpha-mask; the actual color is applied by the GPU tint shader.
+ */
+export function tool_to_token_canvas(
+    tool_canvas: HTMLCanvasElement,
+    rect_to_rect_mapping: RectToRectMapping,
+    token_context: CanvasRenderingContext2D
+): void {
+    _blit_tool_to_token(tool_canvas, rect_to_rect_mapping, token_context, false);
+}
+
+/**
+ * Erases from a color token canvas.
+ * Wherever the tool canvas has a non-transparent pixel, writes [0,0,0,0] to the token canvas.
+ */
+export function tool_erase_token_canvas(
+    tool_canvas: HTMLCanvasElement,
+    rect_to_rect_mapping: RectToRectMapping,
+    token_context: CanvasRenderingContext2D
+): void {
+    _blit_tool_to_token(tool_canvas, rect_to_rect_mapping, token_context, true);
+}
+
+function _blit_tool_to_token(
+    tool_canvas: HTMLCanvasElement,
+    rect_to_rect_mapping: RectToRectMapping,
+    token_context: CanvasRenderingContext2D,
+    erase: boolean
+): void {
+    const tool_context = tool_canvas.getContext('2d', { willReadFrequently: true })! as CanvasRenderingContext2D;
+    const tw = tool_canvas.width;
+    const th = tool_canvas.height;
+    const pixel_from_rect = scale_rect(rect_to_rect_mapping.from, { x: tw, y: th });
+    const pixel_to_rect = rect_to_rect_mapping.to;
+    const token_canvas = token_context.canvas;
+    const doc_w = token_canvas.width;
+    const doc_h = token_canvas.height;
+    const clip_x1 = Math.max(0, pixel_to_rect.x);
+    const clip_y1 = Math.max(0, pixel_to_rect.y);
+    const clip_x2 = Math.min(pixel_to_rect.x + pixel_to_rect.w, doc_w);
+    const clip_y2 = Math.min(pixel_to_rect.y + pixel_to_rect.h, doc_h);
+    if (clip_x2 <= clip_x1 || clip_y2 <= clip_y1) return;
+    const clipped_w = clip_x2 - clip_x1;
+    const clipped_h = clip_y2 - clip_y1;
+    const src_x_off = clip_x1 - pixel_to_rect.x;
+    const src_y_off = clip_y1 - pixel_to_rect.y;
+    const tool_image_data = tool_context.getImageData(
+        pixel_from_rect.x, pixel_from_rect.y, pixel_from_rect.w, pixel_from_rect.h);
+    const tool_data = tool_image_data.data;
+    const token_image_data = token_context.getImageData(clip_x1, clip_y1, clipped_w, clipped_h);
+    const token_data = token_image_data.data;
+    for (let dy = 0; dy < clipped_h; ++dy) {
+        for (let dx = 0; dx < clipped_w; ++dx) {
+            const src_off = 4 * ((src_y_off + dy) * pixel_from_rect.w + (src_x_off + dx));
+            const dst_off = 4 * (dy * clipped_w + dx);
+            if (tool_data[src_off + 3] > 0) {
+                if (erase) {
+                    token_data[dst_off + 0] = 0;
+                    token_data[dst_off + 1] = 0;
+                    token_data[dst_off + 2] = 0;
+                    token_data[dst_off + 3] = 0;
+                } else {
+                    token_data[dst_off + 0] = 255;
+                    token_data[dst_off + 1] = 255;
+                    token_data[dst_off + 2] = 255;
+                    token_data[dst_off + 3] = 255;
+                }
+            }
+        }
+    }
+    token_context.putImageData(token_image_data, clip_x1, clip_y1);
+}
+
+
 export function init_canvas(tool: EditingTool, canvas_signal: Signal<HTMLCanvasElement>,
     canvas_bounds_mapping_signal: Signal<RectToRectMapping>) {
     tool.canvas_bounds_mapping_signal = canvas_bounds_mapping_signal;

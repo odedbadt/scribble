@@ -846,3 +846,31 @@ body {
     color: #333;
     text-align: center;
 }
+/* Color token panel */
+#color-token-panel {
+    position: absolute;
+    left: 0;
+    bottom: 400px;
+    width: 50px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 3px;
+    box-sizing: border-box;
+}
+
+.color-token-btn {
+    width: 44px;
+    height: 22px;
+    border-radius: 3px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    box-sizing: border-box;
+    flex-shrink: 0;
+}
+
+.color-token-btn.active-token {
+    border-color: #000;
+    outline: 1px solid #fff;
+    outline-offset: -3px;
+}

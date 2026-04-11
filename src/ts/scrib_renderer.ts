@@ -1,9 +1,10 @@
 
-import { WebGLRenderer, Scene, OrthographicCamera, ShaderMaterial, DoubleSide, Mesh, PlaneGeometry, CanvasTexture, NearestFilter } from "three"
-import { FRAGMENT_SHADER_CODE, VERTEX_SHADER_CODE, CHECKER_FRAGMENT_SHADER_CODE } from "./glsl_shader_code"
+import { WebGLRenderer, Scene, OrthographicCamera, ShaderMaterial, DoubleSide, Mesh, PlaneGeometry, CanvasTexture, NearestFilter, Vector4 } from "three"
+import { FRAGMENT_SHADER_CODE, VERTEX_SHADER_CODE, CHECKER_FRAGMENT_SHADER_CODE, COLOR_TOKEN_FRAGMENT_SHADER_CODE } from "./glsl_shader_code"
 import { effect, Signal } from "@preact/signals";
 import { Rect, RectToRectMapping } from "./types";
 import { LayerStack } from "./layer_stack";
+import { color_token_registry, MAX_TOKENS } from "./color_token_registry";
 
 export class ScribRenderer {
     layer_stack: LayerStack;
@@ -147,6 +148,36 @@ export class ScribRenderer {
         scene.add(overlayMesh);
         scene.add(aboveMesh);
 
+        // Color token meshes — one per token, rendered between document and anchor layers.
+        // Each uses the tint shader: uColor uniform tints the alpha mask texture.
+        const tokenMaterials: ShaderMaterial[] = [];
+        const tokenTextures: (CanvasTexture | null)[] = [];
+        const tokenTexSizes: { w: number; h: number }[] = [];
+        const tokenGeometries: PlaneGeometry[] = [];
+        const tokenMeshes: Mesh[] = [];
+        for (let i = 0; i < MAX_TOKENS; i++) {
+            const mat = new ShaderMaterial({
+                uniforms: {
+                    uTexture: { value: null },
+                    uColor: { value: new Vector4(0, 0, 0, 0) },
+                },
+                vertexShader: VERTEX_SHADER_CODE,
+                fragmentShader: COLOR_TOKEN_FRAGMENT_SHADER_CODE,
+                transparent: true,
+                side: DoubleSide,
+            });
+            const geom = new PlaneGeometry(docTexW, docTexH);
+            const mesh = new Mesh(geom, mat);
+            // z=-3.9 … -3.2: above document (-5), below anchor (-3) and overlay (-2)
+            mesh.position.set(docTexW * 0.5, docTexH * 0.5, -3.9 + i * 0.1);
+            scene.add(mesh);
+            tokenMaterials.push(mat);
+            tokenTextures.push(null);
+            tokenTexSizes.push({ w: 0, h: 0 });
+            tokenGeometries.push(geom);
+            tokenMeshes.push(mesh);
+        }
+
         effect(() => {
             const overlay_canvas = this.overlay_canvas_signal.value;
             const bounds_mapping = this.overlay_canvas_bounds_signal.value;
@@ -202,6 +233,14 @@ export class ScribRenderer {
                 checkerMesh.geometry = checkerGeometry;
                 checkerMesh.position.set(docTexW * 0.5, docTexH * 0.5, -8);
                 checkerMaterial.uniforms.uDocSize.value = { x: docTexW, y: docTexH };
+                // Rebuild token geometries to match new document size
+                for (let i = 0; i < MAX_TOKENS; i++) {
+                    tokenGeometries[i].dispose();
+                    const newGeom = new PlaneGeometry(docTexW, docTexH);
+                    tokenMeshes[i].geometry = newGeom;
+                    tokenMeshes[i].position.set(docTexW * 0.5, docTexH * 0.5, -3.9 + i * 0.1);
+                    tokenGeometries[i] = newGeom;
+                }
             }
 
             docTexture.needsUpdate = true;
@@ -248,6 +287,31 @@ export class ScribRenderer {
                     overlayMaterial.uniforms.uTexture.value = null;
                 }
                 overlayMesh.visible = false;
+            }
+
+            // Update color token meshes — subscribe to each token's dirty + color signals
+            for (let i = 0; i < MAX_TOKENS; i++) {
+                const token = color_token_registry.tokens[i];
+                token.dirty.value;  // subscribe so texture refreshes after strokes
+                const color = token.color.value;  // subscribe for instant color changes
+
+                const tw = token.canvas.width;
+                const th = token.canvas.height;
+                if (tokenTextures[i] && tw === tokenTexSizes[i].w && th === tokenTexSizes[i].h) {
+                    tokenTextures[i]!.needsUpdate = true;
+                } else {
+                    tokenTextures[i]?.dispose();
+                    const newTex = new CanvasTexture(token.canvas);
+                    newTex.flipY = false;
+                    newTex.minFilter = NearestFilter;
+                    newTex.magFilter = NearestFilter;
+                    tokenTextures[i] = newTex;
+                    tokenMaterials[i].uniforms.uTexture.value = newTex;
+                    tokenTexSizes[i] = { w: tw, h: th };
+                }
+                tokenMaterials[i].uniforms.uColor.value = new Vector4(
+                    color[0] / 255, color[1] / 255, color[2] / 255, color[3] / 255
+                );
             }
 
             // Throttle renders to one per animation frame; pointer events can fire much faster

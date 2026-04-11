@@ -13,6 +13,18 @@ void main() {
   gl_FragColor = rgba;
 }
 `
+/** Fragment shader for color token layers.
+ *  Reads alpha from the texture mask and tints it with uColor, allowing GPU-side
+ *  instant color updates without touching pixel data. */
+export const COLOR_TOKEN_FRAGMENT_SHADER_CODE = `
+varying vec2 vUv;
+uniform sampler2D uTexture;
+uniform vec4 uColor;
+void main() {
+  float a = texture2D(uTexture, vUv).a;
+  gl_FragColor = vec4(uColor.rgb, uColor.a * a);
+}
+`
 /** Fragment shader that generates an 8-px grey checkerboard pattern.
  *  uDocSize must be set to (canvas_width, canvas_height) so pixel coordinates are exact. */
 export const CHECKER_FRAGMENT_SHADER_CODE = `

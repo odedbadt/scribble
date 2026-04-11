@@ -5,6 +5,7 @@ import { parse_RGBA, rect_union } from "./utils";
 import { mandala_mode } from "./mandala_mode";
 import { drawFilledCircle, parseColor, setPixel, RGBA } from "./pixel_utils";
 import { fill_pattern } from "./fill_pattern";
+import { color_token_registry } from "./color_token_registry";
 
 function _equal_colors(c1: Uint8ClampedArray, c2: Uint8ClampedArray): boolean {
     return c1[0] == c2[0] &&
@@ -131,12 +132,65 @@ export class Floodfill extends ClickTool {
     start(at: Vector2) {
         const w = this.document_canvas!.width;
         const h = this.document_canvas!.height;
+
+        const active_token_idx = color_token_registry.active_index.peek();
+        const is_token_mode = active_token_idx !== null;
+
         const fill_color = parse_RGBA(settings.peek<string>(SettingName.ForeColor));
+        const white = new Uint8ClampedArray([255, 255, 255, 255]);
 
         const positions = mandala_mode.enabled
             ? mandala_mode.get_point_transforms(at, mandala_mode.center ?? { x: w / 2, y: h / 2 })
             : [at];
 
+        if (is_token_mode) {
+            // Fill token canvas with white mask.
+            // Run the fill on a scratch copy of the document to discover the region,
+            // then stamp white on those pixels in the token canvas.
+            const token = color_token_registry.tokens[active_token_idx!];
+            let dirty: Rect | null = null;
+            for (const pos of positions) {
+                const replaced_color = this.document_context!.getImageData(
+                    Math.floor(pos.x), Math.floor(pos.y), 1, 1
+                ).data;
+                // scratch canvas initialized from composite document
+                const scratch = document.createElement('canvas');
+                scratch.width = w; scratch.height = h;
+                const scratch_ctx = scratch.getContext('2d', { willReadFrequently: true })!;
+                (scratch_ctx as CanvasRenderingContext2D).imageSmoothingEnabled = false;
+                scratch_ctx.drawImage(this.document_canvas!, 0, 0);
+                const before = scratch_ctx.getImageData(0, 0, w, h);
+                const bbox = _floodfill(scratch_ctx as CanvasRenderingContext2D,
+                    replaced_color as Uint8ClampedArray, white, pos.x, pos.y, w, h);
+                if (!bbox) continue;
+                // Find changed pixels; write white to token canvas at those positions
+                const after = scratch_ctx.getImageData(bbox.x, bbox.y, bbox.w, bbox.h);
+                const before_chunk = before.data;
+                const after_data = after.data;
+                const token_data = token.context.getImageData(bbox.x, bbox.y, bbox.w, bbox.h);
+                const bw = bbox.w, bh = bbox.h;
+                const bx = bbox.x, by = bbox.y;
+                for (let py = 0; py < bh; py++) {
+                    for (let px = 0; px < bw; px++) {
+                        const chunk_off = 4 * (py * bw + px);
+                        const full_off = 4 * ((by + py) * w + (bx + px));
+                        if (after_data[chunk_off + 3] !== before_chunk[full_off + 3] ||
+                            after_data[chunk_off] !== before_chunk[full_off]) {
+                            token_data.data[chunk_off + 0] = 255;
+                            token_data.data[chunk_off + 1] = 255;
+                            token_data.data[chunk_off + 2] = 255;
+                            token_data.data[chunk_off + 3] = 255;
+                        }
+                    }
+                }
+                token.context.putImageData(token_data, bbox.x, bbox.y);
+                dirty = dirty ? rect_union(dirty, bbox) : bbox;
+            }
+            if (dirty) token.dirty.value++;
+            return;
+        }
+
+        // Normal mode: fill into document canvas
         // Capture full canvas before fill; we'll clip to the actual dirty rect after.
         this.begin_undo_capture?.();
         let dirty: Rect | null = null;

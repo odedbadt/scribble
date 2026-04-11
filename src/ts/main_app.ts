@@ -13,6 +13,8 @@ import { StateValue, state_registry } from "./state_registry";
 import { mandala_mode } from "./mandala_mode";
 import { anchor_manager } from "./anchor_manager";
 import { SelectionTool } from "./selection";
+import { color_token_registry, MAX_TOKENS } from "./color_token_registry";
+import { RGBA } from "./pixel_utils";
 import { StampGallery } from "./stamp_gallery";
 import { fill_pattern } from "./fill_pattern";
 function click_for_a_second(id: string, callback: Function) {
@@ -130,6 +132,7 @@ export class MainApp {
         this.view_canvas.width = w;
         this.view_canvas.height = h;
         this.layer_stack.resize_all(w, h);
+        color_token_registry.resize_all(w, h);
         this.view_port_signal.value = { x: 0, y: 0, w, h };
     }
 
@@ -158,6 +161,7 @@ export class MainApp {
             const w = img.naturalWidth;
             const h = img.naturalHeight;
             this.layer_stack.resize_all(w, h);
+            color_token_registry.resize_all(w, h);
             this.layer_stack.active_layer.context.drawImage(img, 0, 0);
             // Keep current viewport size (zoom level); reset pan to origin
             const vp = this.view_port_signal.value;
@@ -504,6 +508,15 @@ export class MainApp {
         const apply_hl = (event: MouseEvent, commit: boolean) => {
             palette.hl_click(event.offsetX, event.offsetY);
             const rgb_color = palette.get_rgb_color();
+            const active_token_idx = color_token_registry.active_index.peek();
+            if (active_token_idx !== null) {
+                // Retroactively update the token's color — all strokes change instantly via GPU uniform
+                const rgba: RGBA = [rgb_color[0], rgb_color[1], rgb_color[2], 255];
+                color_token_registry.tokens[active_token_idx].color.value = rgba;
+                settings.set(SettingName.ForeColor,
+                    `rgba(${rgb_color[0]},${rgb_color[1]},${rgb_color[2]},255)`);
+                return;
+            }
             if (trackColorOnDrag) {
                 this.color_stack.select_color(rgb_color, activeSlot, true, false);
             } else {
@@ -513,6 +526,14 @@ export class MainApp {
         const apply_sat = (event: MouseEvent, commit: boolean) => {
             palette.sat_click(event.offsetX, event.offsetY);
             const rgb_color = palette.get_rgb_color();
+            const active_token_idx = color_token_registry.active_index.peek();
+            if (active_token_idx !== null) {
+                const rgba: RGBA = [rgb_color[0], rgb_color[1], rgb_color[2], 255];
+                color_token_registry.tokens[active_token_idx].color.value = rgba;
+                settings.set(SettingName.ForeColor,
+                    `rgba(${rgb_color[0]},${rgb_color[1]},${rgb_color[2]},255)`);
+                return;
+            }
             if (trackColorOnDrag) {
                 this.color_stack.select_color(rgb_color, activeSlot, true, false);
             } else {
@@ -692,12 +713,50 @@ export class MainApp {
         // bind pointer
 
         this.init_color_selector();
+        this.init_token_panel();
         this.init_buttons();
         this.init_anchor_button();
         this.forward_events_to_editor();
         //this.select_tool('circle');
         //this.init_view_canvas_size();
         this.init_scroll();
+    }
+
+    init_token_panel() {
+        const container = document.getElementById('color-token-panel');
+        if (!container) return;
+        for (let i = 0; i < MAX_TOKENS; i++) {
+            const token = color_token_registry.tokens[i];
+            const btn = document.createElement('div');
+            btn.className = 'color-token-btn button';
+            const c = token.color.peek();
+            btn.style.backgroundColor = `rgba(${c[0]},${c[1]},${c[2]},1)`;
+            // Keep swatch color in sync with token color signal
+            token.color.subscribe((color: RGBA) => {
+                btn.style.backgroundColor = `rgba(${color[0]},${color[1]},${color[2]},1)`;
+            });
+            btn.addEventListener('click', () => {
+                color_token_registry.select(i);
+                this._update_token_panel_ui();
+                // Set ForeColor to match the selected token so cursor/hover match
+                const active_idx = color_token_registry.active_index.peek();
+                if (active_idx !== null) {
+                    const tc = color_token_registry.tokens[active_idx].color.peek();
+                    settings.set(SettingName.ForeColor, `rgba(${tc[0]},${tc[1]},${tc[2]},255)`);
+                }
+            });
+            container.appendChild(btn);
+        }
+    }
+
+    _update_token_panel_ui() {
+        const container = document.getElementById('color-token-panel');
+        if (!container) return;
+        const active_idx = color_token_registry.active_index.peek();
+        const btns = container.querySelectorAll('.color-token-btn');
+        btns.forEach((btn, i) => {
+            btn.classList.toggle('active-token', i === active_idx);
+        });
     }
 }
 function test_signals() {
