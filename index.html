@@ -110,10 +110,11 @@
         <!-- debug -->
         <div id="debug_button" class="button debug-btn"
             onclick="document.getElementById('debug-modal').style.display='flex'">Debug</div>
-        <!-- color pickers -->
-        <canvas id="hl-selector-canvas" width="50" height="200"></canvas>
-        <canvas id="sat-selector-canvas" width="50" height="100"></canvas>
-        <div id="color-selector-div-back" title="Line / Fill / Back colors">
+        <!-- color pickers: narrow hue strip + SL square, side by side -->
+        <canvas id="hl-selector-canvas" width="14" height="96"></canvas>
+        <canvas id="sat-selector-canvas" width="36" height="96"></canvas>
+        <!-- compact fore/back/fill indicator — click to swap fore↔back -->
+        <div id="color-selector-div-back" title="Click to swap fore ↔ back">
             <div id="color-selector-div-fill">
                 <div id="color-selector-div-line"></div>
             </div>
@@ -122,30 +123,10 @@
         <div id="color-token-panel" title="Color tokens — draw with a slot, then drag palette to retroactively change its color"></div>
     </div>
 
-    <!-- BOTTOM BAR: color history stack (36 slots) -->
+    <!-- BOTTOM BAR: color history stack (16 slots) -->
     <div id="bottom-bar">
         <button id="color-stack-live-track" class="button"
             title="Track color while dragging (off = track on release only)">◉</button>
-        <div class="color_stack_item button"></div>
-        <div class="color_stack_item button"></div>
-        <div class="color_stack_item button"></div>
-        <div class="color_stack_item button"></div>
-        <div class="color_stack_item button"></div>
-        <div class="color_stack_item button"></div>
-        <div class="color_stack_item button"></div>
-        <div class="color_stack_item button"></div>
-        <div class="color_stack_item button"></div>
-        <div class="color_stack_item button"></div>
-        <div class="color_stack_item button"></div>
-        <div class="color_stack_item button"></div>
-        <div class="color_stack_item button"></div>
-        <div class="color_stack_item button"></div>
-        <div class="color_stack_item button"></div>
-        <div class="color_stack_item button"></div>
-        <div class="color_stack_item button"></div>
-        <div class="color_stack_item button"></div>
-        <div class="color_stack_item button"></div>
-        <div class="color_stack_item button"></div>
         <div class="color_stack_item button"></div>
         <div class="color_stack_item button"></div>
         <div class="color_stack_item button"></div>

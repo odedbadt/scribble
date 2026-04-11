@@ -78,7 +78,7 @@ export class MainApp {
             document.getElementById('sat-selector-canvas')! as HTMLCanvasElement, [1, 1, 0.5]);
         this.palette_hl_canvas = document.getElementById('hl-selector-canvas')! as HTMLCanvasElement
         this.palette_sat_canvas = document.getElementById('sat-selector-canvas')! as HTMLCanvasElement
-        this.color_stack = new ColorStack(this, 36, 100, 10000,
+        this.color_stack = new ColorStack(this, 16, 100, 10000,
             document.getElementById('color-selector-div-line')!,
             document.getElementById('color-selector-div-fill')!,
             document.getElementById('color-selector-div-back')!,

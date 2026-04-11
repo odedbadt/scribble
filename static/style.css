@@ -92,7 +92,7 @@ body {
     bottom: 0;
     left: 100px;
     right: 50px;
-    height: 35px;
+    height: 22px;
     background-color: white;
     border-top: 1px solid #dde;
     display: flex;
@@ -103,19 +103,19 @@ body {
 
 #bottom-bar .color_stack_item {
     flex: 1;
-    height: 35px;
+    height: 22px;
     width: auto;
 }
 
 #color-stack-live-track {
-    flex: 0 0 22px;
-    height: 35px;
-    width: 22px;
-    font-size: 11px;
+    flex: 0 0 18px;
+    height: 22px;
+    width: 18px;
+    font-size: 9px;
     padding: 0;
     border: none;
     border-right: 1px solid #ccd;
-    line-height: 35px;
+    line-height: 22px;
     text-align: center;
     cursor: pointer;
 }
@@ -127,7 +127,7 @@ body {
     left: 0px;
     top: 22px;
     width: 100px;
-    height: calc(100vh - 57px);
+    height: calc(100vh - 44px);
     background-color: white;
     border: 1px solid #dde;
     display: flex;
@@ -174,20 +174,21 @@ body {
 
 #right-toolbar {
     grid-template-columns: 50px;
-    grid-template-rows: repeat(10, 50px);
     position: absolute;
     top: 22px;
     width: 50px;
     right: 0px;
-    height: calc(100vh - 22px);
+    height: calc(100vh - 44px);
     background-color: white;
     border: 1px solid #dde;
     padding: 0;
     margin: 0;
     display: grid;
+    grid-auto-rows: 50px;
     grid-gap: 0;
     box-sizing: border-box;
     overflow: visible;
+    align-content: start;
 }
 
 #tool-controls-slot {
@@ -240,7 +241,7 @@ body {
 #canvas-area {
     background-color: white;
     width: calc(100vw - 151px);
-    height: calc(100vh - 57px);
+    height: calc(100vh - 44px);
     position: absolute;
     left: 101px;
     top: 22px;
@@ -332,51 +333,57 @@ body {
     color: #444;
 }
 
+/* ── Compact color section (bottom of right toolbar) ─────────────────────── */
+/* Heights from bottom: indicator(26) + tokens(92) + pickers(100) = 218px    */
+
+/* Fore/back/fill indicator — compact nested squares */
 #color-selector-div-back {
     position: absolute;
     bottom: 0;
     left: 0;
     width: 50px;
-    height: 50px;
-    background-color: rgba(255, 255, 255, 255);
+    height: 26px;
+    background: rgb(210, 210, 200);
+    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    cursor: pointer;
 }
 
 #color-selector-div-fill {
-    width: 36px;
-    height: 36px;
-    background-color: rgba(255, 255, 255, 255);
+    width: 34px;
+    height: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
+    background-color: rgba(255, 255, 255, 255);
 }
 
 #color-selector-div-line {
-    width: 22px;
-    height: 22px;
+    width: 18px;
+    height: 14px;
     background-color: rgba(0, 0, 0, 255);
 }
 
+/* Hue strip (14px wide) and SL square (36px wide), side by side */
 #hl-selector-canvas {
     position: absolute;
-    bottom: 150px;
+    bottom: 118px;
     left: 0;
-    width: 50px;
-    height: 200px;
+    width: 14px;
+    height: 92px;
     cursor: crosshair;
     display: block;
     box-sizing: border-box;
+    border-right: 1px solid #bbb;
 }
 
 #sat-selector-canvas {
     position: absolute;
-    bottom: 50px;
-    left: 0;
-    width: 50px;
-    height: 100px;
+    bottom: 118px;
+    left: 14px;
+    width: 36px;
+    height: 92px;
     cursor: crosshair;
     display: block;
     box-sizing: border-box;
@@ -846,27 +853,31 @@ body {
     color: #333;
     text-align: center;
 }
-/* Color token panel */
+/* Color token panel — 2-column × 4-row compact grid */
 #color-token-panel {
     position: absolute;
     left: 0;
-    bottom: 400px;
+    bottom: 26px;
     width: 50px;
-    display: flex;
-    flex-direction: column;
+    height: 92px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: repeat(4, 1fr);
     gap: 2px;
-    padding: 3px;
+    padding: 2px;
     box-sizing: border-box;
+    background: rgb(210, 210, 200);
+    border-top: 1px solid #bbb;
 }
 
 .color-token-btn {
-    width: 44px;
-    height: 22px;
-    border-radius: 3px;
+    border-radius: 2px;
     border: 2px solid transparent;
     cursor: pointer;
     box-sizing: border-box;
-    flex-shrink: 0;
+    min-width: 0;
+    min-height: 0;
+    box-shadow: inset 0px 1px 3px rgba(0,0,0,0.25);
 }
 
 .color-token-btn.active-token {

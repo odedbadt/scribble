@@ -1,5 +1,7 @@
-import { hsl_to_rgb, vec_diff } from "./utils";
+import { hsl_to_rgb } from "./utils";
 
+// _hl_canvas  = narrow vertical hue strip  (x ignored; y → hue 0..2)
+// _sat_canvas = 2-D SL square              (x → saturation, y → lightness top=1)
 export class Palette {
     _hl_canvas: HTMLCanvasElement;
     _hl_w: number;
@@ -9,11 +11,9 @@ export class Palette {
     private _sat_h: number;
     private _rgb_color: number[];
     private _hsl_color: number[];
-    // Last clicked pixel position on the HL canvas; null until first click.
-    private _hl_indicator_x: number | null = null;
-    private _hl_indicator_y: number | null = null;
+
     constructor(hl_canvas: HTMLCanvasElement, sat_canvas: HTMLCanvasElement, initial_color_hsl: number[]) {
-        this._hl_canvas = hl_canvas
+        this._hl_canvas = hl_canvas;
         this._hl_w = hl_canvas.width;
         this._hl_h = hl_canvas.height;
         this._sat_canvas = sat_canvas;
@@ -22,99 +22,78 @@ export class Palette {
         this._sat_w = sat_canvas.width;
         this._sat_h = sat_canvas.height;
     }
+
+    // Vertical rainbow strip: y → hue at full saturation / mid lightness.
+    // A 1-px horizontal hairline marks the current hue.
     _plot_hl() {
-        const hl_context: CanvasRenderingContext2D = this._hl_canvas.getContext('2d', { willReadFrequently: true })!
-        const hl_image_data = hl_context.getImageData(0, 0, this._hl_w, this._hl_h)
-        const hl_data = hl_image_data.data;
-        for (let y = 0; y < this._hl_h; ++y) {
-            for (let x = 0; x < this._hl_w; ++x) {
-                const hl = this._hl_canvas_xy_to_hl(x, y)
-                const h = hl[0];
-                const l = hl[1];
-                const hsl_val = [h, this._hsl_color[1], l];
-
-                const rgb_val = hsl_to_rgb(hsl_val);
-                // Use the actual clicked pixel position for the indicator so the crosshair
-                // sits exactly where the user clicked, including inside the black/white bands.
-                // Fall back to deriving position from HSL before the first click.
-                const ind_y = this._hl_indicator_y ?? this._hl_h * (0.5 + (this._hsl_color[2] - 0.5) / 1.25);
-                const ind_x = this._hl_indicator_x ?? this._hl_w * ((this._hsl_color[0] / 2 + 0.5) % 1);
-                if ((Math.abs(x - ind_x) <= 0.5) ||
-                    (Math.abs(y - ind_y) <= 0.5)) {
-                    // negative color
-                    const negative = vec_diff([255, 255, 255], rgb_val);
-                    rgb_val[0] = negative[0];
-                    rgb_val[1] = negative[1];
-                    rgb_val[2] = negative[2];
-                }
-                const offset = 4 * (x + y * this._hl_w)
-                hl_data[offset] = rgb_val[0]
-                hl_data[offset + 1] = rgb_val[1]
-                hl_data[offset + 2] = rgb_val[2]
-                hl_data[offset + 3] = 255;
+        const ctx = this._hl_canvas.getContext('2d', { willReadFrequently: true })!;
+        this._hl_w = this._hl_canvas.width;
+        this._hl_h = this._hl_canvas.height;
+        const img = ctx.getImageData(0, 0, this._hl_w, this._hl_h);
+        const d = img.data;
+        const ind_y = Math.round((this._hsl_color[0] / 2) * this._hl_h);
+        for (let y = 0; y < this._hl_h; y++) {
+            const h = (y / this._hl_h) * 2;
+            let rgb = hsl_to_rgb([h, 1.0, 0.5]);
+            if (y === ind_y) {
+                rgb = [255 - rgb[0], 255 - rgb[1], 255 - rgb[2]];
+            }
+            for (let x = 0; x < this._hl_w; x++) {
+                const off = 4 * (x + y * this._hl_w);
+                d[off] = rgb[0]; d[off + 1] = rgb[1]; d[off + 2] = rgb[2]; d[off + 3] = 255;
             }
         }
-        hl_context.putImageData(hl_image_data, 0, 0);
-
-
+        ctx.putImageData(img, 0, 0);
     }
+
+    // 2-D SL square at the current hue: x → saturation (0..1), y → lightness (top=1, bottom=0).
+    // A 1-px crosshair marks the current S+L position.
     _plot_sat() {
-        const sat_context: CanvasRenderingContext2D = this._sat_canvas.getContext('2d', { willReadFrequently: true })!
-        const sat_image_data = sat_context.getImageData(0, 0, this._sat_w, this._sat_h)
-        const sat_data = sat_image_data.data;
-        for (let y = 0; y < this._sat_h; ++y) {
-            for (let x = 0; x < this._sat_w; ++x) {
-                const sat = this._sat_canvas_to_sat(x, y);
-                const rgb_val = hsl_to_rgb([this._hsl_color[0], sat, this._hsl_color[2]]);
-                if (Math.abs(sat - this._hsl_color[1]) <= 0.01) {
-                    rgb_val[0] = 0;
-                    rgb_val[1] = 0;
-                    rgb_val[2] = 0;
+        const ctx = this._sat_canvas.getContext('2d', { willReadFrequently: true })!;
+        this._sat_w = this._sat_canvas.width;
+        this._sat_h = this._sat_canvas.height;
+        const img = ctx.getImageData(0, 0, this._sat_w, this._sat_h);
+        const d = img.data;
+        const ind_x = Math.round(this._hsl_color[1] * this._sat_w);
+        const ind_y = Math.round((1 - this._hsl_color[2]) * this._sat_h);
+        for (let y = 0; y < this._sat_h; y++) {
+            const l = 1 - y / this._sat_h;
+            for (let x = 0; x < this._sat_w; x++) {
+                const s = x / this._sat_w;
+                let rgb = hsl_to_rgb([this._hsl_color[0], s, l]);
+                if (x === ind_x || y === ind_y) {
+                    rgb = [255 - rgb[0], 255 - rgb[1], 255 - rgb[2]];
                 }
-                const offset = 4 * (x + y * this._sat_w);
-                sat_data[offset] = rgb_val[0];
-                sat_data[offset + 1] = rgb_val[1];
-                sat_data[offset + 2] = rgb_val[2];
-                sat_data[offset + 3] = 255;
+                const off = 4 * (x + y * this._sat_w);
+                d[off] = rgb[0]; d[off + 1] = rgb[1]; d[off + 2] = rgb[2]; d[off + 3] = 255;
             }
         }
-        sat_context.putImageData(sat_image_data, 0, 0);
-
+        ctx.putImageData(img, 0, 0);
     }
 
     plot() {
         this._plot_hl();
         this._plot_sat();
     }
-    get_rgb_color_at(x: number, y: number): Uint8ClampedArray {
-        const context: CanvasRenderingContext2D = this._hl_canvas.getContext('2d')!
-        const data = context.getImageData(x, y, 1, 1).data;
-        return data;
 
-    }
     get_rgb_color(): number[] {
         return this._rgb_color;
     }
-    _hl_canvas_xy_to_hl(x: number, y: number): number[] {
-        const h = 2 * ((x / this._hl_w + 2.5) % 1);
-        const l = Math.min(1.0, Math.max(0, 0.5 + (y / this._hl_h - 0.5) * 1.25));
-        return [h, l]
-    }
-    _sat_canvas_to_sat(x: number, y: number): number {
-        return y / this._sat_h
-    }
+
+    // Hue strip click: only updates hue; saturation and lightness are preserved.
     hl_click(x: number, y: number) {
-        const hl = this._hl_canvas_xy_to_hl(x, y)
-        this._hsl_color = [hl[0], this._hsl_color[1], hl[1]]
+        const h = Math.max(0, Math.min(2, (y / this._hl_h) * 2));
+        this._hsl_color = [h, this._hsl_color[1], this._hsl_color[2]];
         this._rgb_color = hsl_to_rgb(this._hsl_color);
-        this._hl_indicator_x = x;
-        this._hl_indicator_y = y;
-        this.plot()
-    }
-    sat_click(x: number, y: number) {
-        this._hsl_color = [this._hsl_color[0], this._sat_canvas_to_sat(x, y), this._hsl_color[2]]
-        this._rgb_color = hsl_to_rgb(this._hsl_color);
-        this.plot()
+        this.plot();
     }
 
+    // SL square click: updates both saturation (x) and lightness (y).
+    sat_click(x: number, y: number) {
+        const s = Math.max(0, Math.min(1, x / this._sat_w));
+        const l = Math.max(0, Math.min(1, 1 - y / this._sat_h));
+        this._hsl_color = [this._hsl_color[0], s, l];
+        this._rgb_color = hsl_to_rgb(this._hsl_color);
+        this.plot();
+    }
 }
