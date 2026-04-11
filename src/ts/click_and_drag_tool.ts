@@ -14,6 +14,12 @@ export abstract class ClickAndDragTool extends EditingTool {
     dirty: boolean = false;
     drag_start: Vector2 | null = null;
     protected _start_buttons: number = 0;
+    /**
+     * When true, suppress the tool-canvas overlay while dragging in ghost mode.
+     * Drawing tools set this true (default) — committed pixels are invisible.
+     * RevealBrush sets this false — its preview shows the actual ghost pixels.
+     */
+    protected _suppress_overlay_in_ghost_mode = true;
     // Cached filled-circle ImageData for hover cursor — reused while radius/color are unchanged
     private _hover_circle_cache: ImageData | null = null;
     private _hover_circle_cache_radius = -1;
@@ -43,6 +49,15 @@ export abstract class ClickAndDragTool extends EditingTool {
     }
     editing_start() {
         // nop, implement me
+    }
+    /** Override: suppress the tool-canvas overlay while dragging in ghost mode. */
+    publish_signals() {
+        if (this._suppress_overlay_in_ghost_mode
+                && this.drag_start !== null
+                && ghost_layer.enabled.peek()) {
+            return;
+        }
+        super.publish_signals();
     }
     drag(at: Vector2): void {
         if (!this.drag_start) {

@@ -1,7 +1,7 @@
 import { ClickAndDragTool } from "./click_and_drag_tool";
 import { SettingName, settings } from "./settings_registry";
 import { Vector2 } from "./types";
-import { drawLine, drawThickLine, drawFilledCircle, RGBA } from "./pixel_utils";
+import { drawLine, drawThickLine, RGBA } from "./pixel_utils";
 import { mandala_mode } from "./mandala_mode";
 import { ghost_layer } from "./ghost_layer";
 import { reveal_ghost_to_document } from "./utils";
@@ -9,11 +9,20 @@ import { reveal_ghost_to_document } from "./utils";
 /**
  * Reveal brush — sweeps over the canvas and makes previously invisible
  * ghost-mode strokes visible by copying ghost pixels to the document canvas.
+ *
+ * Preview: the overlay shows the exact ghost pixels that will be revealed,
+ * so what you see while brushing matches the committed result exactly.
  */
 export class RevealBrush extends ClickAndDragTool {
     private _prev: Vector2 | null = null;
-    // Bright highlight color so user can see where they're brushing
-    private readonly _brush_color: RGBA = [255, 230, 50, 120];
+    // Marker color used as a temporary mask before ghost pixels are sampled
+    private readonly _marker: RGBA = [1, 1, 1, 255];
+
+    constructor() {
+        super();
+        // Reveal brush always shows its overlay (it's previewing the reveal, not hiding it)
+        this._suppress_overlay_in_ghost_mode = false;
+    }
 
     editing_start() {
         this._prev = null;
@@ -41,15 +50,50 @@ export class RevealBrush extends ClickAndDragTool {
         const canvas = this.canvas!;
         const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
 
+        // Step 1: mark newly covered pixels with a sentinel marker
         for (const pair of line_pairs) {
             const fx = Math.floor(pair.from.x);
             const fy = Math.floor(pair.from.y);
             const cx = Math.floor(pair.to.x);
             const cy = Math.floor(pair.to.y);
             if (radius <= 0) {
-                drawLine(imageData, fx, fy, cx, cy, this._brush_color);
+                drawLine(imageData, fx, fy, cx, cy, this._marker);
             } else {
-                drawThickLine(imageData, fx, fy, cx, cy, radius, this._brush_color);
+                drawThickLine(imageData, fx, fy, cx, cy, radius, this._marker);
+            }
+        }
+
+        // Step 2: replace every marked pixel with the corresponding ghost pixel
+        // (transparent where ghost is empty — nothing to reveal there).
+        // Tool canvas and document canvas share the same coordinate space
+        // (mapping.to = full doc rect, tool canvas = full doc size).
+        const gw = ghost_layer.canvas.width;
+        const gh = ghost_layer.canvas.height;
+        const ghost_idata = ghost_layer.context.getImageData(0, 0, gw, gh);
+        const w = canvas.width;
+        const h = canvas.height;
+        const d = imageData.data;
+        const gd = ghost_idata.data;
+
+        for (let py = 0; py < h; py++) {
+            for (let px = 0; px < w; px++) {
+                const off = 4 * (py * w + px);
+                if (d[off + 3] === 0) continue; // untouched pixel — skip
+                // This pixel is within the brush sweep: show ghost pixel or clear
+                if (px < gw && py < gh) {
+                    const g_off = 4 * (py * gw + px);
+                    if (gd[g_off + 3] > 0) {
+                        d[off]     = gd[g_off];
+                        d[off + 1] = gd[g_off + 1];
+                        d[off + 2] = gd[g_off + 2];
+                        d[off + 3] = gd[g_off + 3];
+                    } else {
+                        // Ghost is empty here — nothing to reveal, hide the pixel
+                        d[off + 3] = 0;
+                    }
+                } else {
+                    d[off + 3] = 0;
+                }
             }
         }
 
@@ -60,6 +104,7 @@ export class RevealBrush extends ClickAndDragTool {
     commit_to_document(_color: string | null = null) {
         if (!this.canvas_bounds_mapping) return;
         if (this.document_context == null) return;
+        // The tool canvas already holds the ghost pixels we'll copy to document
         reveal_ghost_to_document(
             this.canvas!,
             this.canvas_bounds_mapping,
@@ -85,6 +130,6 @@ export class RevealBrush extends ClickAndDragTool {
     }
 
     hover_color(): RGBA {
-        return this._brush_color;
+        return [180, 255, 180, 200];
     }
 }
