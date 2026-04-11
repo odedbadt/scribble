@@ -19,7 +19,7 @@
         </div>
     </div>
 
-    <!-- LEFT TOOLBAR: drawing tools only -->
+    <!-- LEFT TOOLBAR: drawing tools + all control buttons -->
     <div id="toolbar">
         <div id="toolbar-page-1">
             <div class="scribble button"><svg class="icon"><use href="static/icons/sprite.svg#pen-pencil"/></svg></div>
@@ -44,8 +44,43 @@
             <div id="stamp-gallery-btn" class="button" title="Stamp Gallery">🖼</div>
         </div>
         <div id="toolbar-fold-btn" class="button">▼</div>
+        <!-- control buttons: 2-per-row grid below tools -->
+        <div id="toolbar-controls">
+            <div id="layers-btn" class="button" title="Toggle layers panel">☰</div>
+            <div class="mandala button"></div>
+            <div id="anchor-btn" class="anchor button" title="Toggle anchor edit mode"><svg class="icon"><use href="static/icons/sprite.svg#magnet-magnet"/></svg></div>
+            <div class="fillstyle filled button"></div>
+            <div class="fill_pattern_toggle button" title="Toggle pattern fill"></div>
+            <div class="cursor_size button"></div>
+            <div id="tool-controls-slot">
+                <div id="tool-ctrl-btn" class="button"></div>
+                <div id="tool-ctrl-btn-2" class="button"></div>
+            </div>
+            <div id="undo_button" class="undo button"><svg class="icon"><use href="static/icons/sprite.svg#undo-arrows"/></svg></div>
+            <div id="redo_button" class="redo button"><svg class="icon"><use href="static/icons/sprite.svg#redo-arrows"/></svg></div>
+            <div id="debug_button" class="button debug-btn"
+                onclick="document.getElementById('debug-modal').style.display='flex'">Dbg</div>
+        </div>
     </div>
 
+    <!-- layer panel: pops down from top, right of left toolbar -->
+    <div id="layer-panel">
+        <div id="layer-list"></div>
+        <button id="add-layer-btn">＋ Add Layer</button>
+    </div>
+    <!-- mandala panel: pops right of left toolbar -->
+    <div id="mandala-panel">
+        <div class="mandala-row">
+            <span>n</span>
+            <button id="mandala-n-minus" class="mandala-ctrl-btn">-</button>
+            <span id="mandala-n-val">8</span>
+            <button id="mandala-n-plus" class="mandala-ctrl-btn">+</button>
+        </div>
+        <div class="mandala-row">
+            <span>mirror</span>
+            <button id="mandala-mirror" class="mandala-ctrl-btn pressed">on</button>
+        </div>
+    </div>
     <div id="canvas-area">
         <canvas id="view-canvas" width="300" height="300"></canvas>
     </div>
@@ -69,80 +104,42 @@
         </div>
     </div>
 
-    <!-- RIGHT TOOLBAR: controls only -->
+    <!-- RIGHT TOOLBAR: all color controls, full height -->
     <div id="right-toolbar">
-        <!-- layers first -->
-        <div id="layers-btn" class="button" title="Toggle layers panel">☰</div>
-        <div id="layer-panel">
-            <div id="layer-list"></div>
-            <button id="add-layer-btn">＋ Add Layer</button>
+        <!-- hue strip (14px) + SL square (36px) side by side -->
+        <div id="color-pickers-row">
+            <canvas id="hl-selector-canvas" width="14" height="120"></canvas>
+            <canvas id="sat-selector-canvas" width="36" height="120"></canvas>
         </div>
-        <!-- mandala -->
-        <div class="mandala button"></div>
-        <div id="mandala-panel">
-            <div class="mandala-row">
-                <span>n</span>
-                <button id="mandala-n-minus" class="mandala-ctrl-btn">-</button>
-                <span id="mandala-n-val">8</span>
-                <button id="mandala-n-plus" class="mandala-ctrl-btn">+</button>
-            </div>
-            <div class="mandala-row">
-                <span>mirror</span>
-                <button id="mandala-mirror" class="mandala-ctrl-btn pressed">on</button>
-            </div>
-        </div>
-        <!-- anchor -->
-        <div id="anchor-btn" class="anchor button" title="Toggle anchor edit mode"><svg class="icon"><use href="static/icons/sprite.svg#magnet-magnet"/></svg></div>
-        <!-- fill style -->
-        <div class="fillstyle filled button"></div>
-        <!-- pattern fill toggle -->
-        <div class="fill_pattern_toggle button" title="Toggle pattern fill"></div>
-        <!-- line width (cursor size tool) -->
-        <div class="cursor_size button"></div>
-        <!-- contextual tool controls slot: one button, reconfigured per active tool -->
-        <div id="tool-controls-slot">
-            <div id="tool-ctrl-btn" class="button"></div>
-            <div id="tool-ctrl-btn-2" class="button"></div>
-        </div>
-        <!-- undo / redo -->
-        <div id="undo_button" class="undo button"><svg class="icon"><use href="static/icons/sprite.svg#undo-arrows"/></svg></div>
-        <div id="redo_button" class="redo button"><svg class="icon"><use href="static/icons/sprite.svg#redo-arrows"/></svg></div>
-        <!-- debug -->
-        <div id="debug_button" class="button debug-btn"
-            onclick="document.getElementById('debug-modal').style.display='flex'">Debug</div>
-        <!-- color pickers: narrow hue strip + SL square, side by side -->
-        <canvas id="hl-selector-canvas" width="14" height="96"></canvas>
-        <canvas id="sat-selector-canvas" width="36" height="96"></canvas>
-        <!-- compact fore/back/fill indicator — click to swap fore↔back -->
+        <!-- color token panel: 8 recolorable paint slots in 2×4 grid -->
+        <div id="color-token-panel" title="Color tokens — draw with a slot, then drag palette to retroactively change its color"></div>
+        <!-- fore/fill/back indicator — click to swap fore↔back -->
         <div id="color-selector-div-back" title="Click to swap fore ↔ back">
             <div id="color-selector-div-fill">
                 <div id="color-selector-div-line"></div>
             </div>
         </div>
-        <!-- color token panel: 8 recolorable paint slots -->
-        <div id="color-token-panel" title="Color tokens — draw with a slot, then drag palette to retroactively change its color"></div>
-    </div>
-
-    <!-- BOTTOM BAR: color history stack (16 slots) -->
-    <div id="bottom-bar">
-        <button id="color-stack-live-track" class="button"
-            title="Track color while dragging (off = track on release only)">◉</button>
-        <div class="color_stack_item button"></div>
-        <div class="color_stack_item button"></div>
-        <div class="color_stack_item button"></div>
-        <div class="color_stack_item button"></div>
-        <div class="color_stack_item button"></div>
-        <div class="color_stack_item button"></div>
-        <div class="color_stack_item button"></div>
-        <div class="color_stack_item button"></div>
-        <div class="color_stack_item button"></div>
-        <div class="color_stack_item button"></div>
-        <div class="color_stack_item button"></div>
-        <div class="color_stack_item button"></div>
-        <div class="color_stack_item button"></div>
-        <div class="color_stack_item button"></div>
-        <div class="color_stack_item button"></div>
-        <div class="color_stack_item button"></div>
+        <!-- color history stack — fills remaining space -->
+        <div id="color-stack-section">
+            <button id="color-stack-live-track" class="button"
+                title="Track color while dragging (off = track on release only)">◉</button>
+            <div class="color_stack_item button"></div>
+            <div class="color_stack_item button"></div>
+            <div class="color_stack_item button"></div>
+            <div class="color_stack_item button"></div>
+            <div class="color_stack_item button"></div>
+            <div class="color_stack_item button"></div>
+            <div class="color_stack_item button"></div>
+            <div class="color_stack_item button"></div>
+            <div class="color_stack_item button"></div>
+            <div class="color_stack_item button"></div>
+            <div class="color_stack_item button"></div>
+            <div class="color_stack_item button"></div>
+            <div class="color_stack_item button"></div>
+            <div class="color_stack_item button"></div>
+            <div class="color_stack_item button"></div>
+            <div class="color_stack_item button"></div>
+        </div>
     </div>
 
     <input type="file" id="file_input" accept="image/png" />
