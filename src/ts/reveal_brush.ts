@@ -69,6 +69,21 @@ export class RevealBrush extends ClickAndDragTool {
         ghost_layer.dirty.value++;
     }
 
+    /** Always commits to document (and updates dirty signal) regardless of ghost mode. */
+    stop(at: Vector2) {
+        if (this.drag_start) {
+            this.begin_undo_capture?.(this.canvas_bounds_mapping?.to);
+            this.commit_to_document();
+            this.document_dirty_signal!.value++;
+            this.push_undo_snapshot?.();
+        }
+        this.drag_start = null;
+        this.canvas_bounds_mapping = null;
+        this.canvas!.width = 1;
+        this.canvas!.height = 1;
+        this.canvas_signal!.value = null;
+    }
+
     hover_color(): RGBA {
         return this._brush_color;
     }
