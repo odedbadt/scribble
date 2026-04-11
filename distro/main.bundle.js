@@ -926,6 +926,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _settings_registry__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./settings_registry */ "./src/ts/settings_registry.ts");
 /* harmony import */ var _pixel_utils__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./pixel_utils */ "./src/ts/pixel_utils.ts");
 /* harmony import */ var _mandala_mode__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./mandala_mode */ "./src/ts/mandala_mode.ts");
+/* harmony import */ var _color_token_registry__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./color_token_registry */ "./src/ts/color_token_registry.ts");
+/* harmony import */ var _ghost_layer__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./ghost_layer */ "./src/ts/ghost_layer.ts");
+
+
 
 
 
@@ -938,6 +942,12 @@ class ClickAndDragTool extends _editing_tool__WEBPACK_IMPORTED_MODULE_0__.Editin
         this.dirty = false;
         this.drag_start = null;
         this._start_buttons = 0;
+        /**
+         * When true, suppress the tool-canvas overlay while dragging in ghost mode.
+         * Drawing tools set this true (default) — committed pixels are invisible.
+         * RevealBrush sets this false — its preview shows the actual ghost pixels.
+         */
+        this._suppress_overlay_in_ghost_mode = true;
         // Cached filled-circle ImageData for hover cursor — reused while radius/color are unchanged
         this._hover_circle_cache = null;
         this._hover_circle_cache_radius = -1;
@@ -967,6 +977,15 @@ class ClickAndDragTool extends _editing_tool__WEBPACK_IMPORTED_MODULE_0__.Editin
     }
     editing_start() {
         // nop, implement me
+    }
+    /** Override: suppress the tool-canvas overlay while dragging in ghost mode. */
+    publish_signals() {
+        if (this._suppress_overlay_in_ghost_mode
+            && this.drag_start !== null
+            && _ghost_layer__WEBPACK_IMPORTED_MODULE_7__.ghost_layer.enabled.peek()) {
+            return;
+        }
+        super.publish_signals();
     }
     drag(at) {
         if (!this.drag_start) {
@@ -1063,6 +1082,21 @@ class ClickAndDragTool extends _editing_tool__WEBPACK_IMPORTED_MODULE_0__.Editin
         if (!this.canvas_bounds_mapping) {
             return;
         }
+        // When a color token is active, redirect to the token's alpha-mask canvas.
+        const active_token_idx = _color_token_registry__WEBPACK_IMPORTED_MODULE_6__.color_token_registry.active_index.peek();
+        if (active_token_idx !== null) {
+            const token = _color_token_registry__WEBPACK_IMPORTED_MODULE_6__.color_token_registry.tokens[active_token_idx];
+            (0,_utils__WEBPACK_IMPORTED_MODULE_2__.tool_to_token_canvas)(this.canvas, this.canvas_bounds_mapping, token.context);
+            token.dirty.value++;
+            return;
+        }
+        // When ghost mode is active, commit to the invisible ghost canvas.
+        if (_ghost_layer__WEBPACK_IMPORTED_MODULE_7__.ghost_layer.enabled.peek()) {
+            const color_array = color ? (0,_utils__WEBPACK_IMPORTED_MODULE_2__.parse_RGBA)(color) : undefined;
+            (0,_utils__WEBPACK_IMPORTED_MODULE_2__.tool_to_ghost_canvas)(this.canvas, this.canvas_bounds_mapping, _ghost_layer__WEBPACK_IMPORTED_MODULE_7__.ghost_layer.context, color_array);
+            _ghost_layer__WEBPACK_IMPORTED_MODULE_7__.ghost_layer.dirty.value++;
+            return;
+        }
         // When no explicit color is given, use the actual pixel colors from the tool canvas
         // (supports dual-color fill+outline rendering). Pass a layer_color only when
         // callers explicitly request a specific color (e.g. scribble, eraser, topo_hull).
@@ -1071,10 +1105,21 @@ class ClickAndDragTool extends _editing_tool__WEBPACK_IMPORTED_MODULE_0__.Editin
     }
     stop(at) {
         if (this.drag_start) {
-            this.begin_undo_capture?.(this.canvas_bounds_mapping?.to);
-            this.commit_to_document();
-            this.document_dirty_signal.value++;
-            this.push_undo_snapshot?.();
+            const active_token_idx = _color_token_registry__WEBPACK_IMPORTED_MODULE_6__.color_token_registry.active_index.peek();
+            if (active_token_idx !== null) {
+                // Token mode: commit to token canvas; no undo entry on document
+                this.commit_to_document();
+            }
+            else if (_ghost_layer__WEBPACK_IMPORTED_MODULE_7__.ghost_layer.enabled.peek()) {
+                // Ghost mode: commit to ghost canvas; no undo entry on document
+                this.commit_to_document();
+            }
+            else {
+                this.begin_undo_capture?.(this.canvas_bounds_mapping?.to);
+                this.commit_to_document();
+                this.document_dirty_signal.value++;
+                this.push_undo_snapshot?.();
+            }
         }
         this.drag_start = null;
         this.canvas_bounds_mapping = null;
@@ -1400,6 +1445,74 @@ class ColorStack {
 
 /***/ }),
 
+/***/ "./src/ts/color_token_registry.ts":
+/*!****************************************!*\
+  !*** ./src/ts/color_token_registry.ts ***!
+  \****************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   ColorTokenRegistry: () => (/* binding */ ColorTokenRegistry),
+/* harmony export */   MAX_TOKENS: () => (/* binding */ MAX_TOKENS),
+/* harmony export */   color_token_registry: () => (/* binding */ color_token_registry)
+/* harmony export */ });
+/* harmony import */ var _preact_signals__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @preact/signals */ "./node_modules/@preact/signals/dist/signals.module.js");
+
+const MAX_TOKENS = 8;
+const DEFAULT_COLORS = [
+    [220, 50, 50, 255],
+    [50, 120, 220, 255],
+    [50, 180, 70, 255],
+    [220, 180, 50, 255],
+    [180, 50, 220, 255],
+    [50, 200, 200, 255],
+    [220, 120, 50, 255],
+    [100, 100, 100, 255],
+];
+function make_token(index, width, height) {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext('2d', { willReadFrequently: true });
+    context.imageSmoothingEnabled = false;
+    return {
+        index,
+        canvas,
+        context,
+        color: (0,_preact_signals__WEBPACK_IMPORTED_MODULE_0__.signal)([...DEFAULT_COLORS[index]]),
+        dirty: (0,_preact_signals__WEBPACK_IMPORTED_MODULE_0__.signal)(0),
+    };
+}
+class ColorTokenRegistry {
+    constructor(width = 1, height = 1) {
+        this.tokens = [];
+        this.active_index = (0,_preact_signals__WEBPACK_IMPORTED_MODULE_0__.signal)(null);
+        for (let i = 0; i < MAX_TOKENS; i++) {
+            this.tokens.push(make_token(i, width, height));
+        }
+    }
+    select(index) {
+        this.active_index.value = this.active_index.value === index ? null : index;
+    }
+    deselect() {
+        this.active_index.value = null;
+    }
+    resize_all(new_w, new_h, offset_x = 0, offset_y = 0) {
+        for (const token of this.tokens) {
+            const img = token.context.getImageData(0, 0, token.canvas.width, token.canvas.height);
+            token.canvas.width = new_w;
+            token.canvas.height = new_h;
+            token.context.imageSmoothingEnabled = false;
+            token.context.putImageData(img, offset_x, offset_y);
+        }
+    }
+}
+const color_token_registry = new ColorTokenRegistry();
+
+
+/***/ }),
+
 /***/ "./src/ts/cursor_size.ts":
 /*!*******************************!*\
   !*** ./src/ts/cursor_size.ts ***!
@@ -1647,12 +1760,14 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _selection__WEBPACK_IMPORTED_MODULE_18__ = __webpack_require__(/*! ./selection */ "./src/ts/selection.ts");
 /* harmony import */ var _stamp__WEBPACK_IMPORTED_MODULE_19__ = __webpack_require__(/*! ./stamp */ "./src/ts/stamp.ts");
 /* harmony import */ var _tile_fill__WEBPACK_IMPORTED_MODULE_20__ = __webpack_require__(/*! ./tile_fill */ "./src/ts/tile_fill.ts");
-/* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_21__ = __webpack_require__(/*! ./utils */ "./src/ts/utils.ts");
-/* harmony import */ var _mandala_mode__WEBPACK_IMPORTED_MODULE_22__ = __webpack_require__(/*! ./mandala_mode */ "./src/ts/mandala_mode.ts");
-/* harmony import */ var _pixel_utils__WEBPACK_IMPORTED_MODULE_23__ = __webpack_require__(/*! ./pixel_utils */ "./src/ts/pixel_utils.ts");
-/* harmony import */ var _anchor_manager__WEBPACK_IMPORTED_MODULE_24__ = __webpack_require__(/*! ./anchor_manager */ "./src/ts/anchor_manager.ts");
-/* harmony import */ var _settings_registry__WEBPACK_IMPORTED_MODULE_25__ = __webpack_require__(/*! ./settings_registry */ "./src/ts/settings_registry.ts");
-/* harmony import */ var _FillOutlineState__WEBPACK_IMPORTED_MODULE_26__ = __webpack_require__(/*! ./FillOutlineState */ "./src/ts/FillOutlineState.ts");
+/* harmony import */ var _reveal_brush__WEBPACK_IMPORTED_MODULE_21__ = __webpack_require__(/*! ./reveal_brush */ "./src/ts/reveal_brush.ts");
+/* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_22__ = __webpack_require__(/*! ./utils */ "./src/ts/utils.ts");
+/* harmony import */ var _mandala_mode__WEBPACK_IMPORTED_MODULE_23__ = __webpack_require__(/*! ./mandala_mode */ "./src/ts/mandala_mode.ts");
+/* harmony import */ var _pixel_utils__WEBPACK_IMPORTED_MODULE_24__ = __webpack_require__(/*! ./pixel_utils */ "./src/ts/pixel_utils.ts");
+/* harmony import */ var _anchor_manager__WEBPACK_IMPORTED_MODULE_25__ = __webpack_require__(/*! ./anchor_manager */ "./src/ts/anchor_manager.ts");
+/* harmony import */ var _settings_registry__WEBPACK_IMPORTED_MODULE_26__ = __webpack_require__(/*! ./settings_registry */ "./src/ts/settings_registry.ts");
+/* harmony import */ var _FillOutlineState__WEBPACK_IMPORTED_MODULE_27__ = __webpack_require__(/*! ./FillOutlineState */ "./src/ts/FillOutlineState.ts");
+
 
 
 
@@ -1699,7 +1814,8 @@ const tool_classes = new Map([
     ["selection", _selection__WEBPACK_IMPORTED_MODULE_18__.SelectionTool],
     ["stamp", _stamp__WEBPACK_IMPORTED_MODULE_19__.StampTool],
     ["tile_fill", _tile_fill__WEBPACK_IMPORTED_MODULE_20__.TileFillTool],
-    ["glyph_sizing", _glyph_sizing_tool__WEBPACK_IMPORTED_MODULE_15__.GlyphSizingTool]
+    ["glyph_sizing", _glyph_sizing_tool__WEBPACK_IMPORTED_MODULE_15__.GlyphSizingTool],
+    ["reveal_brush", _reveal_brush__WEBPACK_IMPORTED_MODULE_21__.RevealBrush]
     // , ["fillstyle", FillStyleToggler]
     // , ["mandala", mandala]
 ]);
@@ -1746,7 +1862,7 @@ class Editor {
     // Snap radius in document pixels, based on screen-pixel constant and current zoom
     snap_radius_doc() {
         const vp = this.view_port_signal.value;
-        return _anchor_manager__WEBPACK_IMPORTED_MODULE_24__.SNAP_RADIUS_SCREEN_PX * (vp.w / this.view_canvas.clientWidth);
+        return _anchor_manager__WEBPACK_IMPORTED_MODULE_25__.SNAP_RADIUS_SCREEN_PX * (vp.w / this.view_canvas.clientWidth);
     }
     view_port_px() {
         const top_left_px = this.view_coords_to_doc_coords({
@@ -1769,7 +1885,7 @@ class Editor {
         this.tool?.deselect?.();
         this.tool = new tool_class();
         this.tool.init_editor(this);
-        (0,_utils__WEBPACK_IMPORTED_MODULE_21__.init_canvas)(this.tool, this.tool_canvas_signal, this.tool_bounds_signal);
+        (0,_utils__WEBPACK_IMPORTED_MODULE_22__.init_canvas)(this.tool, this.tool_canvas_signal, this.tool_bounds_signal);
         //this.tool_canvas_signal.value = this.tool.canvas;
         this.tool.context.fillStyle = 'rgba(0,0,0,0)';
         this.tool.context.fillRect(0, 0, this.tool.canvas.width, this.tool.canvas.height);
@@ -1788,9 +1904,9 @@ class Editor {
         const radius = this.snap_radius_doc();
         // Right-click near anchor removes it; otherwise fall through to draw with back color
         if (event.button === 2) {
-            const { removed, was_center } = _anchor_manager__WEBPACK_IMPORTED_MODULE_24__.anchor_manager.remove_nearest(raw, radius);
+            const { removed, was_center } = _anchor_manager__WEBPACK_IMPORTED_MODULE_25__.anchor_manager.remove_nearest(raw, radius);
             if (was_center)
-                _mandala_mode__WEBPACK_IMPORTED_MODULE_22__.mandala_mode.center = null;
+                _mandala_mode__WEBPACK_IMPORTED_MODULE_23__.mandala_mode.center = null;
             if (removed)
                 return;
         }
@@ -1810,21 +1926,21 @@ class Editor {
         }
         // Anchor edit mode: drag existing or place new; never start a draw stroke
         if (this.anchor_edit_mode) {
-            const idx = _anchor_manager__WEBPACK_IMPORTED_MODULE_24__.anchor_manager.nearest_idx(raw, radius);
+            const idx = _anchor_manager__WEBPACK_IMPORTED_MODULE_25__.anchor_manager.nearest_idx(raw, radius);
             if (idx >= 0) {
                 this._dragging_anchor_idx = idx;
                 this.tool.pointer_leave();
             }
             else {
-                _anchor_manager__WEBPACK_IMPORTED_MODULE_24__.anchor_manager.add(raw);
+                _anchor_manager__WEBPACK_IMPORTED_MODULE_25__.anchor_manager.add(raw);
             }
             return;
         }
-        const { pt: at } = _anchor_manager__WEBPACK_IMPORTED_MODULE_24__.anchor_manager.snap(raw, radius);
-        if (_mandala_mode__WEBPACK_IMPORTED_MODULE_22__.mandala_mode.enabled && _mandala_mode__WEBPACK_IMPORTED_MODULE_22__.mandala_mode.center === null) {
-            const idx = _anchor_manager__WEBPACK_IMPORTED_MODULE_24__.anchor_manager.add(at);
-            _anchor_manager__WEBPACK_IMPORTED_MODULE_24__.anchor_manager.set_mandala_center(idx);
-            _mandala_mode__WEBPACK_IMPORTED_MODULE_22__.mandala_mode.center = at;
+        const { pt: at } = _anchor_manager__WEBPACK_IMPORTED_MODULE_25__.anchor_manager.snap(raw, radius);
+        if (_mandala_mode__WEBPACK_IMPORTED_MODULE_23__.mandala_mode.enabled && _mandala_mode__WEBPACK_IMPORTED_MODULE_23__.mandala_mode.center === null) {
+            const idx = _anchor_manager__WEBPACK_IMPORTED_MODULE_25__.anchor_manager.add(at);
+            _anchor_manager__WEBPACK_IMPORTED_MODULE_25__.anchor_manager.set_mandala_center(idx);
+            _mandala_mode__WEBPACK_IMPORTED_MODULE_23__.mandala_mode.center = at;
             return;
         }
         // Don't start drawing if the active layer is locked (except scraper alt mode which
@@ -1858,9 +1974,9 @@ class Editor {
         }
         // Dragging an existing anchor — just move it, no tool cursor
         if (this._dragging_anchor_idx >= 0) {
-            _anchor_manager__WEBPACK_IMPORTED_MODULE_24__.anchor_manager.move(this._dragging_anchor_idx, raw);
-            if (this._dragging_anchor_idx === _anchor_manager__WEBPACK_IMPORTED_MODULE_24__.anchor_manager.mandala_center_idx) {
-                _mandala_mode__WEBPACK_IMPORTED_MODULE_22__.mandala_mode.center = _anchor_manager__WEBPACK_IMPORTED_MODULE_24__.anchor_manager.get_mandala_center();
+            _anchor_manager__WEBPACK_IMPORTED_MODULE_25__.anchor_manager.move(this._dragging_anchor_idx, raw);
+            if (this._dragging_anchor_idx === _anchor_manager__WEBPACK_IMPORTED_MODULE_25__.anchor_manager.mandala_center_idx) {
+                _mandala_mode__WEBPACK_IMPORTED_MODULE_23__.mandala_mode.center = _anchor_manager__WEBPACK_IMPORTED_MODULE_25__.anchor_manager.get_mandala_center();
             }
             return;
         }
@@ -1869,8 +1985,8 @@ class Editor {
             this._show_anchor_placement_cursor(raw);
             return;
         }
-        const { pt: at } = _anchor_manager__WEBPACK_IMPORTED_MODULE_24__.anchor_manager.snap(raw, this.snap_radius_doc());
-        if (_mandala_mode__WEBPACK_IMPORTED_MODULE_22__.mandala_mode.enabled && _mandala_mode__WEBPACK_IMPORTED_MODULE_22__.mandala_mode.center === null) {
+        const { pt: at } = _anchor_manager__WEBPACK_IMPORTED_MODULE_25__.anchor_manager.snap(raw, this.snap_radius_doc());
+        if (_mandala_mode__WEBPACK_IMPORTED_MODULE_23__.mandala_mode.enabled && _mandala_mode__WEBPACK_IMPORTED_MODULE_23__.mandala_mode.center === null) {
             if (!event.buttons)
                 this._show_center_placement_cursor(at);
             return;
@@ -1899,8 +2015,8 @@ class Editor {
         const imageData = ctx.getImageData(0, 0, size, size);
         const color = [0, 0, 0, 255];
         for (let i = 0; i < size; i++) {
-            (0,_pixel_utils__WEBPACK_IMPORTED_MODULE_23__.setPixel)(imageData, i, arm, color);
-            (0,_pixel_utils__WEBPACK_IMPORTED_MODULE_23__.setPixel)(imageData, arm, i, color);
+            (0,_pixel_utils__WEBPACK_IMPORTED_MODULE_24__.setPixel)(imageData, i, arm, color);
+            (0,_pixel_utils__WEBPACK_IMPORTED_MODULE_24__.setPixel)(imageData, arm, i, color);
         }
         ctx.putImageData(imageData, 0, 0);
         this.tool.publish_signals();
@@ -1922,18 +2038,18 @@ class Editor {
             for (let dx = -arm; dx <= arm; dx++) {
                 const d = Math.sqrt(dx * dx + dy * dy);
                 if (d >= arm - 0.6 && d <= arm + 0.6) {
-                    (0,_pixel_utils__WEBPACK_IMPORTED_MODULE_23__.setPixel)(imageData, arm + dx, arm + dy, color);
+                    (0,_pixel_utils__WEBPACK_IMPORTED_MODULE_24__.setPixel)(imageData, arm + dx, arm + dy, color);
                 }
             }
         }
-        (0,_pixel_utils__WEBPACK_IMPORTED_MODULE_23__.setPixel)(imageData, arm, arm, color);
+        (0,_pixel_utils__WEBPACK_IMPORTED_MODULE_24__.setPixel)(imageData, arm, arm, color);
         ctx.putImageData(imageData, 0, 0);
         this.tool.publish_signals();
     }
     show_center_overlay() {
-        if (!_mandala_mode__WEBPACK_IMPORTED_MODULE_22__.mandala_mode.center)
+        if (!_mandala_mode__WEBPACK_IMPORTED_MODULE_23__.mandala_mode.center)
             return;
-        const at = _mandala_mode__WEBPACK_IMPORTED_MODULE_22__.mandala_mode.center;
+        const at = _mandala_mode__WEBPACK_IMPORTED_MODULE_23__.mandala_mode.center;
         const arm = 4;
         const size = arm * 2 + 1;
         this.tool.canvas.width = size;
@@ -1946,8 +2062,8 @@ class Editor {
         const imageData = ctx.getImageData(0, 0, size, size);
         const color = [80, 80, 80, 255];
         for (let i = 0; i < size; i++) {
-            (0,_pixel_utils__WEBPACK_IMPORTED_MODULE_23__.setPixel)(imageData, i, arm, color);
-            (0,_pixel_utils__WEBPACK_IMPORTED_MODULE_23__.setPixel)(imageData, arm, i, color);
+            (0,_pixel_utils__WEBPACK_IMPORTED_MODULE_24__.setPixel)(imageData, i, arm, color);
+            (0,_pixel_utils__WEBPACK_IMPORTED_MODULE_24__.setPixel)(imageData, arm, i, color);
         }
         ctx.putImageData(imageData, 0, 0);
         this.tool.publish_signals();
@@ -1971,7 +2087,7 @@ class Editor {
         const { data: fullBefore } = this._undo_before;
         this._undo_before = null;
         const { x, y } = rect;
-        const before = (0,_pixel_utils__WEBPACK_IMPORTED_MODULE_23__.extract_sub_image)(fullBefore, rect);
+        const before = (0,_pixel_utils__WEBPACK_IMPORTED_MODULE_24__.extract_sub_image)(fullBefore, rect);
         const after = this.document_context.getImageData(x, y, rect.w, rect.h);
         const ctx = this.document_context;
         this._history.push({
@@ -2074,9 +2190,9 @@ class Editor {
         }
         // Handle tristate fill/outline cycling with 'F' key
         if (event.code === 'KeyF') {
-            let state = _settings_registry__WEBPACK_IMPORTED_MODULE_25__.settings.peek(_settings_registry__WEBPACK_IMPORTED_MODULE_25__.SettingName.FillOutline) ?? 0;
-            state = (0,_FillOutlineState__WEBPACK_IMPORTED_MODULE_26__.nextFillOutlineState)(state);
-            _settings_registry__WEBPACK_IMPORTED_MODULE_25__.settings.set(_settings_registry__WEBPACK_IMPORTED_MODULE_25__.SettingName.FillOutline, state);
+            let state = _settings_registry__WEBPACK_IMPORTED_MODULE_26__.settings.peek(_settings_registry__WEBPACK_IMPORTED_MODULE_26__.SettingName.FillOutline) ?? 0;
+            state = (0,_FillOutlineState__WEBPACK_IMPORTED_MODULE_27__.nextFillOutlineState)(state);
+            _settings_registry__WEBPACK_IMPORTED_MODULE_26__.settings.set(_settings_registry__WEBPACK_IMPORTED_MODULE_26__.SettingName.FillOutline, state);
             // Optionally, update UI here if needed
         }
         this.tool.keydown?.(event);
@@ -2123,7 +2239,7 @@ class Editor {
         if (this.anchor_edit_mode) {
             return;
         }
-        const { pt: at } = _anchor_manager__WEBPACK_IMPORTED_MODULE_24__.anchor_manager.snap(up_pos, this.snap_radius_doc());
+        const { pt: at } = _anchor_manager__WEBPACK_IMPORTED_MODULE_25__.anchor_manager.snap(up_pos, this.snap_radius_doc());
         this.tool.stop(at);
         this.tool.hover(at);
     }
@@ -2151,6 +2267,12 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _scribble__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./scribble */ "./src/ts/scribble.ts");
 /* harmony import */ var _settings_registry__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./settings_registry */ "./src/ts/settings_registry.ts");
 /* harmony import */ var _pixel_utils__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./pixel_utils */ "./src/ts/pixel_utils.ts");
+/* harmony import */ var _color_token_registry__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./color_token_registry */ "./src/ts/color_token_registry.ts");
+/* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./utils */ "./src/ts/utils.ts");
+/* harmony import */ var _ghost_layer__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./ghost_layer */ "./src/ts/ghost_layer.ts");
+
+
+
 
 
 
@@ -2164,6 +2286,24 @@ class EraserTool extends _scribble__WEBPACK_IMPORTED_MODULE_0__.ScribbleTool {
         this.editing_drag(this.drag_start, this.drag_start);
     }
     commit_to_document(_color = null) {
+        // In token mode, erase from the token canvas instead of drawing back-color
+        const active_token_idx = _color_token_registry__WEBPACK_IMPORTED_MODULE_3__.color_token_registry.active_index.peek();
+        if (active_token_idx !== null) {
+            if (!this.canvas_bounds_mapping)
+                return;
+            const token = _color_token_registry__WEBPACK_IMPORTED_MODULE_3__.color_token_registry.tokens[active_token_idx];
+            (0,_utils__WEBPACK_IMPORTED_MODULE_4__.tool_erase_token_canvas)(this.canvas, this.canvas_bounds_mapping, token.context);
+            token.dirty.value++;
+            return;
+        }
+        // In ghost mode, erase from the ghost canvas
+        if (_ghost_layer__WEBPACK_IMPORTED_MODULE_5__.ghost_layer.enabled.peek()) {
+            if (!this.canvas_bounds_mapping)
+                return;
+            (0,_utils__WEBPACK_IMPORTED_MODULE_4__.tool_erase_ghost_canvas)(this.canvas, this.canvas_bounds_mapping, _ghost_layer__WEBPACK_IMPORTED_MODULE_5__.ghost_layer.context);
+            _ghost_layer__WEBPACK_IMPORTED_MODULE_5__.ghost_layer.dirty.value++;
+            return;
+        }
         super.commit_to_document(_settings_registry__WEBPACK_IMPORTED_MODULE_1__.settings.peek(_settings_registry__WEBPACK_IMPORTED_MODULE_1__.SettingName.BackColor));
     }
     hover_color() {
@@ -2212,6 +2352,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _mandala_mode__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./mandala_mode */ "./src/ts/mandala_mode.ts");
 /* harmony import */ var _pixel_utils__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./pixel_utils */ "./src/ts/pixel_utils.ts");
 /* harmony import */ var _fill_pattern__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./fill_pattern */ "./src/ts/fill_pattern.ts");
+/* harmony import */ var _color_token_registry__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./color_token_registry */ "./src/ts/color_token_registry.ts");
+/* harmony import */ var _ghost_layer__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./ghost_layer */ "./src/ts/ghost_layer.ts");
+
+
 
 
 
@@ -2345,10 +2489,101 @@ class Floodfill extends _click_tool__WEBPACK_IMPORTED_MODULE_0__.ClickTool {
     start(at) {
         const w = this.document_canvas.width;
         const h = this.document_canvas.height;
+        const active_token_idx = _color_token_registry__WEBPACK_IMPORTED_MODULE_6__.color_token_registry.active_index.peek();
+        const is_token_mode = active_token_idx !== null;
         const fill_color = (0,_utils__WEBPACK_IMPORTED_MODULE_2__.parse_RGBA)(_settings_registry__WEBPACK_IMPORTED_MODULE_1__.settings.peek(_settings_registry__WEBPACK_IMPORTED_MODULE_1__.SettingName.ForeColor));
+        const white = new Uint8ClampedArray([255, 255, 255, 255]);
         const positions = _mandala_mode__WEBPACK_IMPORTED_MODULE_3__.mandala_mode.enabled
             ? _mandala_mode__WEBPACK_IMPORTED_MODULE_3__.mandala_mode.get_point_transforms(at, _mandala_mode__WEBPACK_IMPORTED_MODULE_3__.mandala_mode.center ?? { x: w / 2, y: h / 2 })
             : [at];
+        if (is_token_mode) {
+            // Fill token canvas with white mask.
+            // Run the fill on a scratch copy of the document to discover the region,
+            // then stamp white on those pixels in the token canvas.
+            const token = _color_token_registry__WEBPACK_IMPORTED_MODULE_6__.color_token_registry.tokens[active_token_idx];
+            let dirty = null;
+            for (const pos of positions) {
+                const replaced_color = this.document_context.getImageData(Math.floor(pos.x), Math.floor(pos.y), 1, 1).data;
+                // scratch canvas initialized from composite document
+                const scratch = document.createElement('canvas');
+                scratch.width = w;
+                scratch.height = h;
+                const scratch_ctx = scratch.getContext('2d', { willReadFrequently: true });
+                scratch_ctx.imageSmoothingEnabled = false;
+                scratch_ctx.drawImage(this.document_canvas, 0, 0);
+                const before = scratch_ctx.getImageData(0, 0, w, h);
+                const bbox = _floodfill(scratch_ctx, replaced_color, white, pos.x, pos.y, w, h);
+                if (!bbox)
+                    continue;
+                // Find changed pixels; write white to token canvas at those positions
+                const after = scratch_ctx.getImageData(bbox.x, bbox.y, bbox.w, bbox.h);
+                const before_chunk = before.data;
+                const after_data = after.data;
+                const token_data = token.context.getImageData(bbox.x, bbox.y, bbox.w, bbox.h);
+                const bw = bbox.w, bh = bbox.h;
+                const bx = bbox.x, by = bbox.y;
+                for (let py = 0; py < bh; py++) {
+                    for (let px = 0; px < bw; px++) {
+                        const chunk_off = 4 * (py * bw + px);
+                        const full_off = 4 * ((by + py) * w + (bx + px));
+                        if (after_data[chunk_off + 3] !== before_chunk[full_off + 3] ||
+                            after_data[chunk_off] !== before_chunk[full_off]) {
+                            token_data.data[chunk_off + 0] = 255;
+                            token_data.data[chunk_off + 1] = 255;
+                            token_data.data[chunk_off + 2] = 255;
+                            token_data.data[chunk_off + 3] = 255;
+                        }
+                    }
+                }
+                token.context.putImageData(token_data, bbox.x, bbox.y);
+                dirty = dirty ? (0,_utils__WEBPACK_IMPORTED_MODULE_2__.rect_union)(dirty, bbox) : bbox;
+            }
+            if (dirty)
+                token.dirty.value++;
+            return;
+        }
+        // Ghost mode: fill with actual color into the ghost canvas
+        if (_ghost_layer__WEBPACK_IMPORTED_MODULE_7__.ghost_layer.enabled.peek()) {
+            let dirty = null;
+            for (const pos of positions) {
+                const replaced_color = this.document_context.getImageData(Math.floor(pos.x), Math.floor(pos.y), 1, 1).data;
+                const scratch = document.createElement('canvas');
+                scratch.width = w;
+                scratch.height = h;
+                const scratch_ctx = scratch.getContext('2d', { willReadFrequently: true });
+                scratch_ctx.imageSmoothingEnabled = false;
+                scratch_ctx.drawImage(this.document_canvas, 0, 0);
+                const before = scratch_ctx.getImageData(0, 0, w, h);
+                const bbox = _floodfill(scratch_ctx, replaced_color, fill_color, pos.x, pos.y, w, h);
+                if (!bbox)
+                    continue;
+                const after = scratch_ctx.getImageData(bbox.x, bbox.y, bbox.w, bbox.h);
+                const before_chunk = before.data;
+                const after_data = after.data;
+                const ghost_data = _ghost_layer__WEBPACK_IMPORTED_MODULE_7__.ghost_layer.context.getImageData(bbox.x, bbox.y, bbox.w, bbox.h);
+                const bw = bbox.w, bh = bbox.h;
+                const bx = bbox.x, by = bbox.y;
+                for (let py = 0; py < bh; py++) {
+                    for (let px = 0; px < bw; px++) {
+                        const chunk_off = 4 * (py * bw + px);
+                        const full_off = 4 * ((by + py) * w + (bx + px));
+                        if (after_data[chunk_off + 3] !== before_chunk[full_off + 3] ||
+                            after_data[chunk_off] !== before_chunk[full_off]) {
+                            ghost_data.data[chunk_off + 0] = fill_color[0];
+                            ghost_data.data[chunk_off + 1] = fill_color[1];
+                            ghost_data.data[chunk_off + 2] = fill_color[2];
+                            ghost_data.data[chunk_off + 3] = 255;
+                        }
+                    }
+                }
+                _ghost_layer__WEBPACK_IMPORTED_MODULE_7__.ghost_layer.context.putImageData(ghost_data, bbox.x, bbox.y);
+                dirty = dirty ? (0,_utils__WEBPACK_IMPORTED_MODULE_2__.rect_union)(dirty, bbox) : bbox;
+            }
+            if (dirty)
+                _ghost_layer__WEBPACK_IMPORTED_MODULE_7__.ghost_layer.dirty.value++;
+            return;
+        }
+        // Normal mode: fill into document canvas
         // Capture full canvas before fill; we'll clip to the actual dirty rect after.
         this.begin_undo_capture?.();
         let dirty = null;
@@ -2375,6 +2610,54 @@ class Floodfill extends _click_tool__WEBPACK_IMPORTED_MODULE_0__.ClickTool {
 
 /***/ }),
 
+/***/ "./src/ts/ghost_layer.ts":
+/*!*******************************!*\
+  !*** ./src/ts/ghost_layer.ts ***!
+  \*******************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   GhostLayer: () => (/* binding */ GhostLayer),
+/* harmony export */   ghost_layer: () => (/* binding */ ghost_layer)
+/* harmony export */ });
+/* harmony import */ var _preact_signals__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @preact/signals */ "./node_modules/@preact/signals/dist/signals.module.js");
+
+/**
+ * "Invisible ink" layer.
+ * Drawing tools commit here instead of the document when ghost mode is active.
+ * The canvas is never rendered — pixels are 100% invisible until the RevealBrush
+ * sweeps over them and copies them to the document canvas.
+ */
+class GhostLayer {
+    constructor() {
+        /** When true, all drawing tools commit to ghost canvas instead of document. */
+        this.enabled = (0,_preact_signals__WEBPACK_IMPORTED_MODULE_0__.signal)(false);
+        /** Incremented whenever ghost canvas changes (for external listeners). */
+        this.dirty = (0,_preact_signals__WEBPACK_IMPORTED_MODULE_0__.signal)(0);
+        this.canvas = document.createElement('canvas');
+        this.canvas.width = 1;
+        this.canvas.height = 1;
+        this.context = this.canvas.getContext('2d', { willReadFrequently: true });
+        this.context.imageSmoothingEnabled = false;
+    }
+    resize(w, h) {
+        if (this.canvas.width === w && this.canvas.height === h)
+            return;
+        const saved = this.context.getImageData(0, 0, this.canvas.width, this.canvas.height);
+        this.canvas.width = w;
+        this.canvas.height = h;
+        this.context.imageSmoothingEnabled = false;
+        if (saved.width > 0 && saved.height > 0) {
+            this.context.putImageData(saved, 0, 0);
+        }
+    }
+}
+const ghost_layer = new GhostLayer();
+
+
+/***/ }),
+
 /***/ "./src/ts/glsl_shader_code.ts":
 /*!************************************!*\
   !*** ./src/ts/glsl_shader_code.ts ***!
@@ -2384,6 +2667,7 @@ class Floodfill extends _click_tool__WEBPACK_IMPORTED_MODULE_0__.ClickTool {
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   CHECKER_FRAGMENT_SHADER_CODE: () => (/* binding */ CHECKER_FRAGMENT_SHADER_CODE),
+/* harmony export */   COLOR_TOKEN_FRAGMENT_SHADER_CODE: () => (/* binding */ COLOR_TOKEN_FRAGMENT_SHADER_CODE),
 /* harmony export */   FRAGMENT_SHADER_CODE: () => (/* binding */ FRAGMENT_SHADER_CODE),
 /* harmony export */   VERTEX_SHADER_CODE: () => (/* binding */ VERTEX_SHADER_CODE)
 /* harmony export */ });
@@ -2400,6 +2684,18 @@ uniform sampler2D uTexture;
 void main() {
   vec4 rgba = texture2D(uTexture, vUv);
   gl_FragColor = rgba;
+}
+`;
+/** Fragment shader for color token layers.
+ *  Reads alpha from the texture mask and tints it with uColor, allowing GPU-side
+ *  instant color updates without touching pixel data. */
+const COLOR_TOKEN_FRAGMENT_SHADER_CODE = `
+varying vec2 vUv;
+uniform sampler2D uTexture;
+uniform vec4 uColor;
+void main() {
+  float a = texture2D(uTexture, vUv).a;
+  gl_FragColor = vec4(uColor.rgb, uColor.a * a);
 }
 `;
 /** Fragment shader that generates an 8-px grey checkerboard pattern.
@@ -3362,11 +3658,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./utils */ "./src/ts/utils.ts");
 
+// _hl_canvas  = narrow vertical hue strip  (x ignored; y → hue 0..2)
+// _sat_canvas = 2-D SL square              (x → saturation, y → lightness top=1)
 class Palette {
     constructor(hl_canvas, sat_canvas, initial_color_hsl) {
-        // Last clicked pixel position on the HL canvas; null until first click.
-        this._hl_indicator_x = null;
-        this._hl_indicator_y = null;
         this._hl_canvas = hl_canvas;
         this._hl_w = hl_canvas.width;
         this._hl_h = hl_canvas.height;
@@ -3376,91 +3671,77 @@ class Palette {
         this._sat_w = sat_canvas.width;
         this._sat_h = sat_canvas.height;
     }
+    // Vertical rainbow strip: y → hue at full saturation / mid lightness.
+    // A 1-px horizontal hairline marks the current hue.
     _plot_hl() {
-        const hl_context = this._hl_canvas.getContext('2d', { willReadFrequently: true });
-        const hl_image_data = hl_context.getImageData(0, 0, this._hl_w, this._hl_h);
-        const hl_data = hl_image_data.data;
-        for (let y = 0; y < this._hl_h; ++y) {
-            for (let x = 0; x < this._hl_w; ++x) {
-                const hl = this._hl_canvas_xy_to_hl(x, y);
-                const h = hl[0];
-                const l = hl[1];
-                const hsl_val = [h, this._hsl_color[1], l];
-                const rgb_val = (0,_utils__WEBPACK_IMPORTED_MODULE_0__.hsl_to_rgb)(hsl_val);
-                // Use the actual clicked pixel position for the indicator so the crosshair
-                // sits exactly where the user clicked, including inside the black/white bands.
-                // Fall back to deriving position from HSL before the first click.
-                const ind_y = this._hl_indicator_y ?? this._hl_h * (0.5 + (this._hsl_color[2] - 0.5) / 1.25);
-                const ind_x = this._hl_indicator_x ?? this._hl_w * ((this._hsl_color[0] / 2 + 0.5) % 1);
-                if ((Math.abs(x - ind_x) <= 0.5) ||
-                    (Math.abs(y - ind_y) <= 0.5)) {
-                    // negative color
-                    const negative = (0,_utils__WEBPACK_IMPORTED_MODULE_0__.vec_diff)([255, 255, 255], rgb_val);
-                    rgb_val[0] = negative[0];
-                    rgb_val[1] = negative[1];
-                    rgb_val[2] = negative[2];
-                }
-                const offset = 4 * (x + y * this._hl_w);
-                hl_data[offset] = rgb_val[0];
-                hl_data[offset + 1] = rgb_val[1];
-                hl_data[offset + 2] = rgb_val[2];
-                hl_data[offset + 3] = 255;
+        const ctx = this._hl_canvas.getContext('2d', { willReadFrequently: true });
+        this._hl_w = this._hl_canvas.width;
+        this._hl_h = this._hl_canvas.height;
+        const img = ctx.getImageData(0, 0, this._hl_w, this._hl_h);
+        const d = img.data;
+        const ind_y = Math.round((this._hsl_color[0] / 2) * this._hl_h);
+        for (let y = 0; y < this._hl_h; y++) {
+            const h = (y / this._hl_h) * 2;
+            let rgb = (0,_utils__WEBPACK_IMPORTED_MODULE_0__.hsl_to_rgb)([h, 1.0, 0.5]);
+            if (y === ind_y) {
+                rgb = [255 - rgb[0], 255 - rgb[1], 255 - rgb[2]];
+            }
+            for (let x = 0; x < this._hl_w; x++) {
+                const off = 4 * (x + y * this._hl_w);
+                d[off] = rgb[0];
+                d[off + 1] = rgb[1];
+                d[off + 2] = rgb[2];
+                d[off + 3] = 255;
             }
         }
-        hl_context.putImageData(hl_image_data, 0, 0);
+        ctx.putImageData(img, 0, 0);
     }
+    // 2-D SL square at the current hue: x → saturation (0..1), y → lightness (top=1, bottom=0).
+    // A 1-px crosshair marks the current S+L position.
     _plot_sat() {
-        const sat_context = this._sat_canvas.getContext('2d', { willReadFrequently: true });
-        const sat_image_data = sat_context.getImageData(0, 0, this._sat_w, this._sat_h);
-        const sat_data = sat_image_data.data;
-        for (let y = 0; y < this._sat_h; ++y) {
-            for (let x = 0; x < this._sat_w; ++x) {
-                const sat = this._sat_canvas_to_sat(x, y);
-                const rgb_val = (0,_utils__WEBPACK_IMPORTED_MODULE_0__.hsl_to_rgb)([this._hsl_color[0], sat, this._hsl_color[2]]);
-                if (Math.abs(sat - this._hsl_color[1]) <= 0.01) {
-                    rgb_val[0] = 0;
-                    rgb_val[1] = 0;
-                    rgb_val[2] = 0;
+        const ctx = this._sat_canvas.getContext('2d', { willReadFrequently: true });
+        this._sat_w = this._sat_canvas.width;
+        this._sat_h = this._sat_canvas.height;
+        const img = ctx.getImageData(0, 0, this._sat_w, this._sat_h);
+        const d = img.data;
+        const ind_x = Math.round(this._hsl_color[1] * this._sat_w);
+        const ind_y = Math.round((1 - this._hsl_color[2]) * this._sat_h);
+        for (let y = 0; y < this._sat_h; y++) {
+            const l = 1 - y / this._sat_h;
+            for (let x = 0; x < this._sat_w; x++) {
+                const s = x / this._sat_w;
+                let rgb = (0,_utils__WEBPACK_IMPORTED_MODULE_0__.hsl_to_rgb)([this._hsl_color[0], s, l]);
+                if (x === ind_x || y === ind_y) {
+                    rgb = [255 - rgb[0], 255 - rgb[1], 255 - rgb[2]];
                 }
-                const offset = 4 * (x + y * this._sat_w);
-                sat_data[offset] = rgb_val[0];
-                sat_data[offset + 1] = rgb_val[1];
-                sat_data[offset + 2] = rgb_val[2];
-                sat_data[offset + 3] = 255;
+                const off = 4 * (x + y * this._sat_w);
+                d[off] = rgb[0];
+                d[off + 1] = rgb[1];
+                d[off + 2] = rgb[2];
+                d[off + 3] = 255;
             }
         }
-        sat_context.putImageData(sat_image_data, 0, 0);
+        ctx.putImageData(img, 0, 0);
     }
     plot() {
         this._plot_hl();
         this._plot_sat();
     }
-    get_rgb_color_at(x, y) {
-        const context = this._hl_canvas.getContext('2d');
-        const data = context.getImageData(x, y, 1, 1).data;
-        return data;
-    }
     get_rgb_color() {
         return this._rgb_color;
     }
-    _hl_canvas_xy_to_hl(x, y) {
-        const h = 2 * ((x / this._hl_w + 2.5) % 1);
-        const l = Math.min(1.0, Math.max(0, 0.5 + (y / this._hl_h - 0.5) * 1.25));
-        return [h, l];
-    }
-    _sat_canvas_to_sat(x, y) {
-        return y / this._sat_h;
-    }
+    // Hue strip click: only updates hue; saturation and lightness are preserved.
     hl_click(x, y) {
-        const hl = this._hl_canvas_xy_to_hl(x, y);
-        this._hsl_color = [hl[0], this._hsl_color[1], hl[1]];
+        const h = Math.max(0, Math.min(2, (y / this._hl_h) * 2));
+        this._hsl_color = [h, this._hsl_color[1], this._hsl_color[2]];
         this._rgb_color = (0,_utils__WEBPACK_IMPORTED_MODULE_0__.hsl_to_rgb)(this._hsl_color);
-        this._hl_indicator_x = x;
-        this._hl_indicator_y = y;
         this.plot();
     }
+    // SL square click: updates both saturation (x) and lightness (y).
     sat_click(x, y) {
-        this._hsl_color = [this._hsl_color[0], this._sat_canvas_to_sat(x, y), this._hsl_color[2]];
+        const s = Math.max(0, Math.min(1, x / this._sat_w));
+        const l = Math.max(0, Math.min(1, 1 - y / this._sat_h));
+        this._hsl_color = [this._hsl_color[0], s, l];
         this._rgb_color = (0,_utils__WEBPACK_IMPORTED_MODULE_0__.hsl_to_rgb)(this._hsl_color);
         this.plot();
     }
@@ -4397,6 +4678,149 @@ class RectTool extends _click_and_drag_tool__WEBPACK_IMPORTED_MODULE_0__.ClickAn
 
 /***/ }),
 
+/***/ "./src/ts/reveal_brush.ts":
+/*!********************************!*\
+  !*** ./src/ts/reveal_brush.ts ***!
+  \********************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   RevealBrush: () => (/* binding */ RevealBrush)
+/* harmony export */ });
+/* harmony import */ var _click_and_drag_tool__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./click_and_drag_tool */ "./src/ts/click_and_drag_tool.ts");
+/* harmony import */ var _settings_registry__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./settings_registry */ "./src/ts/settings_registry.ts");
+/* harmony import */ var _pixel_utils__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./pixel_utils */ "./src/ts/pixel_utils.ts");
+/* harmony import */ var _mandala_mode__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./mandala_mode */ "./src/ts/mandala_mode.ts");
+/* harmony import */ var _ghost_layer__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./ghost_layer */ "./src/ts/ghost_layer.ts");
+/* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./utils */ "./src/ts/utils.ts");
+
+
+
+
+
+
+/**
+ * Reveal brush — sweeps over the canvas and makes previously invisible
+ * ghost-mode strokes visible by copying ghost pixels to the document canvas.
+ *
+ * Preview: the overlay shows the exact ghost pixels that will be revealed,
+ * so what you see while brushing matches the committed result exactly.
+ */
+class RevealBrush extends _click_and_drag_tool__WEBPACK_IMPORTED_MODULE_0__.ClickAndDragTool {
+    constructor() {
+        super();
+        this._prev = null;
+        // Marker color used as a temporary mask before ghost pixels are sampled
+        this._marker = [1, 1, 1, 255];
+        // Reveal brush always shows its overlay (it's previewing the reveal, not hiding it)
+        this._suppress_overlay_in_ghost_mode = false;
+    }
+    editing_start() {
+        this._prev = null;
+        this.editing_drag(this.drag_start, this.drag_start);
+    }
+    editing_drag(from, to) {
+        const lw = _settings_registry__WEBPACK_IMPORTED_MODULE_1__.settings.peek(_settings_registry__WEBPACK_IMPORTED_MODULE_1__.SettingName.LineWidth);
+        const radius = Math.floor(lw / 2);
+        const prev = this._prev ?? to;
+        this._prev = { ...to };
+        let line_pairs;
+        if (_mandala_mode__WEBPACK_IMPORTED_MODULE_3__.mandala_mode.enabled) {
+            const center = _mandala_mode__WEBPACK_IMPORTED_MODULE_3__.mandala_mode.center ?? {
+                x: this.document_canvas.width / 2,
+                y: this.document_canvas.height / 2
+            };
+            line_pairs = _mandala_mode__WEBPACK_IMPORTED_MODULE_3__.mandala_mode.get_line_transforms(prev, to, center);
+        }
+        else {
+            line_pairs = [{ from: prev, to }];
+        }
+        const context = this.context;
+        const canvas = this.canvas;
+        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+        // Step 1: mark newly covered pixels with a sentinel marker
+        for (const pair of line_pairs) {
+            const fx = Math.floor(pair.from.x);
+            const fy = Math.floor(pair.from.y);
+            const cx = Math.floor(pair.to.x);
+            const cy = Math.floor(pair.to.y);
+            if (radius <= 0) {
+                (0,_pixel_utils__WEBPACK_IMPORTED_MODULE_2__.drawLine)(imageData, fx, fy, cx, cy, this._marker);
+            }
+            else {
+                (0,_pixel_utils__WEBPACK_IMPORTED_MODULE_2__.drawThickLine)(imageData, fx, fy, cx, cy, radius, this._marker);
+            }
+        }
+        // Step 2: replace every marked pixel with the corresponding ghost pixel
+        // (transparent where ghost is empty — nothing to reveal there).
+        // Tool canvas and document canvas share the same coordinate space
+        // (mapping.to = full doc rect, tool canvas = full doc size).
+        const gw = _ghost_layer__WEBPACK_IMPORTED_MODULE_4__.ghost_layer.canvas.width;
+        const gh = _ghost_layer__WEBPACK_IMPORTED_MODULE_4__.ghost_layer.canvas.height;
+        const ghost_idata = _ghost_layer__WEBPACK_IMPORTED_MODULE_4__.ghost_layer.context.getImageData(0, 0, gw, gh);
+        const w = canvas.width;
+        const h = canvas.height;
+        const d = imageData.data;
+        const gd = ghost_idata.data;
+        for (let py = 0; py < h; py++) {
+            for (let px = 0; px < w; px++) {
+                const off = 4 * (py * w + px);
+                if (d[off + 3] === 0)
+                    continue; // untouched pixel — skip
+                // This pixel is within the brush sweep: show ghost pixel or clear
+                if (px < gw && py < gh) {
+                    const g_off = 4 * (py * gw + px);
+                    if (gd[g_off + 3] > 0) {
+                        d[off] = gd[g_off];
+                        d[off + 1] = gd[g_off + 1];
+                        d[off + 2] = gd[g_off + 2];
+                        d[off + 3] = gd[g_off + 3];
+                    }
+                    else {
+                        // Ghost is empty here — nothing to reveal, hide the pixel
+                        d[off + 3] = 0;
+                    }
+                }
+                else {
+                    d[off + 3] = 0;
+                }
+            }
+        }
+        context.putImageData(imageData, 0, 0);
+        this.publish_signals();
+    }
+    commit_to_document(_color = null) {
+        if (!this.canvas_bounds_mapping)
+            return;
+        if (this.document_context == null)
+            return;
+        // The tool canvas already holds the ghost pixels we'll copy to document
+        (0,_utils__WEBPACK_IMPORTED_MODULE_5__.reveal_ghost_to_document)(this.canvas, this.canvas_bounds_mapping, _ghost_layer__WEBPACK_IMPORTED_MODULE_4__.ghost_layer.context, this.document_context);
+        _ghost_layer__WEBPACK_IMPORTED_MODULE_4__.ghost_layer.dirty.value++;
+    }
+    /** Always commits to document (and updates dirty signal) regardless of ghost mode. */
+    stop(at) {
+        if (this.drag_start) {
+            this.begin_undo_capture?.(this.canvas_bounds_mapping?.to);
+            this.commit_to_document();
+            this.document_dirty_signal.value++;
+            this.push_undo_snapshot?.();
+        }
+        this.drag_start = null;
+        this.canvas_bounds_mapping = null;
+        this.canvas.width = 1;
+        this.canvas.height = 1;
+        this.canvas_signal.value = null;
+    }
+    hover_color() {
+        return [180, 255, 180, 200];
+    }
+}
+
+
+/***/ }),
+
 /***/ "./src/ts/scraper.ts":
 /*!***************************!*\
   !*** ./src/ts/scraper.ts ***!
@@ -4799,10 +5223,12 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   ScribRenderer: () => (/* binding */ ScribRenderer)
 /* harmony export */ });
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.core.js");
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.core.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 /* harmony import */ var _glsl_shader_code__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./glsl_shader_code */ "./src/ts/glsl_shader_code.ts");
 /* harmony import */ var _preact_signals__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @preact/signals */ "./node_modules/@preact/signals/dist/signals.module.js");
+/* harmony import */ var _color_token_registry__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./color_token_registry */ "./src/ts/color_token_registry.ts");
+
 
 
 
@@ -4820,7 +5246,7 @@ class ScribRenderer {
         this.init_render_loop();
     }
     init_camera(vp) {
-        const camera = new three__WEBPACK_IMPORTED_MODULE_2__.OrthographicCamera(vp.x, // left
+        const camera = new three__WEBPACK_IMPORTED_MODULE_3__.OrthographicCamera(vp.x, // left
         vp.x + vp.w, // right
         vp.y, // top
         vp.y + vp.h, // bottom
@@ -4830,7 +5256,7 @@ class ScribRenderer {
         return camera;
     }
     init_render_loop() {
-        const renderer = new three__WEBPACK_IMPORTED_MODULE_3__.WebGLRenderer({
+        const renderer = new three__WEBPACK_IMPORTED_MODULE_4__.WebGLRenderer({
             antialias: false,
             canvas: this.view_canvas
         });
@@ -4841,76 +5267,76 @@ class ScribRenderer {
         let docTexW = composite_canvas.width;
         let docTexH = composite_canvas.height;
         const makeDocTexture = () => {
-            const t = new three__WEBPACK_IMPORTED_MODULE_2__.CanvasTexture(composite_canvas);
+            const t = new three__WEBPACK_IMPORTED_MODULE_3__.CanvasTexture(composite_canvas);
             t.flipY = false;
-            t.minFilter = three__WEBPACK_IMPORTED_MODULE_2__.NearestFilter;
-            t.magFilter = three__WEBPACK_IMPORTED_MODULE_2__.NearestFilter;
+            t.minFilter = three__WEBPACK_IMPORTED_MODULE_3__.NearestFilter;
+            t.magFilter = three__WEBPACK_IMPORTED_MODULE_3__.NearestFilter;
             return t;
         };
         const makeAboveTexture = () => {
-            const t = new three__WEBPACK_IMPORTED_MODULE_2__.CanvasTexture(above_composite_canvas);
+            const t = new three__WEBPACK_IMPORTED_MODULE_3__.CanvasTexture(above_composite_canvas);
             t.flipY = false;
-            t.minFilter = three__WEBPACK_IMPORTED_MODULE_2__.NearestFilter;
-            t.magFilter = three__WEBPACK_IMPORTED_MODULE_2__.NearestFilter;
+            t.minFilter = three__WEBPACK_IMPORTED_MODULE_3__.NearestFilter;
+            t.magFilter = three__WEBPACK_IMPORTED_MODULE_3__.NearestFilter;
             return t;
         };
         let docTexture = makeDocTexture();
-        const docMaterial = new three__WEBPACK_IMPORTED_MODULE_2__.ShaderMaterial({
+        const docMaterial = new three__WEBPACK_IMPORTED_MODULE_3__.ShaderMaterial({
             uniforms: { uTexture: { value: docTexture } },
             vertexShader: _glsl_shader_code__WEBPACK_IMPORTED_MODULE_0__.VERTEX_SHADER_CODE,
             fragmentShader: _glsl_shader_code__WEBPACK_IMPORTED_MODULE_0__.FRAGMENT_SHADER_CODE,
             transparent: true,
-            side: three__WEBPACK_IMPORTED_MODULE_2__.DoubleSide,
+            side: three__WEBPACK_IMPORTED_MODULE_3__.DoubleSide,
         });
-        let docGeometry = new three__WEBPACK_IMPORTED_MODULE_2__.PlaneGeometry(docTexW, docTexH);
-        const docMesh = new three__WEBPACK_IMPORTED_MODULE_2__.Mesh(docGeometry, docMaterial);
+        let docGeometry = new three__WEBPACK_IMPORTED_MODULE_3__.PlaneGeometry(docTexW, docTexH);
+        const docMesh = new three__WEBPACK_IMPORTED_MODULE_3__.Mesh(docGeometry, docMaterial);
         docMesh.position.set(docTexW * 0.5, docTexH * 0.5, -5);
         // Checkerboard background mesh — sits behind docMesh at z=-8.
         // Shows through transparent holes punched in the bottommost layer.
-        const checkerMaterial = new three__WEBPACK_IMPORTED_MODULE_2__.ShaderMaterial({
+        const checkerMaterial = new three__WEBPACK_IMPORTED_MODULE_3__.ShaderMaterial({
             uniforms: { uDocSize: { value: { x: docTexW, y: docTexH } } },
             vertexShader: _glsl_shader_code__WEBPACK_IMPORTED_MODULE_0__.VERTEX_SHADER_CODE,
             fragmentShader: _glsl_shader_code__WEBPACK_IMPORTED_MODULE_0__.CHECKER_FRAGMENT_SHADER_CODE,
-            side: three__WEBPACK_IMPORTED_MODULE_2__.DoubleSide,
+            side: three__WEBPACK_IMPORTED_MODULE_3__.DoubleSide,
         });
-        let checkerGeometry = new three__WEBPACK_IMPORTED_MODULE_2__.PlaneGeometry(docTexW, docTexH);
-        const checkerMesh = new three__WEBPACK_IMPORTED_MODULE_2__.Mesh(checkerGeometry, checkerMaterial);
+        let checkerGeometry = new three__WEBPACK_IMPORTED_MODULE_3__.PlaneGeometry(docTexW, docTexH);
+        const checkerMesh = new three__WEBPACK_IMPORTED_MODULE_3__.Mesh(checkerGeometry, checkerMaterial);
         checkerMesh.position.set(docTexW * 0.5, docTexH * 0.5, -8);
         // Above-active-layer mesh — renders on top of the overlay stroke
         let aboveTexture = makeAboveTexture();
-        const aboveMaterial = new three__WEBPACK_IMPORTED_MODULE_2__.ShaderMaterial({
+        const aboveMaterial = new three__WEBPACK_IMPORTED_MODULE_3__.ShaderMaterial({
             uniforms: { uTexture: { value: aboveTexture } },
             vertexShader: _glsl_shader_code__WEBPACK_IMPORTED_MODULE_0__.VERTEX_SHADER_CODE,
             fragmentShader: _glsl_shader_code__WEBPACK_IMPORTED_MODULE_0__.FRAGMENT_SHADER_CODE,
             transparent: true,
-            side: three__WEBPACK_IMPORTED_MODULE_2__.DoubleSide,
+            side: three__WEBPACK_IMPORTED_MODULE_3__.DoubleSide,
         });
-        let aboveGeometry = new three__WEBPACK_IMPORTED_MODULE_2__.PlaneGeometry(docTexW, docTexH);
-        const aboveMesh = new three__WEBPACK_IMPORTED_MODULE_2__.Mesh(aboveGeometry, aboveMaterial);
+        let aboveGeometry = new three__WEBPACK_IMPORTED_MODULE_3__.PlaneGeometry(docTexW, docTexH);
+        const aboveMesh = new three__WEBPACK_IMPORTED_MODULE_3__.Mesh(aboveGeometry, aboveMaterial);
         aboveMesh.position.set(docTexW * 0.5, docTexH * 0.5, -1);
         // Overlay mesh — geometry/material/mesh reused; texture reused when canvas dimensions match
-        const overlayMaterial = new three__WEBPACK_IMPORTED_MODULE_2__.ShaderMaterial({
+        const overlayMaterial = new three__WEBPACK_IMPORTED_MODULE_3__.ShaderMaterial({
             uniforms: { uTexture: { value: null } },
             vertexShader: _glsl_shader_code__WEBPACK_IMPORTED_MODULE_0__.VERTEX_SHADER_CODE,
             fragmentShader: _glsl_shader_code__WEBPACK_IMPORTED_MODULE_0__.FRAGMENT_SHADER_CODE,
             transparent: true,
-            side: three__WEBPACK_IMPORTED_MODULE_2__.DoubleSide,
+            side: three__WEBPACK_IMPORTED_MODULE_3__.DoubleSide,
         });
-        const overlayGeometry = new three__WEBPACK_IMPORTED_MODULE_2__.PlaneGeometry(1, 1);
-        const overlayMesh = new three__WEBPACK_IMPORTED_MODULE_2__.Mesh(overlayGeometry, overlayMaterial);
+        const overlayGeometry = new three__WEBPACK_IMPORTED_MODULE_3__.PlaneGeometry(1, 1);
+        const overlayMesh = new three__WEBPACK_IMPORTED_MODULE_3__.Mesh(overlayGeometry, overlayMaterial);
         overlayMesh.visible = false;
         let overlayTexture = null;
         let overlayTexW = 0;
         let overlayTexH = 0;
         // Anchor overlay mesh — full-document-sized, persists across strokes
-        const anchorMaterial = new three__WEBPACK_IMPORTED_MODULE_2__.ShaderMaterial({
+        const anchorMaterial = new three__WEBPACK_IMPORTED_MODULE_3__.ShaderMaterial({
             uniforms: { uTexture: { value: null } },
             vertexShader: _glsl_shader_code__WEBPACK_IMPORTED_MODULE_0__.VERTEX_SHADER_CODE,
             fragmentShader: _glsl_shader_code__WEBPACK_IMPORTED_MODULE_0__.FRAGMENT_SHADER_CODE,
             transparent: true,
-            side: three__WEBPACK_IMPORTED_MODULE_2__.DoubleSide,
+            side: three__WEBPACK_IMPORTED_MODULE_3__.DoubleSide,
         });
-        const anchorMesh = new three__WEBPACK_IMPORTED_MODULE_2__.Mesh(new three__WEBPACK_IMPORTED_MODULE_2__.PlaneGeometry(1, 1), anchorMaterial);
+        const anchorMesh = new three__WEBPACK_IMPORTED_MODULE_3__.Mesh(new three__WEBPACK_IMPORTED_MODULE_3__.PlaneGeometry(1, 1), anchorMaterial);
         anchorMesh.visible = false;
         let anchorTexture = null;
         let anchorTexW = 0;
@@ -4918,12 +5344,41 @@ class ScribRenderer {
         // Render is throttled to one call per animation frame to avoid rendering faster
         // than the display can show when pointer events fire at high rate.
         let renderPending = false;
-        const scene = new three__WEBPACK_IMPORTED_MODULE_2__.Scene();
+        const scene = new three__WEBPACK_IMPORTED_MODULE_3__.Scene();
         scene.add(checkerMesh);
         scene.add(docMesh);
         scene.add(anchorMesh);
         scene.add(overlayMesh);
         scene.add(aboveMesh);
+        // Color token meshes — one per token, rendered between document and anchor layers.
+        // Each uses the tint shader: uColor uniform tints the alpha mask texture.
+        const tokenMaterials = [];
+        const tokenTextures = [];
+        const tokenTexSizes = [];
+        const tokenGeometries = [];
+        const tokenMeshes = [];
+        for (let i = 0; i < _color_token_registry__WEBPACK_IMPORTED_MODULE_2__.MAX_TOKENS; i++) {
+            const mat = new three__WEBPACK_IMPORTED_MODULE_3__.ShaderMaterial({
+                uniforms: {
+                    uTexture: { value: null },
+                    uColor: { value: new three__WEBPACK_IMPORTED_MODULE_3__.Vector4(0, 0, 0, 0) },
+                },
+                vertexShader: _glsl_shader_code__WEBPACK_IMPORTED_MODULE_0__.VERTEX_SHADER_CODE,
+                fragmentShader: _glsl_shader_code__WEBPACK_IMPORTED_MODULE_0__.COLOR_TOKEN_FRAGMENT_SHADER_CODE,
+                transparent: true,
+                side: three__WEBPACK_IMPORTED_MODULE_3__.DoubleSide,
+            });
+            const geom = new three__WEBPACK_IMPORTED_MODULE_3__.PlaneGeometry(docTexW, docTexH);
+            const mesh = new three__WEBPACK_IMPORTED_MODULE_3__.Mesh(geom, mat);
+            // z=-3.9 … -3.2: above document (-5), below anchor (-3) and overlay (-2)
+            mesh.position.set(docTexW * 0.5, docTexH * 0.5, -3.9 + i * 0.1);
+            scene.add(mesh);
+            tokenMaterials.push(mat);
+            tokenTextures.push(null);
+            tokenTexSizes.push({ w: 0, h: 0 });
+            tokenGeometries.push(geom);
+            tokenMeshes.push(mesh);
+        }
         (0,_preact_signals__WEBPACK_IMPORTED_MODULE_1__.effect)(() => {
             const overlay_canvas = this.overlay_canvas_signal.value;
             const bounds_mapping = this.overlay_canvas_bounds_signal.value;
@@ -4941,10 +5396,10 @@ class ScribRenderer {
                 }
                 else {
                     anchorTexture?.dispose();
-                    anchorTexture = new three__WEBPACK_IMPORTED_MODULE_2__.CanvasTexture(anchor_canvas);
+                    anchorTexture = new three__WEBPACK_IMPORTED_MODULE_3__.CanvasTexture(anchor_canvas);
                     anchorTexture.flipY = false;
-                    anchorTexture.minFilter = three__WEBPACK_IMPORTED_MODULE_2__.NearestFilter;
-                    anchorTexture.magFilter = three__WEBPACK_IMPORTED_MODULE_2__.NearestFilter;
+                    anchorTexture.minFilter = three__WEBPACK_IMPORTED_MODULE_3__.NearestFilter;
+                    anchorTexture.magFilter = three__WEBPACK_IMPORTED_MODULE_3__.NearestFilter;
                     anchorMaterial.uniforms.uTexture.value = anchorTexture;
                     anchorTexW = anchor_canvas.width;
                     anchorTexH = anchor_canvas.height;
@@ -4969,15 +5424,23 @@ class ScribRenderer {
                 docTexture = makeDocTexture();
                 docMaterial.uniforms.uTexture.value = docTexture;
                 docGeometry.dispose();
-                docGeometry = new three__WEBPACK_IMPORTED_MODULE_2__.PlaneGeometry(docTexW, docTexH);
+                docGeometry = new three__WEBPACK_IMPORTED_MODULE_3__.PlaneGeometry(docTexW, docTexH);
                 docMesh.geometry = docGeometry;
                 docMesh.position.set(docTexW * 0.5, docTexH * 0.5, -5);
                 // Keep checker mesh in sync with document size
                 checkerGeometry.dispose();
-                checkerGeometry = new three__WEBPACK_IMPORTED_MODULE_2__.PlaneGeometry(docTexW, docTexH);
+                checkerGeometry = new three__WEBPACK_IMPORTED_MODULE_3__.PlaneGeometry(docTexW, docTexH);
                 checkerMesh.geometry = checkerGeometry;
                 checkerMesh.position.set(docTexW * 0.5, docTexH * 0.5, -8);
                 checkerMaterial.uniforms.uDocSize.value = { x: docTexW, y: docTexH };
+                // Rebuild token geometries to match new document size
+                for (let i = 0; i < _color_token_registry__WEBPACK_IMPORTED_MODULE_2__.MAX_TOKENS; i++) {
+                    tokenGeometries[i].dispose();
+                    const newGeom = new three__WEBPACK_IMPORTED_MODULE_3__.PlaneGeometry(docTexW, docTexH);
+                    tokenMeshes[i].geometry = newGeom;
+                    tokenMeshes[i].position.set(docTexW * 0.5, docTexH * 0.5, -3.9 + i * 0.1);
+                    tokenGeometries[i] = newGeom;
+                }
             }
             docTexture.needsUpdate = true;
             // Update above-composite mesh — resize geometry when canvas dimensions change
@@ -4988,7 +5451,7 @@ class ScribRenderer {
                 aboveTexture = makeAboveTexture();
                 aboveMaterial.uniforms.uTexture.value = aboveTexture;
                 aboveGeometry.dispose();
-                aboveGeometry = new three__WEBPACK_IMPORTED_MODULE_2__.PlaneGeometry(docTexW, docTexH);
+                aboveGeometry = new three__WEBPACK_IMPORTED_MODULE_3__.PlaneGeometry(docTexW, docTexH);
                 aboveMesh.geometry = aboveGeometry;
                 aboveMesh.position.set(docTexW * 0.5, docTexH * 0.5, -1);
             }
@@ -5002,10 +5465,10 @@ class ScribRenderer {
                 }
                 else {
                     overlayTexture?.dispose();
-                    overlayTexture = new three__WEBPACK_IMPORTED_MODULE_2__.CanvasTexture(overlay_canvas);
+                    overlayTexture = new three__WEBPACK_IMPORTED_MODULE_3__.CanvasTexture(overlay_canvas);
                     overlayTexture.flipY = false;
-                    overlayTexture.minFilter = three__WEBPACK_IMPORTED_MODULE_2__.NearestFilter;
-                    overlayTexture.magFilter = three__WEBPACK_IMPORTED_MODULE_2__.NearestFilter;
+                    overlayTexture.minFilter = three__WEBPACK_IMPORTED_MODULE_3__.NearestFilter;
+                    overlayTexture.magFilter = three__WEBPACK_IMPORTED_MODULE_3__.NearestFilter;
                     overlayMaterial.uniforms.uTexture.value = overlayTexture;
                     overlayTexW = overlay_canvas.width;
                     overlayTexH = overlay_canvas.height;
@@ -5021,6 +5484,28 @@ class ScribRenderer {
                     overlayMaterial.uniforms.uTexture.value = null;
                 }
                 overlayMesh.visible = false;
+            }
+            // Update color token meshes — subscribe to each token's dirty + color signals
+            for (let i = 0; i < _color_token_registry__WEBPACK_IMPORTED_MODULE_2__.MAX_TOKENS; i++) {
+                const token = _color_token_registry__WEBPACK_IMPORTED_MODULE_2__.color_token_registry.tokens[i];
+                token.dirty.value; // subscribe so texture refreshes after strokes
+                const color = token.color.value; // subscribe for instant color changes
+                const tw = token.canvas.width;
+                const th = token.canvas.height;
+                if (tokenTextures[i] && tw === tokenTexSizes[i].w && th === tokenTexSizes[i].h) {
+                    tokenTextures[i].needsUpdate = true;
+                }
+                else {
+                    tokenTextures[i]?.dispose();
+                    const newTex = new three__WEBPACK_IMPORTED_MODULE_3__.CanvasTexture(token.canvas);
+                    newTex.flipY = false;
+                    newTex.minFilter = three__WEBPACK_IMPORTED_MODULE_3__.NearestFilter;
+                    newTex.magFilter = three__WEBPACK_IMPORTED_MODULE_3__.NearestFilter;
+                    tokenTextures[i] = newTex;
+                    tokenMaterials[i].uniforms.uTexture.value = newTex;
+                    tokenTexSizes[i] = { w: tw, h: th };
+                }
+                tokenMaterials[i].uniforms.uColor.value = new three__WEBPACK_IMPORTED_MODULE_3__.Vector4(color[0] / 255, color[1] / 255, color[2] / 255, color[3] / 255);
             }
             // Throttle renders to one per animation frame; pointer events can fire much faster
             // than the display refresh rate, so batching them avoids redundant GPU work.
@@ -6162,8 +6647,13 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   norm2: () => (/* binding */ norm2),
 /* harmony export */   parse_RGBA: () => (/* binding */ parse_RGBA),
 /* harmony export */   rect_union: () => (/* binding */ rect_union),
+/* harmony export */   reveal_ghost_to_document: () => (/* binding */ reveal_ghost_to_document),
 /* harmony export */   scale_rect: () => (/* binding */ scale_rect),
+/* harmony export */   tool_erase_ghost_canvas: () => (/* binding */ tool_erase_ghost_canvas),
+/* harmony export */   tool_erase_token_canvas: () => (/* binding */ tool_erase_token_canvas),
 /* harmony export */   tool_to_document: () => (/* binding */ tool_to_document),
+/* harmony export */   tool_to_ghost_canvas: () => (/* binding */ tool_to_ghost_canvas),
+/* harmony export */   tool_to_token_canvas: () => (/* binding */ tool_to_token_canvas),
 /* harmony export */   vec_diff: () => (/* binding */ vec_diff)
 /* harmony export */ });
 function parse_RGBA(color) {
@@ -6327,6 +6817,134 @@ function tool_to_document(tool_canvas, rect_to_rect_mapping, document_context, l
         }
     }
     document_context.putImageData(document_image_data, clip_x1, clip_y1);
+}
+/**
+ * Like tool_to_document but writes to a color token canvas.
+ * Wherever the tool canvas has a non-transparent pixel, writes [255,255,255,255] to the token canvas.
+ * The token canvas stores a white alpha-mask; the actual color is applied by the GPU tint shader.
+ */
+function tool_to_token_canvas(tool_canvas, rect_to_rect_mapping, token_context) {
+    _blit_tool_to_token(tool_canvas, rect_to_rect_mapping, token_context, false);
+}
+/**
+ * Erases from a color token canvas.
+ * Wherever the tool canvas has a non-transparent pixel, writes [0,0,0,0] to the token canvas.
+ */
+function tool_erase_token_canvas(tool_canvas, rect_to_rect_mapping, token_context) {
+    _blit_tool_to_token(tool_canvas, rect_to_rect_mapping, token_context, true);
+}
+function _blit_tool_to_token(tool_canvas, rect_to_rect_mapping, token_context, erase) {
+    const tool_context = tool_canvas.getContext('2d', { willReadFrequently: true });
+    const tw = tool_canvas.width;
+    const th = tool_canvas.height;
+    const pixel_from_rect = scale_rect(rect_to_rect_mapping.from, { x: tw, y: th });
+    const pixel_to_rect = rect_to_rect_mapping.to;
+    const token_canvas = token_context.canvas;
+    const doc_w = token_canvas.width;
+    const doc_h = token_canvas.height;
+    const clip_x1 = Math.max(0, pixel_to_rect.x);
+    const clip_y1 = Math.max(0, pixel_to_rect.y);
+    const clip_x2 = Math.min(pixel_to_rect.x + pixel_to_rect.w, doc_w);
+    const clip_y2 = Math.min(pixel_to_rect.y + pixel_to_rect.h, doc_h);
+    if (clip_x2 <= clip_x1 || clip_y2 <= clip_y1)
+        return;
+    const clipped_w = clip_x2 - clip_x1;
+    const clipped_h = clip_y2 - clip_y1;
+    const src_x_off = clip_x1 - pixel_to_rect.x;
+    const src_y_off = clip_y1 - pixel_to_rect.y;
+    const tool_image_data = tool_context.getImageData(pixel_from_rect.x, pixel_from_rect.y, pixel_from_rect.w, pixel_from_rect.h);
+    const tool_data = tool_image_data.data;
+    const token_image_data = token_context.getImageData(clip_x1, clip_y1, clipped_w, clipped_h);
+    const token_data = token_image_data.data;
+    for (let dy = 0; dy < clipped_h; ++dy) {
+        for (let dx = 0; dx < clipped_w; ++dx) {
+            const src_off = 4 * ((src_y_off + dy) * pixel_from_rect.w + (src_x_off + dx));
+            const dst_off = 4 * (dy * clipped_w + dx);
+            if (tool_data[src_off + 3] > 0) {
+                if (erase) {
+                    token_data[dst_off + 0] = 0;
+                    token_data[dst_off + 1] = 0;
+                    token_data[dst_off + 2] = 0;
+                    token_data[dst_off + 3] = 0;
+                }
+                else {
+                    token_data[dst_off + 0] = 255;
+                    token_data[dst_off + 1] = 255;
+                    token_data[dst_off + 2] = 255;
+                    token_data[dst_off + 3] = 255;
+                }
+            }
+        }
+    }
+    token_context.putImageData(token_image_data, clip_x1, clip_y1);
+}
+/**
+ * Like tool_to_ghost_canvas but erases pixels from the ghost canvas
+ * wherever the tool canvas has non-transparent pixels.
+ */
+function tool_erase_ghost_canvas(tool_canvas, rect_to_rect_mapping, ghost_context) {
+    _blit_tool_to_token(tool_canvas, rect_to_rect_mapping, ghost_context, true);
+}
+/**
+ * Like tool_to_document but writes actual pixel colors to the ghost canvas.
+ * Used when ghost mode is active — strokes are stored invisible until revealed.
+ */
+function tool_to_ghost_canvas(tool_canvas, rect_to_rect_mapping, ghost_context, layer_color) {
+    tool_to_document(tool_canvas, rect_to_rect_mapping, ghost_context, layer_color);
+}
+/**
+ * Reveal brush commit: for each pixel covered by the tool canvas,
+ * if the ghost canvas has a non-transparent pixel there, copy it to
+ * the document canvas and clear it from the ghost canvas.
+ */
+function reveal_ghost_to_document(tool_canvas, rect_to_rect_mapping, ghost_context, document_context) {
+    const tool_context = tool_canvas.getContext('2d', { willReadFrequently: true });
+    const tw = tool_canvas.width;
+    const th = tool_canvas.height;
+    const pixel_from_rect = scale_rect(rect_to_rect_mapping.from, { x: tw, y: th });
+    const pixel_to_rect = rect_to_rect_mapping.to;
+    const doc_w = document_context.canvas.width;
+    const doc_h = document_context.canvas.height;
+    const clip_x1 = Math.max(0, pixel_to_rect.x);
+    const clip_y1 = Math.max(0, pixel_to_rect.y);
+    const clip_x2 = Math.min(pixel_to_rect.x + pixel_to_rect.w, doc_w);
+    const clip_y2 = Math.min(pixel_to_rect.y + pixel_to_rect.h, doc_h);
+    if (clip_x2 <= clip_x1 || clip_y2 <= clip_y1)
+        return;
+    const clipped_w = clip_x2 - clip_x1;
+    const clipped_h = clip_y2 - clip_y1;
+    const src_x_off = clip_x1 - pixel_to_rect.x;
+    const src_y_off = clip_y1 - pixel_to_rect.y;
+    const tool_image_data = tool_context.getImageData(pixel_from_rect.x, pixel_from_rect.y, pixel_from_rect.w, pixel_from_rect.h);
+    const tool_data = tool_image_data.data;
+    const ghost_image_data = ghost_context.getImageData(clip_x1, clip_y1, clipped_w, clipped_h);
+    const ghost_data = ghost_image_data.data;
+    const doc_image_data = document_context.getImageData(clip_x1, clip_y1, clipped_w, clipped_h);
+    const doc_data = doc_image_data.data;
+    let any_revealed = false;
+    for (let dy = 0; dy < clipped_h; ++dy) {
+        for (let dx = 0; dx < clipped_w; ++dx) {
+            const src_off = 4 * ((src_y_off + dy) * pixel_from_rect.w + (src_x_off + dx));
+            const dst_off = 4 * (dy * clipped_w + dx);
+            if (tool_data[src_off + 3] > 0 && ghost_data[dst_off + 3] > 0) {
+                // Copy ghost pixel to document
+                doc_data[dst_off + 0] = ghost_data[dst_off + 0];
+                doc_data[dst_off + 1] = ghost_data[dst_off + 1];
+                doc_data[dst_off + 2] = ghost_data[dst_off + 2];
+                doc_data[dst_off + 3] = ghost_data[dst_off + 3];
+                // Consume from ghost
+                ghost_data[dst_off + 0] = 0;
+                ghost_data[dst_off + 1] = 0;
+                ghost_data[dst_off + 2] = 0;
+                ghost_data[dst_off + 3] = 0;
+                any_revealed = true;
+            }
+        }
+    }
+    if (any_revealed) {
+        document_context.putImageData(doc_image_data, clip_x1, clip_y1);
+        ghost_context.putImageData(ghost_image_data, clip_x1, clip_y1);
+    }
 }
 function init_canvas(tool, canvas_signal, canvas_bounds_mapping_signal) {
     tool.canvas_bounds_mapping_signal = canvas_bounds_mapping_signal;
@@ -61985,14 +62603,18 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _mandala_mode__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./mandala_mode */ "./src/ts/mandala_mode.ts");
 /* harmony import */ var _anchor_manager__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./anchor_manager */ "./src/ts/anchor_manager.ts");
 /* harmony import */ var _selection__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ./selection */ "./src/ts/selection.ts");
-/* harmony import */ var _stamp_gallery__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ./stamp_gallery */ "./src/ts/stamp_gallery.ts");
-/* harmony import */ var _fill_pattern__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ./fill_pattern */ "./src/ts/fill_pattern.ts");
+/* harmony import */ var _color_token_registry__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ./color_token_registry */ "./src/ts/color_token_registry.ts");
+/* harmony import */ var _ghost_layer__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ./ghost_layer */ "./src/ts/ghost_layer.ts");
+/* harmony import */ var _stamp_gallery__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ./stamp_gallery */ "./src/ts/stamp_gallery.ts");
+/* harmony import */ var _fill_pattern__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__(/*! ./fill_pattern */ "./src/ts/fill_pattern.ts");
 
 
 
 
 
 //import { GoogleDrive } from "./gdrive"
+
+
 
 
 
@@ -62042,7 +62664,7 @@ class MainApp {
         this.palette = new _palette__WEBPACK_IMPORTED_MODULE_1__.Palette(document.getElementById('hl-selector-canvas'), document.getElementById('sat-selector-canvas'), [1, 1, 0.5]);
         this.palette_hl_canvas = document.getElementById('hl-selector-canvas');
         this.palette_sat_canvas = document.getElementById('sat-selector-canvas');
-        this.color_stack = new _color_stack__WEBPACK_IMPORTED_MODULE_2__.ColorStack(this, 36, 100, 10000, document.getElementById('color-selector-div-line'), document.getElementById('color-selector-div-fill'), document.getElementById('color-selector-div-back'), document.getElementsByClassName('color_stack_item'));
+        this.color_stack = new _color_stack__WEBPACK_IMPORTED_MODULE_2__.ColorStack(this, 16, 100, 10000, document.getElementById('color-selector-div-line'), document.getElementById('color-selector-div-fill'), document.getElementById('color-selector-div-back'), document.getElementsByClassName('color_stack_item'));
         // Seed the stack with the initial foreground color so it appears from the start.
         this.color_stack.select_color(this.palette.get_rgb_color(), 'line', true, true, true);
         this.tool_canvas_signal = (0,_preact_signals__WEBPACK_IMPORTED_MODULE_5__.signal)();
@@ -62076,6 +62698,8 @@ class MainApp {
         this.view_canvas.width = w;
         this.view_canvas.height = h;
         this.layer_stack.resize_all(w, h);
+        _color_token_registry__WEBPACK_IMPORTED_MODULE_13__.color_token_registry.resize_all(w, h);
+        _ghost_layer__WEBPACK_IMPORTED_MODULE_14__.ghost_layer.resize(w, h);
         this.view_port_signal.value = { x: 0, y: 0, w, h };
     }
     _perform_select_tool(tool_name) {
@@ -62102,6 +62726,8 @@ class MainApp {
             const w = img.naturalWidth;
             const h = img.naturalHeight;
             this.layer_stack.resize_all(w, h);
+            _color_token_registry__WEBPACK_IMPORTED_MODULE_13__.color_token_registry.resize_all(w, h);
+            _ghost_layer__WEBPACK_IMPORTED_MODULE_14__.ghost_layer.resize(w, h);
             this.layer_stack.active_layer.context.drawImage(img, 0, 0);
             // Keep current viewport size (zoom level); reset pan to origin
             const vp = this.view_port_signal.value;
@@ -62262,12 +62888,12 @@ class MainApp {
         // Pattern fill toggle button
         const fill_pattern_toggle_btn = document.getElementsByClassName('fill_pattern_toggle')[0];
         fill_pattern_toggle_btn.addEventListener('click', () => {
-            _fill_pattern__WEBPACK_IMPORTED_MODULE_14__.fill_pattern.enabled.value = !_fill_pattern__WEBPACK_IMPORTED_MODULE_14__.fill_pattern.enabled.value;
-            fill_pattern_toggle_btn.classList.toggle('active', _fill_pattern__WEBPACK_IMPORTED_MODULE_14__.fill_pattern.enabled.value);
+            _fill_pattern__WEBPACK_IMPORTED_MODULE_16__.fill_pattern.enabled.value = !_fill_pattern__WEBPACK_IMPORTED_MODULE_16__.fill_pattern.enabled.value;
+            fill_pattern_toggle_btn.classList.toggle('active', _fill_pattern__WEBPACK_IMPORTED_MODULE_16__.fill_pattern.enabled.value);
         });
         // Keep button state in sync with programmatic changes (e.g. TileFillTool activates it)
         (0,_preact_signals__WEBPACK_IMPORTED_MODULE_5__.effect)(() => {
-            fill_pattern_toggle_btn.classList.toggle('active', _fill_pattern__WEBPACK_IMPORTED_MODULE_14__.fill_pattern.enabled.value);
+            fill_pattern_toggle_btn.classList.toggle('active', _fill_pattern__WEBPACK_IMPORTED_MODULE_16__.fill_pattern.enabled.value);
         });
         // Layers button: toggles the layer panel
         const layers_btn = document.getElementById('layers-btn');
@@ -62287,7 +62913,7 @@ class MainApp {
             }
         });
         // Stamp gallery button (not a drawing tool — handled separately)
-        const stamp_gallery = new _stamp_gallery__WEBPACK_IMPORTED_MODULE_13__.StampGallery((toolName) => this.select_tool(toolName));
+        const stamp_gallery = new _stamp_gallery__WEBPACK_IMPORTED_MODULE_15__.StampGallery((toolName) => this.select_tool(toolName));
         document.getElementById('stamp-gallery-btn').addEventListener('click', () => stamp_gallery.open());
         _settings_registry__WEBPACK_IMPORTED_MODULE_7__.settings.set(_settings_registry__WEBPACK_IMPORTED_MODULE_7__.SettingName.HeartSouth, 'smooth');
         _settings_registry__WEBPACK_IMPORTED_MODULE_7__.settings.set(_settings_registry__WEBPACK_IMPORTED_MODULE_7__.SettingName.BezierClosed, false);
@@ -62368,6 +62994,20 @@ class MainApp {
         });
         this.init_undo_redo_buttons();
         this.init_load_save();
+        this.init_ghost_mode();
+    }
+    init_ghost_mode() {
+        const btn = document.getElementById('ghost-mode-btn');
+        if (!btn)
+            return;
+        const update_btn = () => {
+            btn.classList.toggle('pressed', _ghost_layer__WEBPACK_IMPORTED_MODULE_14__.ghost_layer.enabled.peek());
+        };
+        btn.addEventListener('click', () => {
+            _ghost_layer__WEBPACK_IMPORTED_MODULE_14__.ghost_layer.enabled.value = !_ghost_layer__WEBPACK_IMPORTED_MODULE_14__.ghost_layer.enabled.peek();
+            update_btn();
+        });
+        update_btn();
     }
     forward_events_to_editor() {
         // canvas
@@ -62426,6 +63066,14 @@ class MainApp {
         const apply_hl = (event, commit) => {
             palette.hl_click(event.offsetX, event.offsetY);
             const rgb_color = palette.get_rgb_color();
+            const active_token_idx = _color_token_registry__WEBPACK_IMPORTED_MODULE_13__.color_token_registry.active_index.peek();
+            if (active_token_idx !== null) {
+                // Retroactively update the token's color — all strokes change instantly via GPU uniform
+                const rgba = [rgb_color[0], rgb_color[1], rgb_color[2], 255];
+                _color_token_registry__WEBPACK_IMPORTED_MODULE_13__.color_token_registry.tokens[active_token_idx].color.value = rgba;
+                _settings_registry__WEBPACK_IMPORTED_MODULE_7__.settings.set(_settings_registry__WEBPACK_IMPORTED_MODULE_7__.SettingName.ForeColor, `rgba(${rgb_color[0]},${rgb_color[1]},${rgb_color[2]},255)`);
+                return;
+            }
             if (trackColorOnDrag) {
                 this.color_stack.select_color(rgb_color, activeSlot, true, false);
             }
@@ -62436,6 +63084,13 @@ class MainApp {
         const apply_sat = (event, commit) => {
             palette.sat_click(event.offsetX, event.offsetY);
             const rgb_color = palette.get_rgb_color();
+            const active_token_idx = _color_token_registry__WEBPACK_IMPORTED_MODULE_13__.color_token_registry.active_index.peek();
+            if (active_token_idx !== null) {
+                const rgba = [rgb_color[0], rgb_color[1], rgb_color[2], 255];
+                _color_token_registry__WEBPACK_IMPORTED_MODULE_13__.color_token_registry.tokens[active_token_idx].color.value = rgba;
+                _settings_registry__WEBPACK_IMPORTED_MODULE_7__.settings.set(_settings_registry__WEBPACK_IMPORTED_MODULE_7__.SettingName.ForeColor, `rgba(${rgb_color[0]},${rgb_color[1]},${rgb_color[2]},255)`);
+                return;
+            }
             if (trackColorOnDrag) {
                 this.color_stack.select_color(rgb_color, activeSlot, true, false);
             }
@@ -62613,12 +63268,50 @@ class MainApp {
         // forward pointer
         // bind pointer
         this.init_color_selector();
+        this.init_token_panel();
         this.init_buttons();
         this.init_anchor_button();
         this.forward_events_to_editor();
         //this.select_tool('circle');
         //this.init_view_canvas_size();
         this.init_scroll();
+    }
+    init_token_panel() {
+        const container = document.getElementById('color-token-panel');
+        if (!container)
+            return;
+        for (let i = 0; i < _color_token_registry__WEBPACK_IMPORTED_MODULE_13__.MAX_TOKENS; i++) {
+            const token = _color_token_registry__WEBPACK_IMPORTED_MODULE_13__.color_token_registry.tokens[i];
+            const btn = document.createElement('div');
+            btn.className = 'color-token-btn button';
+            const c = token.color.peek();
+            btn.style.backgroundColor = `rgba(${c[0]},${c[1]},${c[2]},1)`;
+            // Keep swatch color in sync with token color signal
+            token.color.subscribe((color) => {
+                btn.style.backgroundColor = `rgba(${color[0]},${color[1]},${color[2]},1)`;
+            });
+            btn.addEventListener('click', () => {
+                _color_token_registry__WEBPACK_IMPORTED_MODULE_13__.color_token_registry.select(i);
+                this._update_token_panel_ui();
+                // Set ForeColor to match the selected token so cursor/hover match
+                const active_idx = _color_token_registry__WEBPACK_IMPORTED_MODULE_13__.color_token_registry.active_index.peek();
+                if (active_idx !== null) {
+                    const tc = _color_token_registry__WEBPACK_IMPORTED_MODULE_13__.color_token_registry.tokens[active_idx].color.peek();
+                    _settings_registry__WEBPACK_IMPORTED_MODULE_7__.settings.set(_settings_registry__WEBPACK_IMPORTED_MODULE_7__.SettingName.ForeColor, `rgba(${tc[0]},${tc[1]},${tc[2]},255)`);
+                }
+            });
+            container.appendChild(btn);
+        }
+    }
+    _update_token_panel_ui() {
+        const container = document.getElementById('color-token-panel');
+        if (!container)
+            return;
+        const active_idx = _color_token_registry__WEBPACK_IMPORTED_MODULE_13__.color_token_registry.active_index.peek();
+        const btns = container.querySelectorAll('.color-token-btn');
+        btns.forEach((btn, i) => {
+            btn.classList.toggle('active-token', i === active_idx);
+        });
     }
 }
 function test_signals() {

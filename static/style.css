@@ -85,57 +85,27 @@ body {
     color: white;
 }
 
-/* ── Bottom bar ───────────────────────────────────────────────────────────── */
+/* ── Bottom bar ─────────────────────────────────────────────────────────────
+   Bottom bar is removed; color stack lives in the right toolbar.
+   This section intentionally empty.                                          */
 
-#bottom-bar {
-    position: absolute;
-    bottom: 0;
-    left: 100px;
-    right: 50px;
-    height: 35px;
-    background-color: white;
-    border-top: 1px solid #dde;
-    display: flex;
-    flex-direction: row;
-    z-index: 50;
-    box-sizing: border-box;
-}
-
-#bottom-bar .color_stack_item {
-    flex: 1;
-    height: 35px;
-    width: auto;
-}
-
-#color-stack-live-track {
-    flex: 0 0 22px;
-    height: 35px;
-    width: 22px;
-    font-size: 11px;
-    padding: 0;
-    border: none;
-    border-right: 1px solid #ccd;
-    line-height: 35px;
-    text-align: center;
-    cursor: pointer;
-}
-
-/* ── Left toolbar (tools only) ───────────────────────────────────────────── */
+/* ── Left toolbar: tools + control buttons ───────────────────────────────── */
 
 #toolbar {
     position: absolute;
-    left: 0px;
+    left: 0;
     top: 22px;
     width: 100px;
-    height: calc(100vh - 57px);
+    bottom: 0;
     background-color: white;
-    border: 1px solid #dde;
+    border-right: 1px solid #dde;
     display: flex;
     flex-direction: column;
     padding: 0;
     margin: 0;
     box-sizing: border-box;
-    overflow: visible;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 #toolbar-page-1,
@@ -159,48 +129,164 @@ body {
 
 #toolbar-fold-btn {
     width: 100px;
-    height: 35px;
-    margin-top: auto;
+    height: 30px;
     font-family: monospace;
-    font-size: 16px;
+    font-size: 14px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
     box-sizing: border-box;
+    border-top: 1px solid #dde;
 }
 
-/* ── Right toolbar (controls only) ───────────────────────────────────────── */
-
-#right-toolbar {
-    grid-template-columns: 50px;
-    grid-template-rows: repeat(10, 50px);
-    position: absolute;
-    top: 22px;
-    width: 50px;
-    right: 0px;
-    height: calc(100vh - 22px);
-    background-color: white;
-    border: 1px solid #dde;
-    padding: 0;
-    margin: 0;
+/* control buttons below tools: 2-per-row grid */
+#toolbar-controls {
     display: grid;
-    grid-gap: 0;
-    box-sizing: border-box;
-    overflow: visible;
+    grid-template-columns: repeat(2, 50px);
+    flex-shrink: 0;
+    border-top: 1px solid #dde;
 }
 
 #tool-controls-slot {
-    width: 50px;
-    height: 50px;
-    position: relative;
+    display: contents; /* both inner buttons flow directly into the grid */
 }
 
-#tool-ctrl-btn {
+#tool-ctrl-btn,
+#tool-ctrl-btn-2 {
     font-family: monospace;
     font-size: 20px;
-    display: none;
-    /* shown by JS only when active tool has a contextual control */
+    display: none; /* shown by JS only when active tool has a contextual control */
+}
+
+/* ── Right toolbar: full-height color panel ──────────────────────────────── */
+
+#right-toolbar {
+    position: absolute;
+    top: 22px;
+    right: 0;
+    width: 50px;
+    bottom: 0;
+    background-color: white;
+    border-left: 1px solid #dde;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+/* hue strip (14px) + SL square side by side */
+#color-pickers-row {
+    flex: 0 0 120px;
+    display: flex;
+    flex-direction: row;
+    border-bottom: 1px solid #bbb;
+}
+
+#hl-selector-canvas {
+    flex: 0 0 14px;
+    width: 14px;
+    height: 100%;
+    cursor: crosshair;
+    display: block;
+    box-sizing: border-box;
+    border-right: 1px solid #bbb;
+}
+
+#sat-selector-canvas {
+    flex: 1;
+    width: 36px;
+    height: 100%;
+    cursor: crosshair;
+    display: block;
+    box-sizing: border-box;
+}
+
+/* Color token panel: 2×4 grid */
+#color-token-panel {
+    flex: 0 0 92px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: repeat(4, 1fr);
+    gap: 2px;
+    padding: 2px;
+    box-sizing: border-box;
+    background: rgb(210, 210, 200);
+    border-bottom: 1px solid #bbb;
+}
+
+.color-token-btn {
+    border-radius: 2px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    box-sizing: border-box;
+    min-width: 0;
+    min-height: 0;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.25);
+}
+
+.color-token-btn.active-token {
+    border-color: #000;
+    outline: 1px solid #fff;
+    outline-offset: -3px;
+}
+
+/* Fore/fill/back indicator */
+#color-selector-div-back {
+    flex: 0 0 26px;
+    width: 50px;
+    background: rgb(210, 210, 200);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-bottom: 1px solid #bbb;
+}
+
+#color-selector-div-fill {
+    width: 34px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(255, 255, 255, 255);
+}
+
+#color-selector-div-line {
+    width: 18px;
+    height: 14px;
+    background-color: rgba(0, 0, 0, 255);
+}
+
+/* Color history stack — fills all remaining space vertically */
+#color-stack-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+
+#color-stack-live-track {
+    flex: 0 0 16px;
+    height: 16px;
+    width: 50px;
+    font-size: 8px;
+    padding: 0;
+    border: none;
+    border-bottom: 1px solid #ccd;
+    line-height: 16px;
+    text-align: center;
+    cursor: pointer;
+    background: rgb(220, 220, 210);
+    box-shadow: none;
+}
+
+#color-stack-section .color_stack_item {
+    flex: 1;
+    width: 50px;
+    height: auto;
+    min-height: 8px;
 }
 
 .button,
@@ -222,8 +308,9 @@ body {
 
 .color_stack_item {
     width: 50px;
-    height: 30px;
+    height: auto;
 }
+
 
 .button.tool-disabled {
     opacity: 0.35;
@@ -240,10 +327,11 @@ body {
 #canvas-area {
     background-color: white;
     width: calc(100vw - 151px);
-    height: calc(100vh - 57px);
+    height: calc(100vh - 22px);
     position: absolute;
     left: 101px;
     top: 22px;
+    bottom: 0;
     overflow: hidden;
     padding: 0;
     margin: 0;
@@ -332,54 +420,18 @@ body {
     color: #444;
 }
 
-#color-selector-div-back {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 50px;
-    height: 50px;
-    background-color: rgba(255, 255, 255, 255);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
+#ghost-mode-btn {
+    font-size: 16px;
 }
 
-#color-selector-div-fill {
-    width: 36px;
-    height: 36px;
-    background-color: rgba(255, 255, 255, 255);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+#ghost-mode-btn.pressed {
+    background: #3a1a6a;
+    color: #e0b0ff;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
 }
 
-#color-selector-div-line {
-    width: 22px;
-    height: 22px;
-    background-color: rgba(0, 0, 0, 255);
-}
-
-#hl-selector-canvas {
-    position: absolute;
-    bottom: 150px;
-    left: 0;
-    width: 50px;
-    height: 200px;
-    cursor: crosshair;
-    display: block;
-    box-sizing: border-box;
-}
-
-#sat-selector-canvas {
-    position: absolute;
-    bottom: 50px;
-    left: 0;
-    width: 50px;
-    height: 100px;
-    cursor: crosshair;
-    display: block;
-    box-sizing: border-box;
+.reveal_brush {
+    font-size: 16px;
 }
 
 .scribble {
@@ -507,10 +559,9 @@ body {
 
 #mandala-panel {
     display: none;
-    position: absolute;
-    right: 50px;
-    top: 50px;
-    /* mandala is row 2 (layers is row 1) */
+    position: fixed;
+    left: 100px;
+    top: 22px;
     width: 90px;
     background: rgb(210, 210, 200);
     border: 1px solid #bbb;
@@ -548,30 +599,28 @@ body {
     box-shadow: inset 0px -2px 3px rgb(230, 230, 225), inset 0px 2px 3px rgb(231, 237, 231);
 }
 
-/* ── Layer panel ──────────────────────────────────────────────────rgb(227 236 226);───────── */
+/* ── Layer panel: pops down from top, right of left toolbar ──────────────── */
 
 #layer-panel {
-    position: absolute;
-    top: 0;
-    /* layers-btn is now row 1 */
-    right: 50px;
-    /* flush with left edge of right-toolbar */
+    position: fixed;
+    top: 22px;
+    left: 100px;
     width: 180px;
+    max-height: calc(100vh - 44px);
     background: rgb(235, 235, 226);
     border: 1px solid #bbb;
-    border-right: none;
-    box-shadow: -3px 3px 8px rgba(0, 0, 0, 0.25);
+    border-top: none;
+    box-shadow: 3px 3px 8px rgba(0, 0, 0, 0.25);
     display: flex;
     flex-direction: column;
     z-index: 100;
-    transform: translateX(calc(100% + 2px));
-    /* fully hidden (accounts for border) */
+    transform: translateY(-110%);
     transition: transform 0.18s ease;
     pointer-events: none;
 }
 
 #layer-panel.open {
-    transform: translateX(0);
+    transform: translateY(0);
     pointer-events: auto;
 }
 
@@ -846,3 +895,5 @@ body {
     color: #333;
     text-align: center;
 }
+/* ── Color section styles are in the right-toolbar block above ───────────── */
+
