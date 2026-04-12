@@ -460,6 +460,20 @@ export class MainApp {
         // canvas
         const fore = document.getElementById('fore')!!!;
         const canvas_area = document.getElementById('view-canvas')!!;
+        // rAF-gate for pointermove: stash latest event and drain once per animation
+        // frame so getImageData/putImageData doesn't block the event pipeline 120×/sec
+        // on high-rate touch devices. Coalesced events preserve full stroke fidelity.
+        let pendingMoveEvent: PointerEvent | null = null;
+        let moveRafPending = false;
+        const flushPendingMove = () => {
+            moveRafPending = false;
+            if (!pendingMoveEvent) return;
+            const ev = pendingMoveEvent;
+            pendingMoveEvent = null;
+            this.editor.pointermove(ev as MouseEvent);
+            this._redraw_anchor_canvas();
+        };
+
         ["pointerdown", "pointerup", "pointerout", "pointerleave", "pointermove", "click", "keydown"].forEach((ename) => {
             canvas_area.addEventListener(ename, (ev) => {
                 ev.preventDefault();
@@ -469,11 +483,21 @@ export class MainApp {
                     const slot: ColorSlot = btn === 2 ? 'back' : btn === 1 ? 'fill' : 'line';
                     this.color_stack.commit_pending(slot);
                 }
+                if (ename === 'pointermove') {
+                    // Throttle draw work to one rAF per frame; coalesced events in
+                    // editor.pointermove() cover all intermediate positions.
+                    pendingMoveEvent = ev as PointerEvent;
+                    if (!moveRafPending) {
+                        moveRafPending = true;
+                        requestAnimationFrame(flushPendingMove);
+                    }
+                    return;
+                }
                 const method = ename as keyof Editor
                 if (this.editor[method]) {
                     this.editor[method](ev);
                 }
-                if (ename === 'pointermove' || ename === 'pointerleave' || ename === 'pointerdown') {
+                if (ename === 'pointerleave' || ename === 'pointerdown') {
                     this._redraw_anchor_canvas();
                 }
             })
@@ -662,6 +686,13 @@ export class MainApp {
 
     }
     _redraw_anchor_canvas() {
+        // Skip expensive pixel work when there are no anchors to draw.
+        if (anchor_manager.anchors.length === 0) {
+            if (this.anchor_canvas_signal.value !== undefined as any) {
+                this.anchor_canvas_signal.value = undefined as any;
+            }
+            return;
+        }
         const docW = this.layer_stack.composite_canvas.width;
         const docH = this.layer_stack.composite_canvas.height;
         const c = this._anchor_canvas;

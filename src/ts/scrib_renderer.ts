@@ -51,6 +51,9 @@ export class ScribRenderer {
             canvas: this.view_canvas
         });
         renderer.setClearColor(0xd0d0c8, 1); // gray background outside document
+        // Cap DPR to 2 — avoids blurry upscaling on high-DPR Android displays
+        // without burning GPU budget at 3× on POCO 5 / similar.
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         // Cache a single camera; update its frustum instead of allocating per frame.
         const camera = new OrthographicCamera(0, 1, 0, 1, 0, 10);
         camera.position.set(0, 0, 1);
