@@ -1985,22 +1985,28 @@ class Editor {
             this._show_anchor_placement_cursor(raw);
             return;
         }
-        const { pt: at } = _anchor_manager__WEBPACK_IMPORTED_MODULE_25__.anchor_manager.snap(raw, this.snap_radius_doc());
-        if (_mandala_mode__WEBPACK_IMPORTED_MODULE_23__.mandala_mode.enabled && _mandala_mode__WEBPACK_IMPORTED_MODULE_23__.mandala_mode.center === null) {
-            if (!event.buttons)
-                this._show_center_placement_cursor(at);
-            return;
-        }
         if (event.buttons) {
-            this.tool.drag(at);
+            // Process all coalesced pointer samples — gives correct stroke coverage on
+            // high-rate touch devices (Android fires 60–120 samples between frames).
+            const samples = event.getCoalescedEvents?.() ?? [event];
+            for (const sample of samples) {
+                const pt = _anchor_manager__WEBPACK_IMPORTED_MODULE_25__.anchor_manager.snap(this.view_coords_to_doc_coords({ x: sample.offsetX, y: sample.offsetY }), this.snap_radius_doc()).pt;
+                if (_mandala_mode__WEBPACK_IMPORTED_MODULE_23__.mandala_mode.enabled && _mandala_mode__WEBPACK_IMPORTED_MODULE_23__.mandala_mode.center === null)
+                    continue;
+                this.tool.drag(pt);
+            }
+            // Hover uses only the latest position
+            const { pt: at } = _anchor_manager__WEBPACK_IMPORTED_MODULE_25__.anchor_manager.snap(raw, this.snap_radius_doc());
             this.tool.hover(at);
         }
         else {
+            const { pt: at } = _anchor_manager__WEBPACK_IMPORTED_MODULE_25__.anchor_manager.snap(raw, this.snap_radius_doc());
+            if (_mandala_mode__WEBPACK_IMPORTED_MODULE_23__.mandala_mode.enabled && _mandala_mode__WEBPACK_IMPORTED_MODULE_23__.mandala_mode.center === null) {
+                this._show_center_placement_cursor(at);
+                return;
+            }
             this.tool.hover(at);
         }
-        // Appply action
-        // this.staging_to_view()
-        // this.tmp_tool_to_view();
     }
     _show_center_placement_cursor(at) {
         const arm = 7;
@@ -5261,6 +5267,18 @@ class ScribRenderer {
             canvas: this.view_canvas
         });
         renderer.setClearColor(0xd0d0c8, 1); // gray background outside document
+        // Cache a single camera; update its frustum instead of allocating per frame.
+        const camera = new three__WEBPACK_IMPORTED_MODULE_3__.OrthographicCamera(0, 1, 0, 1, 0, 10);
+        camera.position.set(0, 0, 1);
+        camera.lookAt(0, 0, 0);
+        const update_camera = (vp) => {
+            camera.left = vp.x;
+            camera.right = vp.x + vp.w;
+            camera.top = vp.y;
+            camera.bottom = vp.y + vp.h;
+            camera.updateProjectionMatrix();
+            renderer.setSize(vp.w, vp.h, false);
+        };
         // Document mesh — texture and geometry recreated when canvas dimensions change
         const composite_canvas = this.layer_stack.composite_canvas;
         const above_composite_canvas = this.layer_stack.above_composite_canvas;
@@ -5383,7 +5401,6 @@ class ScribRenderer {
             const overlay_canvas = this.overlay_canvas_signal.value;
             const bounds_mapping = this.overlay_canvas_bounds_signal.value;
             this.document_dirty_signal.value; // subscribe so document-only changes trigger re-render
-            this.view_port_signal.value; // subscribe so viewport changes trigger re-render
             const anchor_canvas = this.anchor_canvas_signal.value;
             this.layer_stack.layers.value; // subscribe to layer list changes (add/delete/reorder/visibility)
             this.layer_stack.active_index.value; // subscribe so switching active layer updates split
@@ -5507,13 +5524,15 @@ class ScribRenderer {
                 }
                 tokenMaterials[i].uniforms.uColor.value = new three__WEBPACK_IMPORTED_MODULE_3__.Vector4(color[0] / 255, color[1] / 255, color[2] / 255, color[3] / 255);
             }
+            const vp = this.view_port_signal.value; // subscribe so viewport changes trigger re-render
+            update_camera(vp);
             // Throttle renders to one per animation frame; pointer events can fire much faster
             // than the display refresh rate, so batching them avoids redundant GPU work.
             if (!renderPending) {
                 renderPending = true;
                 requestAnimationFrame(() => {
                     renderPending = false;
-                    renderer.render(scene, this.init_camera(this.view_port_signal.peek()));
+                    renderer.render(scene, camera);
                 });
             }
         });
@@ -5572,12 +5591,33 @@ class ScribbleTool extends _click_and_drag_tool__WEBPACK_IMPORTED_MODULE_0__.Cli
         }
         const context = this.context;
         const canvas = this.canvas;
-        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+        const cw = canvas.width;
+        const ch = canvas.height;
+        const pad = radius + 1;
+        // Compute tight bounding box around all line pairs to minimise getImageData cost.
+        let bx0 = cw, by0 = ch, bx1 = 0, by1 = 0;
         for (const pair of line_pairs) {
-            const fx = Math.floor(pair.from.x);
-            const fy = Math.floor(pair.from.y);
-            const cx = Math.floor(pair.to.x);
-            const cy = Math.floor(pair.to.y);
+            const minX = Math.min(pair.from.x, pair.to.x);
+            const maxX = Math.max(pair.from.x, pair.to.x);
+            const minY = Math.min(pair.from.y, pair.to.y);
+            const maxY = Math.max(pair.from.y, pair.to.y);
+            bx0 = Math.min(bx0, Math.floor(minX) - pad);
+            by0 = Math.min(by0, Math.floor(minY) - pad);
+            bx1 = Math.max(bx1, Math.ceil(maxX) + pad);
+            by1 = Math.max(by1, Math.ceil(maxY) + pad);
+        }
+        bx0 = Math.max(0, bx0);
+        by0 = Math.max(0, by0);
+        bx1 = Math.min(cw, bx1);
+        by1 = Math.min(ch, by1);
+        if (bx1 <= bx0 || by1 <= by0)
+            return;
+        const imageData = context.getImageData(bx0, by0, bx1 - bx0, by1 - by0);
+        for (const pair of line_pairs) {
+            const fx = Math.floor(pair.from.x) - bx0;
+            const fy = Math.floor(pair.from.y) - by0;
+            const cx = Math.floor(pair.to.x) - bx0;
+            const cy = Math.floor(pair.to.y) - by0;
             if (radius <= 0) {
                 (0,_pixel_utils__WEBPACK_IMPORTED_MODULE_2__.drawLine)(imageData, fx, fy, cx, cy, this._stroke_color);
             }
@@ -5585,7 +5625,7 @@ class ScribbleTool extends _click_and_drag_tool__WEBPACK_IMPORTED_MODULE_0__.Cli
                 (0,_pixel_utils__WEBPACK_IMPORTED_MODULE_2__.drawThickLine)(imageData, fx, fy, cx, cy, radius, this._stroke_color);
             }
         }
-        context.putImageData(imageData, 0, 0);
+        context.putImageData(imageData, bx0, by0);
         this.publish_signals();
     }
     commit_to_document(color = null) {
