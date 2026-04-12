@@ -5267,6 +5267,9 @@ class ScribRenderer {
             canvas: this.view_canvas
         });
         renderer.setClearColor(0xd0d0c8, 1); // gray background outside document
+        // Cap DPR to 2 — avoids blurry upscaling on high-DPR Android displays
+        // without burning GPU budget at 3× on POCO 5 / similar.
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         // Cache a single camera; update its frustum instead of allocating per frame.
         const camera = new three__WEBPACK_IMPORTED_MODULE_3__.OrthographicCamera(0, 1, 0, 1, 0, 10);
         camera.position.set(0, 0, 1);
@@ -63053,6 +63056,20 @@ class MainApp {
         // canvas
         const fore = document.getElementById('fore');
         const canvas_area = document.getElementById('view-canvas');
+        // rAF-gate for pointermove: stash latest event and drain once per animation
+        // frame so getImageData/putImageData doesn't block the event pipeline 120×/sec
+        // on high-rate touch devices. Coalesced events preserve full stroke fidelity.
+        let pendingMoveEvent = null;
+        let moveRafPending = false;
+        const flushPendingMove = () => {
+            moveRafPending = false;
+            if (!pendingMoveEvent)
+                return;
+            const ev = pendingMoveEvent;
+            pendingMoveEvent = null;
+            this.editor.pointermove(ev);
+            this._redraw_anchor_canvas();
+        };
         ["pointerdown", "pointerup", "pointerout", "pointerleave", "pointermove", "click", "keydown"].forEach((ename) => {
             canvas_area.addEventListener(ename, (ev) => {
                 ev.preventDefault();
@@ -63062,11 +63079,21 @@ class MainApp {
                     const slot = btn === 2 ? 'back' : btn === 1 ? 'fill' : 'line';
                     this.color_stack.commit_pending(slot);
                 }
+                if (ename === 'pointermove') {
+                    // Throttle draw work to one rAF per frame; coalesced events in
+                    // editor.pointermove() cover all intermediate positions.
+                    pendingMoveEvent = ev;
+                    if (!moveRafPending) {
+                        moveRafPending = true;
+                        requestAnimationFrame(flushPendingMove);
+                    }
+                    return;
+                }
                 const method = ename;
                 if (this.editor[method]) {
                     this.editor[method](ev);
                 }
-                if (ename === 'pointermove' || ename === 'pointerleave' || ename === 'pointerdown') {
+                if (ename === 'pointerleave' || ename === 'pointerdown') {
                     this._redraw_anchor_canvas();
                 }
             });
@@ -63245,6 +63272,13 @@ class MainApp {
         });
     }
     _redraw_anchor_canvas() {
+        // Skip expensive pixel work when there are no anchors to draw.
+        if (_anchor_manager__WEBPACK_IMPORTED_MODULE_11__.anchor_manager.anchors.length === 0) {
+            if (this.anchor_canvas_signal.value !== undefined) {
+                this.anchor_canvas_signal.value = undefined;
+            }
+            return;
+        }
         const docW = this.layer_stack.composite_canvas.width;
         const docH = this.layer_stack.composite_canvas.height;
         const c = this._anchor_canvas;
