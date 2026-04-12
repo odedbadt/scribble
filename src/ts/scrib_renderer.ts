@@ -51,6 +51,18 @@ export class ScribRenderer {
             canvas: this.view_canvas
         });
         renderer.setClearColor(0xd0d0c8, 1); // gray background outside document
+        // Cache a single camera; update its frustum instead of allocating per frame.
+        const camera = new OrthographicCamera(0, 1, 0, 1, 0, 10);
+        camera.position.set(0, 0, 1);
+        camera.lookAt(0, 0, 0);
+        const update_camera = (vp: Rect) => {
+            camera.left   = vp.x;
+            camera.right  = vp.x + vp.w;
+            camera.top    = vp.y;
+            camera.bottom = vp.y + vp.h;
+            camera.updateProjectionMatrix();
+            renderer.setSize(vp.w, vp.h, false);
+        };
 
         // Document mesh — texture and geometry recreated when canvas dimensions change
         const composite_canvas = this.layer_stack.composite_canvas;
@@ -182,7 +194,6 @@ export class ScribRenderer {
             const overlay_canvas = this.overlay_canvas_signal.value;
             const bounds_mapping = this.overlay_canvas_bounds_signal.value;
             this.document_dirty_signal.value; // subscribe so document-only changes trigger re-render
-            this.view_port_signal.value; // subscribe so viewport changes trigger re-render
             const anchor_canvas = this.anchor_canvas_signal.value;
             this.layer_stack.layers.value; // subscribe to layer list changes (add/delete/reorder/visibility)
             this.layer_stack.active_index.value; // subscribe so switching active layer updates split
@@ -314,13 +325,16 @@ export class ScribRenderer {
                 );
             }
 
+            const vp = this.view_port_signal.value; // subscribe so viewport changes trigger re-render
+            update_camera(vp);
+
             // Throttle renders to one per animation frame; pointer events can fire much faster
             // than the display refresh rate, so batching them avoids redundant GPU work.
             if (!renderPending) {
                 renderPending = true;
                 requestAnimationFrame(() => {
                     renderPending = false;
-                    renderer.render(scene, this.init_camera(this.view_port_signal.peek()));
+                    renderer.render(scene, camera);
                 });
             }
         });

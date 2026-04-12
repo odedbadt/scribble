@@ -242,21 +242,29 @@ export class Editor {
             this._show_anchor_placement_cursor(raw);
             return;
         }
-        const { pt: at } = anchor_manager.snap(raw, this.snap_radius_doc());
-        if (mandala_mode.enabled && mandala_mode.center === null) {
-            if (!event.buttons) this._show_center_placement_cursor(at);
-            return;
-        }
         if (event.buttons) {
-            this.tool.drag(at);
+            // Process all coalesced pointer samples — gives correct stroke coverage on
+            // high-rate touch devices (Android fires 60–120 samples between frames).
+            const samples = (event as any).getCoalescedEvents?.() ?? [event];
+            for (const sample of samples) {
+                const pt = anchor_manager.snap(
+                    this.view_coords_to_doc_coords({ x: sample.offsetX, y: sample.offsetY }),
+                    this.snap_radius_doc()
+                ).pt;
+                if (mandala_mode.enabled && mandala_mode.center === null) continue;
+                this.tool.drag(pt);
+            }
+            // Hover uses only the latest position
+            const { pt: at } = anchor_manager.snap(raw, this.snap_radius_doc());
+            this.tool.hover(at);
+        } else {
+            const { pt: at } = anchor_manager.snap(raw, this.snap_radius_doc());
+            if (mandala_mode.enabled && mandala_mode.center === null) {
+                this._show_center_placement_cursor(at);
+                return;
+            }
             this.tool.hover(at);
         }
-        else {
-            this.tool.hover(at);
-        }
-        // Appply action
-        // this.staging_to_view()
-        // this.tmp_tool_to_view();
 
     }
     private _show_center_placement_cursor(at: Vector2) {
