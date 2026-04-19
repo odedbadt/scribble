@@ -41,6 +41,8 @@ export declare abstract class EditingTool {
     abstract start(at: Vector2, buttons: number): void;
     abstract drag(at: Vector2): void;
     stop(at: Vector2): void;
+    /** Abort an in-progress stroke without committing to the document. */
+    cancel(): void;
     abstract hover(at: Vector2): void;
     pointer_leave(): void;
     deselect(): void;

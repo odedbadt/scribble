@@ -43,6 +43,8 @@ export declare class Editor {
     clear_undo_history(): void;
     /** Discard a pending begin_undo_capture() without pushing (nothing changed). */
     cancel_undo_capture(): void;
+    /** Abort the active stroke (if any) without committing to the document. */
+    cancel_stroke(): void;
     /**
      * Like push_undo_snapshot() but clips the stored before-data to `rect`,
      * so only that region is saved.  Intended for tools that capture a full

@@ -21,6 +21,8 @@ export declare abstract class ClickAndDragTool extends EditingTool {
     /** Override: suppress the tool-canvas overlay while dragging in ghost mode. */
     publish_signals(): void;
     drag(at: Vector2): void;
+    /** Abort the current stroke without committing it to the document. */
+    cancel(): void;
     hover(at: Vector2): false | undefined;
     hover_color(): RGBA;
     hover_action(at: Vector2): void;
