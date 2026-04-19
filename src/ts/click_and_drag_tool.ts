@@ -66,6 +66,16 @@ export abstract class ClickAndDragTool extends EditingTool {
         this.editing_drag(vfloor(this.drag_start), vfloor(at));
         this.publish_signals();
     }
+    /** Abort the current stroke without committing it to the document. */
+    override cancel(): void {
+        if (!this.drag_start) return;
+        this.drag_start = null;
+        this.cancel_undo_capture?.();
+        if (this.canvas && this.context) {
+            this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        }
+        this.canvas_signal!.value = null;
+    }
     hover(at: Vector2) {
         if (!this.context || this.drag_start) {
             return false;

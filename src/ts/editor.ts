@@ -345,6 +345,11 @@ export class Editor {
         this._undo_before = null;
     }
 
+    /** Abort the active stroke (if any) without committing to the document. */
+    cancel_stroke() {
+        this.tool?.cancel?.();
+    }
+
     /**
      * Like push_undo_snapshot() but clips the stored before-data to `rect`,
      * so only that region is saved.  Intended for tools that capture a full

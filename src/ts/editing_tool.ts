@@ -78,6 +78,8 @@ export abstract class EditingTool {
     stop(at: Vector2): void {
         this.canvas_signal!.value = null;
     }
+    /** Abort an in-progress stroke without committing to the document. */
+    cancel(): void {}
     abstract hover(at: Vector2): void;
     pointer_leave(): void {}
     deselect(): void {}

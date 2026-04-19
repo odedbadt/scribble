@@ -64,6 +64,8 @@ export class MainApp {
     tool_bounds_signal: any;
     document_dirty_signal: Signal<number>;
     view_port_signal: Signal<Rect>;
+    /** True while a two-finger gesture (pan/zoom) is active — drawing events are suppressed. */
+    private _in_touch_gesture = false;
 
     constructor() {
         this.view_canvas = document.getElementById('view-canvas')! as HTMLCanvasElement;
@@ -477,6 +479,8 @@ export class MainApp {
         ["pointerdown", "pointerup", "pointerout", "pointerleave", "pointermove", "click", "keydown"].forEach((ename) => {
             canvas_area.addEventListener(ename, (ev) => {
                 ev.preventDefault();
+                // Suppress drawing events while a two-finger gesture is active.
+                if (this._in_touch_gesture && ename !== 'keydown') return;
                 if (ename === 'pointerdown') {
                     // Commit staged palette color to history the moment a stroke begins.
                     const btn = (ev as MouseEvent).button;
@@ -767,6 +771,106 @@ export class MainApp {
         //this.select_tool('circle');
         //this.init_view_canvas_size();
         this.init_scroll();
+        this.init_touch_gestures();
+    }
+
+    /**
+     * Pinch-to-zoom and two-finger pan via Pointer Events.
+     *
+     * The Pointer Events stream already fires on the view-canvas for drawing.
+     * We intercept it here: when exactly 2 pointers are active we switch to
+     * gesture mode (pan + zoom) and suppress drawing.  The combined formula
+     * keeps the document point under the gesture midpoint stationary while
+     * the finger-spread ratio drives zoom — handling pan, zoom, or both at once.
+     */
+    init_touch_gestures() {
+        const canvas = this.view_canvas;
+        // Map from pointerId to the last known screen position (offsetX/Y).
+        const ptrs = new Map<number, { x: number; y: number }>();
+
+        const screen_to_doc = (sx: number, sy: number, vp: Rect) => ({
+            x: vp.x + sx / canvas.clientWidth  * vp.w,
+            y: vp.y + sy / canvas.clientHeight * vp.h,
+        });
+
+        const clamp_vp = (x: number, y: number, w: number, h: number): Rect => {
+            const dw = this.layer_stack.composite_canvas.width;
+            const dh = this.layer_stack.composite_canvas.height;
+            return {
+                x: Math.max(0, Math.min(x, Math.max(0, dw - w))),
+                y: Math.max(0, Math.min(y, Math.max(0, dh - h))),
+                w,
+                h,
+            };
+        };
+
+        const on_down = (ev: PointerEvent) => {
+            ptrs.set(ev.pointerId, { x: ev.offsetX, y: ev.offsetY });
+            if (ptrs.size === 2) {
+                // Second finger landed — abort any in-progress stroke and enter gesture mode.
+                this._in_touch_gesture = true;
+                this.editor.cancel_stroke();
+            }
+        };
+
+        const on_move = (ev: PointerEvent) => {
+            if (!ptrs.has(ev.pointerId)) return;
+            if (ptrs.size !== 2 || !this._in_touch_gesture) {
+                // Update position even when not in gesture (needed for when second finger arrives).
+                ptrs.set(ev.pointerId, { x: ev.offsetX, y: ev.offsetY });
+                return;
+            }
+
+            const ids = [...ptrs.keys()];
+            const other_id = ids.find(id => id !== ev.pointerId)!;
+            const prev_this = ptrs.get(ev.pointerId)!;
+            const prev_other = ptrs.get(other_id)!;
+
+            // Previous midpoint and distance
+            const M0 = { x: (prev_this.x + prev_other.x) / 2, y: (prev_this.y + prev_other.y) / 2 };
+            const D0 = Math.hypot(prev_this.x - prev_other.x, prev_this.y - prev_other.y);
+
+            // Update position
+            ptrs.set(ev.pointerId, { x: ev.offsetX, y: ev.offsetY });
+            const curr_this = { x: ev.offsetX, y: ev.offsetY };
+            const curr_other = prev_other;
+
+            // Current midpoint and distance
+            const M1 = { x: (curr_this.x + curr_other.x) / 2, y: (curr_this.y + curr_other.y) / 2 };
+            const D1 = Math.hypot(curr_this.x - curr_other.x, curr_this.y - curr_other.y);
+
+            if (D0 < 1 || D1 < 1) return; // guard against degenerate positions
+
+            const vp = this.view_port_signal.value;
+            const scale = D0 / D1;
+
+            // Document point that should stay under the gesture midpoint
+            const doc_M0 = screen_to_doc(M0.x, M0.y, vp);
+
+            // New viewport dimensions (maintain aspect ratio)
+            const aspect = vp.w / vp.h;
+            const dh = this.layer_stack.composite_canvas.height;
+            const new_h = Math.max(1, Math.min(vp.h * scale, dh));
+            const new_w = new_h * aspect;
+
+            // Position so doc_M0 appears at screen position M1
+            const new_x = doc_M0.x - M1.x / canvas.clientWidth  * new_w;
+            const new_y = doc_M0.y - M1.y / canvas.clientHeight * new_h;
+
+            this.view_port_signal.value = clamp_vp(new_x, new_y, new_w, new_h);
+        };
+
+        const on_up = (ev: PointerEvent) => {
+            ptrs.delete(ev.pointerId);
+            if (ptrs.size < 2) {
+                this._in_touch_gesture = false;
+            }
+        };
+
+        canvas.addEventListener('pointerdown',   on_down,   { passive: true });
+        canvas.addEventListener('pointermove',   on_move,   { passive: true });
+        canvas.addEventListener('pointerup',     on_up,     { passive: true });
+        canvas.addEventListener('pointercancel', on_up,     { passive: true });
     }
 
     init_token_panel() {
