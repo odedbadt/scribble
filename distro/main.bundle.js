@@ -2008,9 +2008,11 @@ class Editor {
                     continue;
                 this.tool.drag(pt);
             }
-            // Hover uses only the latest position
-            const { pt: at } = _anchor_manager__WEBPACK_IMPORTED_MODULE_25__.anchor_manager.snap(raw, this.snap_radius_doc());
-            this.tool.hover(at);
+            // Hover cursor: skip on touch (no hover concept; also avoids stale-event flash)
+            if (event.pointerType !== 'touch') {
+                const { pt: at } = _anchor_manager__WEBPACK_IMPORTED_MODULE_25__.anchor_manager.snap(raw, this.snap_radius_doc());
+                this.tool.hover(at);
+            }
         }
         else {
             const { pt: at } = _anchor_manager__WEBPACK_IMPORTED_MODULE_25__.anchor_manager.snap(raw, this.snap_radius_doc());
@@ -2018,7 +2020,10 @@ class Editor {
                 this._show_center_placement_cursor(at);
                 return;
             }
-            this.tool.hover(at);
+            // Hover cursor: skip on touch devices
+            if (event.pointerType !== 'touch') {
+                this.tool.hover(at);
+            }
         }
     }
     _show_center_placement_cursor(at) {
@@ -63335,8 +63340,8 @@ class MainApp {
             const doc_w = this.document_canvas.width;
             const doc_h = this.document_canvas.height;
             const clamp_pos = (x, y, w, h) => ({
-                x: Math.max(0, Math.min(x, Math.max(0, doc_w - w))),
-                y: Math.max(0, Math.min(y, Math.max(0, doc_h - h))),
+                x: Math.round(Math.max(0, Math.min(x, Math.max(0, doc_w - w)))),
+                y: Math.round(Math.max(0, Math.min(y, Math.max(0, doc_h - h)))),
                 w,
                 h,
             });
@@ -63393,12 +63398,11 @@ class MainApp {
         const clamp_vp = (x, y, w, h) => {
             const dw = this.layer_stack.composite_canvas.width;
             const dh = this.layer_stack.composite_canvas.height;
-            return {
-                x: Math.max(0, Math.min(x, Math.max(0, dw - w))),
-                y: Math.max(0, Math.min(y, Math.max(0, dh - h))),
-                w,
-                h,
-            };
+            // Round x/y to integer document pixels — prevents NearestFilter from
+            // oscillating between adjacent texels as the pan origin drifts sub-pixel.
+            const rx = Math.round(Math.max(0, Math.min(x, Math.max(0, dw - w))));
+            const ry = Math.round(Math.max(0, Math.min(y, Math.max(0, dh - h))));
+            return { x: rx, y: ry, w, h };
         };
         const on_down = (ev) => {
             ptrs.set(ev.pointerId, { x: ev.offsetX, y: ev.offsetY });
