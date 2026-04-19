@@ -5302,8 +5302,15 @@ class ScribRenderer {
             camera.top = vp.y;
             camera.bottom = vp.y + vp.h;
             camera.updateProjectionMatrix();
-            renderer.setSize(vp.w, vp.h, false);
         };
+        // Size the renderer to the CSS canvas area (not the doc viewport).
+        // The camera frustum handles zoom/pan; resizing the framebuffer to doc-pixel
+        // count causes a GPU reallocation every frame during pinch-zoom → flicker.
+        const resize_renderer = () => {
+            renderer.setSize(this.view_canvas.clientWidth, this.view_canvas.clientHeight, false);
+        };
+        resize_renderer();
+        window.addEventListener('resize', resize_renderer);
         // Document mesh — texture and geometry recreated when canvas dimensions change
         const composite_canvas = this.layer_stack.composite_canvas;
         const above_composite_canvas = this.layer_stack.above_composite_canvas;
