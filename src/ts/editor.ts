@@ -254,16 +254,21 @@ export class Editor {
                 if (mandala_mode.enabled && mandala_mode.center === null) continue;
                 this.tool.drag(pt);
             }
-            // Hover uses only the latest position
-            const { pt: at } = anchor_manager.snap(raw, this.snap_radius_doc());
-            this.tool.hover(at);
+            // Hover cursor: skip on touch (no hover concept; also avoids stale-event flash)
+            if ((event as any).pointerType !== 'touch') {
+                const { pt: at } = anchor_manager.snap(raw, this.snap_radius_doc());
+                this.tool.hover(at);
+            }
         } else {
             const { pt: at } = anchor_manager.snap(raw, this.snap_radius_doc());
             if (mandala_mode.enabled && mandala_mode.center === null) {
                 this._show_center_placement_cursor(at);
                 return;
             }
-            this.tool.hover(at);
+            // Hover cursor: skip on touch devices
+            if ((event as any).pointerType !== 'touch') {
+                this.tool.hover(at);
+            }
         }
 
     }

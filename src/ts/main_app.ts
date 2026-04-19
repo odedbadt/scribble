@@ -735,8 +735,8 @@ export class MainApp {
             const doc_w = this.document_canvas.width;
             const doc_h = this.document_canvas.height;
             const clamp_pos = (x: number, y: number, w: number, h: number) => ({
-                x: Math.max(0, Math.min(x, Math.max(0, doc_w - w))),
-                y: Math.max(0, Math.min(y, Math.max(0, doc_h - h))),
+                x: Math.round(Math.max(0, Math.min(x, Math.max(0, doc_w - w)))),
+                y: Math.round(Math.max(0, Math.min(y, Math.max(0, doc_h - h)))),
                 w,
                 h,
             });
@@ -796,12 +796,11 @@ export class MainApp {
         const clamp_vp = (x: number, y: number, w: number, h: number): Rect => {
             const dw = this.layer_stack.composite_canvas.width;
             const dh = this.layer_stack.composite_canvas.height;
-            return {
-                x: Math.max(0, Math.min(x, Math.max(0, dw - w))),
-                y: Math.max(0, Math.min(y, Math.max(0, dh - h))),
-                w,
-                h,
-            };
+            // Round x/y to integer document pixels — prevents NearestFilter from
+            // oscillating between adjacent texels as the pan origin drifts sub-pixel.
+            const rx = Math.round(Math.max(0, Math.min(x, Math.max(0, dw - w))));
+            const ry = Math.round(Math.max(0, Math.min(y, Math.max(0, dh - h))));
+            return { x: rx, y: ry, w, h };
         };
 
         const on_down = (ev: PointerEvent) => {
