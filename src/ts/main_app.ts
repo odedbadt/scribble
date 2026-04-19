@@ -735,8 +735,8 @@ export class MainApp {
             const doc_w = this.document_canvas.width;
             const doc_h = this.document_canvas.height;
             const clamp_pos = (x: number, y: number, w: number, h: number) => ({
-                x: Math.round(Math.max(0, Math.min(x, Math.max(0, doc_w - w)))),
-                y: Math.round(Math.max(0, Math.min(y, Math.max(0, doc_h - h)))),
+                x: Math.max(0, Math.min(x, Math.max(0, doc_w - w))),
+                y: Math.max(0, Math.min(y, Math.max(0, doc_h - h))),
                 w,
                 h,
             });
@@ -785,82 +785,88 @@ export class MainApp {
      */
     init_touch_gestures() {
         const canvas = this.view_canvas;
-        // Map from pointerId to the last known screen position (offsetX/Y).
+        // Current positions for each active pointer.
         const ptrs = new Map<number, { x: number; y: number }>();
-
-        const screen_to_doc = (sx: number, sy: number, vp: Rect) => ({
-            x: vp.x + sx / canvas.clientWidth  * vp.w,
-            y: vp.y + sy / canvas.clientHeight * vp.h,
-        });
+        // Positions as of the last committed viewport update (one rAF ago).
+        let prev_ptrs = new Map<number, { x: number; y: number }>();
+        let raf_pending = false;
 
         const clamp_vp = (x: number, y: number, w: number, h: number): Rect => {
             const dw = this.layer_stack.composite_canvas.width;
             const dh = this.layer_stack.composite_canvas.height;
-            // Round x/y to integer document pixels — prevents NearestFilter from
-            // oscillating between adjacent texels as the pan origin drifts sub-pixel.
-            const rx = Math.round(Math.max(0, Math.min(x, Math.max(0, dw - w))));
-            const ry = Math.round(Math.max(0, Math.min(y, Math.max(0, dh - h))));
-            return { x: rx, y: ry, w, h };
+            return {
+                x: Math.max(0, Math.min(x, Math.max(0, dw - w))),
+                y: Math.max(0, Math.min(y, Math.max(0, dh - h))),
+                w,
+                h,
+            };
         };
 
-        const on_down = (ev: PointerEvent) => {
-            ptrs.set(ev.pointerId, { x: ev.offsetX, y: ev.offsetY });
-            if (ptrs.size === 2) {
-                // Second finger landed — abort any in-progress stroke and enter gesture mode.
-                this._in_touch_gesture = true;
-                this.editor.cancel_stroke();
-            }
-        };
-
-        const on_move = (ev: PointerEvent) => {
-            if (!ptrs.has(ev.pointerId)) return;
-            if (ptrs.size !== 2 || !this._in_touch_gesture) {
-                // Update position even when not in gesture (needed for when second finger arrives).
-                ptrs.set(ev.pointerId, { x: ev.offsetX, y: ev.offsetY });
+        /**
+         * Apply one gesture frame: both pointers' positions are up-to-date
+         * so M0/M1 and D0/D1 are accurate, eliminating per-event intermediate jitter.
+         */
+        const apply_gesture = () => {
+            raf_pending = false;
+            if (ptrs.size !== 2 || !this._in_touch_gesture) return;
+            const [id0, id1] = [...ptrs.keys()];
+            const curr0 = ptrs.get(id0)!;
+            const curr1 = ptrs.get(id1)!;
+            const prev0 = prev_ptrs.get(id0);
+            const prev1 = prev_ptrs.get(id1);
+            // First frame: just snapshot positions, nothing to diff against yet.
+            if (!prev0 || !prev1) {
+                prev_ptrs = new Map(ptrs);
                 return;
             }
-
-            const ids = [...ptrs.keys()];
-            const other_id = ids.find(id => id !== ev.pointerId)!;
-            const prev_this = ptrs.get(ev.pointerId)!;
-            const prev_other = ptrs.get(other_id)!;
-
-            // Previous midpoint and distance
-            const M0 = { x: (prev_this.x + prev_other.x) / 2, y: (prev_this.y + prev_other.y) / 2 };
-            const D0 = Math.hypot(prev_this.x - prev_other.x, prev_this.y - prev_other.y);
-
-            // Update position
-            ptrs.set(ev.pointerId, { x: ev.offsetX, y: ev.offsetY });
-            const curr_this = { x: ev.offsetX, y: ev.offsetY };
-            const curr_other = prev_other;
-
-            // Current midpoint and distance
-            const M1 = { x: (curr_this.x + curr_other.x) / 2, y: (curr_this.y + curr_other.y) / 2 };
-            const D1 = Math.hypot(curr_this.x - curr_other.x, curr_this.y - curr_other.y);
-
-            if (D0 < 1 || D1 < 1) return; // guard against degenerate positions
+            const M0 = { x: (prev0.x + prev1.x) / 2, y: (prev0.y + prev1.y) / 2 };
+            const M1 = { x: (curr0.x + curr1.x) / 2, y: (curr0.y + curr1.y) / 2 };
+            const D0 = Math.hypot(prev0.x - prev1.x, prev0.y - prev1.y);
+            const D1 = Math.hypot(curr0.x - curr1.x, curr0.y - curr1.y);
+            prev_ptrs = new Map(ptrs);
+            if (D0 < 1 || D1 < 1) return;
 
             const vp = this.view_port_signal.value;
             const scale = D0 / D1;
 
-            // Document point that should stay under the gesture midpoint
-            const doc_M0 = screen_to_doc(M0.x, M0.y, vp);
+            // Document point anchored under the midpoint of the gesture.
+            const doc_M0 = {
+                x: vp.x + M0.x / canvas.clientWidth  * vp.w,
+                y: vp.y + M0.y / canvas.clientHeight * vp.h,
+            };
 
-            // New viewport dimensions (maintain aspect ratio)
             const aspect = vp.w / vp.h;
             const dh = this.layer_stack.composite_canvas.height;
             const new_h = Math.max(1, Math.min(vp.h * scale, dh));
             const new_w = new_h * aspect;
 
-            // Position so doc_M0 appears at screen position M1
             const new_x = doc_M0.x - M1.x / canvas.clientWidth  * new_w;
             const new_y = doc_M0.y - M1.y / canvas.clientHeight * new_h;
 
             this.view_port_signal.value = clamp_vp(new_x, new_y, new_w, new_h);
         };
 
+        const on_down = (ev: PointerEvent) => {
+            ptrs.set(ev.pointerId, { x: ev.offsetX, y: ev.offsetY });
+            if (ptrs.size === 2) {
+                this._in_touch_gesture = true;
+                this.editor.cancel_stroke();
+                prev_ptrs = new Map(ptrs);
+            }
+        };
+
+        const on_move = (ev: PointerEvent) => {
+            if (!ptrs.has(ev.pointerId)) return;
+            ptrs.set(ev.pointerId, { x: ev.offsetX, y: ev.offsetY });
+            if (ptrs.size === 2 && this._in_touch_gesture && !raf_pending) {
+                raf_pending = true;
+                requestAnimationFrame(apply_gesture);
+            }
+        };
+
         const on_up = (ev: PointerEvent) => {
             ptrs.delete(ev.pointerId);
+            prev_ptrs.delete(ev.pointerId);
             if (ptrs.size < 2) {
                 this._in_touch_gesture = false;
             }
