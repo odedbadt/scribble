@@ -62798,6 +62798,9 @@ class MainApp {
         _state_registry__WEBPACK_IMPORTED_MODULE_9__.state_registry.set(_state_registry__WEBPACK_IMPORTED_MODULE_9__.StateValue.SelectedToolName, tool_name);
         this._perform_select_tool(tool_name);
     }
+    set_line_width(v) {
+        _settings_registry__WEBPACK_IMPORTED_MODULE_7__.settings.set(_settings_registry__WEBPACK_IMPORTED_MODULE_7__.SettingName.LineWidth, Math.max(1, Math.round(v)));
+    }
     load_image(url) {
         const img = new Image();
         img.addEventListener('load', () => {
