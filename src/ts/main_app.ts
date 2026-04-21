@@ -524,10 +524,20 @@ export class MainApp {
     }
 
     init_color_selector() {
-        this.palette_hl_canvas.width = this.palette_hl_canvas.offsetWidth;
-        this.palette_hl_canvas.height = this.palette_hl_canvas.offsetHeight;
-        this.palette_sat_canvas.width = this.palette_sat_canvas.offsetWidth;
-        this.palette_sat_canvas.height = this.palette_sat_canvas.offsetHeight;
+        // Only resize if visible — offsetWidth/Height is 0 when hidden (e.g. on mobile),
+        // and setting canvas size to 0 causes getImageData to throw a DOMException.
+        const hlW = this.palette_hl_canvas.offsetWidth;
+        const hlH = this.palette_hl_canvas.offsetHeight;
+        if (hlW > 0 && hlH > 0) {
+            this.palette_hl_canvas.width = hlW;
+            this.palette_hl_canvas.height = hlH;
+        }
+        const satW = this.palette_sat_canvas.offsetWidth;
+        const satH = this.palette_sat_canvas.offsetHeight;
+        if (satW > 0 && satH > 0) {
+            this.palette_sat_canvas.width = satW;
+            this.palette_sat_canvas.height = satH;
+        }
         this.palette.plot()
 
 

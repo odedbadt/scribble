@@ -9,6 +9,62 @@
 </head>
 
 <body>
+    <!-- Open mobile tool selector immediately on mobile -->
+    <script>
+    if (/Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 800) {
+        document.addEventListener('DOMContentLoaded', function() {
+            var toolSel = document.getElementById('mobile-tool-selector');
+            if (toolSel) toolSel.classList.add('open');
+        });
+    }
+    </script>
+    <script>
+    // Mobile tool selector interactions
+    document.addEventListener('DOMContentLoaded', function() {
+        var toolSel = document.getElementById('mobile-tool-selector');
+        if (!toolSel) return;
+        let open = toolSel.classList.contains('open');
+        function openSelector() {
+            if (!open) { toolSel.classList.add('open'); open = true; }
+        }
+        function closeSelector() {
+            if (open) { toolSel.classList.remove('open'); open = false; }
+        }
+        // Open on swipe from left edge
+        let startX = null;
+        document.body.addEventListener('touchstart', function(e) {
+            if (e.touches[0].clientX < 24) startX = e.touches[0].clientX;
+        });
+        document.body.addEventListener('touchmove', function(e) {
+            if (startX !== null && e.touches[0].clientX - startX > 30) {
+                openSelector();
+                startX = null;
+            }
+        });
+        document.body.addEventListener('touchend', function() { startX = null; });
+        // Close on tap outside
+        document.addEventListener('touchstart', function(e) {
+            if (open && !toolSel.contains(e.target)) closeSelector();
+        }, true);
+        // Tool/color selection
+        toolSel.addEventListener('click', function(e) {
+            var btn = e.target.closest('.mobile-tool-btn');
+            if (!btn) return;
+            Array.from(toolSel.querySelectorAll('.mobile-tool-btn')).forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            if (btn.dataset.tool) {
+                if (window.app && window.app.select_tool) window.app.select_tool(btn.dataset.tool);
+            }
+            if (btn.dataset.color) {
+                var hex = btn.dataset.color.replace('#', '');
+                var r = parseInt(hex.substring(0,2), 16);
+                var g = parseInt(hex.substring(2,4), 16);
+                var b = parseInt(hex.substring(4,6), 16);
+                if (window.app && window.app.color_stack) window.app.color_stack.select_color([r,g,b], 'line', true, true, true);
+            }
+        });
+    });
+    </script>
     <!-- TOP BAR: menu bar -->
     <div id="top-bar">
         <div id="file-menu" class="top-menu-item">
@@ -158,6 +214,16 @@
             <p class="gallery-hint">Click a stamp, then drag on the canvas to set its size.</p>
             <div class="gallery-grid"></div>
         </div>
+    </div>
+    <!-- Minimal floating tool/color selector for mobile -->
+    <div id="mobile-tool-selector" style="display:none">
+        <button class="mobile-tool-btn" data-tool="scribble" aria-label="Pen" style="background:#222;color:#fff">✏️</button>
+        <button class="mobile-tool-btn" data-tool="eraser" aria-label="Eraser" style="background:#eee;color:#222">🧽</button>
+        <button class="mobile-tool-btn mobile-color" data-color="#000000" style="background:#000"></button>
+        <button class="mobile-tool-btn mobile-color" data-color="#ff0000" style="background:#f00"></button>
+        <button class="mobile-tool-btn mobile-color" data-color="#00cc00" style="background:#0c0"></button>
+        <button class="mobile-tool-btn mobile-color" data-color="#0066ff" style="background:#06f"></button>
+        <button class="mobile-tool-btn mobile-color" data-color="#ffff00" style="background:#ff0"></button>
     </div>
 </body>
 

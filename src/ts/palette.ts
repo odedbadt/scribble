@@ -29,6 +29,7 @@ export class Palette {
         const ctx = this._hl_canvas.getContext('2d', { willReadFrequently: true })!;
         this._hl_w = this._hl_canvas.width;
         this._hl_h = this._hl_canvas.height;
+        if (this._hl_w === 0 || this._hl_h === 0) return;
         const img = ctx.getImageData(0, 0, this._hl_w, this._hl_h);
         const d = img.data;
         const ind_y = Math.round((this._hsl_color[0] / 2) * this._hl_h);
@@ -52,6 +53,7 @@ export class Palette {
         const ctx = this._sat_canvas.getContext('2d', { willReadFrequently: true })!;
         this._sat_w = this._sat_canvas.width;
         this._sat_h = this._sat_canvas.height;
+        if (this._sat_w === 0 || this._sat_h === 0) return;
         const img = ctx.getImageData(0, 0, this._sat_w, this._sat_h);
         const d = img.data;
         const ind_x = Math.round(this._hsl_color[1] * this._sat_w);
