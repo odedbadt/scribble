@@ -46,23 +46,36 @@
         document.addEventListener('touchstart', function(e) {
             if (open && !toolSel.contains(e.target)) closeSelector();
         }, true);
-        // Tool/color selection
+        // Tool selection
         toolSel.addEventListener('click', function(e) {
-            var btn = e.target.closest('.mobile-tool-btn');
-            if (!btn) return;
-            Array.from(toolSel.querySelectorAll('.mobile-tool-btn')).forEach(b => b.classList.remove('selected'));
-            btn.classList.add('selected');
-            if (btn.dataset.tool) {
+            var btn = e.target.closest('[data-tool]');
+            if (btn) {
+                toolSel.querySelectorAll('[data-tool]').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
                 if (window.app && window.app.select_tool) window.app.select_tool(btn.dataset.tool);
             }
-            if (btn.dataset.color) {
-                var hex = btn.dataset.color.replace('#', '');
-                var r = parseInt(hex.substring(0,2), 16);
-                var g = parseInt(hex.substring(2,4), 16);
-                var b = parseInt(hex.substring(4,6), 16);
-                if (window.app && window.app.color_stack) window.app.color_stack.select_color([r,g,b], 'line', true, true, true);
-            }
         });
+        // Color selection
+        toolSel.addEventListener('click', function(e) {
+            var btn = e.target.closest('.mobile-color-btn');
+            if (!btn) return;
+            toolSel.querySelectorAll('.mobile-color-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            var hex = btn.dataset.color.replace('#', '');
+            var r = parseInt(hex.substring(0,2), 16);
+            var g = parseInt(hex.substring(2,4), 16);
+            var b = parseInt(hex.substring(4,6), 16);
+            if (window.app && window.app.color_stack) window.app.color_stack.select_color([r,g,b], 'line', true, true, true);
+        });
+        // Size slider
+        var slider = document.getElementById('mobile-size-slider');
+        var sizeVal = document.getElementById('mobile-size-val');
+        if (slider) {
+            slider.addEventListener('input', function() {
+                sizeVal.textContent = slider.value;
+                if (window.app && window.app.set_line_width) window.app.set_line_width(parseInt(slider.value));
+            });
+        }
     });
     </script>
     <!-- TOP BAR: menu bar -->
@@ -217,13 +230,38 @@
     </div>
     <!-- Minimal floating tool/color selector for mobile -->
     <div id="mobile-tool-selector" style="display:none">
-        <button class="mobile-tool-btn" data-tool="scribble" aria-label="Pen" style="background:#222;color:#fff">✏️</button>
-        <button class="mobile-tool-btn" data-tool="eraser" aria-label="Eraser" style="background:#eee;color:#222">🧽</button>
-        <button class="mobile-tool-btn mobile-color" data-color="#000000" style="background:#000"></button>
-        <button class="mobile-tool-btn mobile-color" data-color="#ff0000" style="background:#f00"></button>
-        <button class="mobile-tool-btn mobile-color" data-color="#00cc00" style="background:#0c0"></button>
-        <button class="mobile-tool-btn mobile-color" data-color="#0066ff" style="background:#06f"></button>
-        <button class="mobile-tool-btn mobile-color" data-color="#ffff00" style="background:#ff0"></button>
+        <!-- Tools row -->
+        <div class="mobile-section-label">Tools</div>
+        <div class="mobile-tools-row">
+            <button class="mobile-tool-btn selected" data-tool="scribble" aria-label="Pen">✏️</button>
+            <button class="mobile-tool-btn" data-tool="eraser" aria-label="Eraser">🧹</button>
+        </div>
+        <!-- Size slider -->
+        <div class="mobile-section-label">Size</div>
+        <div class="mobile-size-row">
+            <input type="range" id="mobile-size-slider" min="1" max="60" value="10" step="1">
+            <span id="mobile-size-val">10</span>
+        </div>
+        <!-- Color palette -->
+        <div class="mobile-section-label">Color</div>
+        <div class="mobile-palette-grid">
+            <button class="mobile-color-btn selected" data-color="#000000" style="background:#000"></button>
+            <button class="mobile-color-btn" data-color="#ffffff" style="background:#fff;border:1px solid #ccc"></button>
+            <button class="mobile-color-btn" data-color="#808080" style="background:#808080"></button>
+            <button class="mobile-color-btn" data-color="#c0c0c0" style="background:#c0c0c0"></button>
+            <button class="mobile-color-btn" data-color="#800000" style="background:#800000"></button>
+            <button class="mobile-color-btn" data-color="#ff0000" style="background:#f00"></button>
+            <button class="mobile-color-btn" data-color="#ff8000" style="background:#f80"></button>
+            <button class="mobile-color-btn" data-color="#ffff00" style="background:#ff0"></button>
+            <button class="mobile-color-btn" data-color="#008000" style="background:#080"></button>
+            <button class="mobile-color-btn" data-color="#00cc00" style="background:#0c0"></button>
+            <button class="mobile-color-btn" data-color="#00cccc" style="background:#0cc"></button>
+            <button class="mobile-color-btn" data-color="#0066ff" style="background:#06f"></button>
+            <button class="mobile-color-btn" data-color="#000080" style="background:#000080"></button>
+            <button class="mobile-color-btn" data-color="#8800cc" style="background:#8800cc"></button>
+            <button class="mobile-color-btn" data-color="#ff00ff" style="background:#f0f"></button>
+            <button class="mobile-color-btn" data-color="#ff80c0" style="background:#f8c"></button>
+        </div>
     </div>
 </body>
 

@@ -159,6 +159,9 @@ export class MainApp {
         state_registry.set<string>(StateValue.SelectedToolName, tool_name);
         this._perform_select_tool(tool_name);
     }
+    set_line_width(v: number) {
+        settings.set(SettingName.LineWidth, Math.max(1, Math.round(v)));
+    }
     load_image(url: string) {
         const img = new Image();
         img.addEventListener('load', () => {
