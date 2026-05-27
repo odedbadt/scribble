@@ -10,6 +10,7 @@ import { ScribRenderer } from "./scrib_renderer";
 import { SettingName, settings } from './settings_registry'
 import { FillOutlineState, nextFillOutlineState, fillOutlineClass } from './FillOutlineState'
 import { StateValue, state_registry } from "./state_registry";
+import { State } from "./state";
 import { mandala_mode } from "./mandala_mode";
 import { anchor_manager } from "./anchor_manager";
 import { SelectionTool } from "./selection";
@@ -42,6 +43,7 @@ function parse_rgba_string(s: string): number[] | null {
 export class MainApp {
     public overlay_canvas_signal = signal<CanvasRenderingContext2D>();
     public settings = settings;
+    public state = new State();
     private scrib_renderer: ScribRenderer;
     private anchor_canvas_signal = signal<HTMLCanvasElement>(null as any);
     private _anchor_canvas: HTMLCanvasElement = document.createElement('canvas');
@@ -105,7 +107,8 @@ export class MainApp {
             this.tool_canvas_signal,
             this.tool_bounds_signal,
             this.view_port_signal,
-            this.document_dirty_signal);
+            this.document_dirty_signal,
+            this.state);
         this.scrib_renderer = new ScribRenderer(this.layer_stack,
             this.tool_canvas_signal,
             this.tool_bounds_signal,
@@ -118,6 +121,8 @@ export class MainApp {
         // Re-render anchor overlay whenever anchors change
         anchor_manager.dirty.subscribe(() => this._redraw_anchor_canvas());
 
+        this._bridge_legacy_registries();
+
         settings.bulkSet({
             fore_color: 'rgba(255,0,0,255)',
             fill_color: 'rgba(255,255,255,255)',
@@ -129,6 +134,23 @@ export class MainApp {
         this.init_canvases();
         this.scrib_renderer.init();
     }
+
+    private _bridge_legacy_registries(): void {
+        const pair = <T>(a: Signal<T>, b: Signal<T>): void => {
+            a.subscribe(v => { if (b.peek() !== v) b.value = v; });
+            b.subscribe(v => { if (a.peek() !== v) a.value = v; });
+        };
+        pair(this.state.fore_color,        settings.get<string>(SettingName.ForeColor));
+        pair(this.state.fill_color,        settings.get<string>(SettingName.FillColor));
+        pair(this.state.back_color,        settings.get<string>(SettingName.BackColor));
+        pair(this.state.line_width,        settings.get<number>(SettingName.LineWidth));
+        pair(this.state.fill_outline,      settings.get<FillOutlineState>(SettingName.FillOutline));
+        pair(this.state.heart_south,       settings.get<'smooth' | 'straight'>(SettingName.HeartSouth));
+        pair(this.state.bezier_closed,     settings.get<boolean>(SettingName.BezierClosed));
+        pair(this.state.bezier_manual_cp,  settings.get<boolean>(SettingName.BezierManualCP));
+        pair(this.state.selected_tool_name, state_registry.use_signal<string>(StateValue.SelectedToolName, this.state.selected_tool_name.value));
+    }
+
     init_canvases() {
         const w = this.view_canvas.clientWidth;
         const h = this.view_canvas.clientHeight;

@@ -31,32 +31,7 @@ import { setPixel, RGBA, extract_sub_image } from "./pixel_utils"
 import { anchor_manager, SNAP_RADIUS_SCREEN_PX } from "./anchor_manager"
 import { settings, SettingName } from './settings_registry';
 import { nextFillOutlineState } from './FillOutlineState';
-const tool_classes = new Map<string, new (...args: any[]) => EditingTool>
-    ([
-
-        ["polygon", PolygonTool]
-        , ["topo_hull", TopoHullTool]
-        , ["heart", HeartTool]
-        , ["cloud_stamp", CloudStampTool]
-        , ["rect", RectTool]
-        , ["scribble", ScribbleTool]
-        , ["line", LineTool]
-        , ["bezier", BezierTool]
-        , ["circle", CircleTool]
-        , ["dropper", Dropper]
-        , ["floodfill", Floodfill]
-        , ["eraser", EraserTool]
-        , ["scraper", ScraperTool]
-        , ["clearall", ClearAllTool]
-        , ["cursor_size", CursorSize]
-        , ["selection", SelectionTool]
-        , ["stamp", StampTool]
-        , ["tile_fill", TileFillTool]
-        , ["glyph_sizing", GlyphSizingTool]
-        , ["reveal_brush", RevealBrush]
-        // , ["fillstyle", FillStyleToggler]
-        // , ["mandala", mandala]
-    ])
+import { State } from './state';
 export class Editor {
     private _history: ActionHistory = new ActionHistory();
     private _undo_before: { x: number; y: number; data: ImageData } | null = null;
@@ -84,6 +59,7 @@ export class Editor {
     tool_bounds_signal: Signal<RectToRectMapping>;
     view_port_signal: Signal<Rect>;
     document_dirty_signal: Signal<number>;
+    private _tool_factories: Map<string, () => EditingTool>;
 
     /** The active drawing canvas — proxies to the current layer. */
     get document_canvas(): HTMLCanvasElement { return this.layer_stack.active_layer.canvas; }
@@ -95,7 +71,8 @@ export class Editor {
         tool_canvas_signal: Signal<HTMLCanvasElement>,
         tool_bounds_signal: Signal<RectToRectMapping>,
         view_port_signal: Signal<Rect>,
-        document_dirty_signal: Signal<number>
+        document_dirty_signal: Signal<number>,
+        state: State
     ) {
         this.tool_canvas_signal = tool_canvas_signal;
         this.tool_bounds_signal = tool_bounds_signal;
@@ -105,6 +82,28 @@ export class Editor {
         this.tool = new NopTool();
         this.view_canvas = view_canvas;
         this._last_hover_spot = null;
+        this._tool_factories = new Map<string, () => EditingTool>([
+            ["polygon",      () => new PolygonTool()],
+            ["topo_hull",    () => new TopoHullTool()],
+            ["heart",        () => new HeartTool()],
+            ["cloud_stamp",  () => new CloudStampTool()],
+            ["rect",         () => new RectTool()],
+            ["scribble",     () => new ScribbleTool()],
+            ["line",         () => new LineTool(state.fore_color, state.line_width)],
+            ["bezier",       () => new BezierTool()],
+            ["circle",       () => new CircleTool()],
+            ["dropper",      () => new Dropper(state.fore_color, state.fill_color, state.back_color, state.selected_tool_name, state.previous_tool_name)],
+            ["floodfill",    () => new Floodfill()],
+            ["eraser",       () => new EraserTool()],
+            ["scraper",      () => new ScraperTool()],
+            ["clearall",     () => new ClearAllTool()],
+            ["cursor_size",  () => new CursorSize()],
+            ["selection",    () => new SelectionTool()],
+            ["stamp",        () => new StampTool()],
+            ["tile_fill",    () => new TileFillTool()],
+            ["glyph_sizing", () => new GlyphSizingTool()],
+            ["reveal_brush", () => new RevealBrush()],
+        ]);
     }
 
     view_coords_to_doc_coords(view_coords: Vector2): Vector2 {
@@ -136,12 +135,12 @@ export class Editor {
     }
     select_tool(tool_name: string) {
         //state_registry.set(StateValue.SelectedToolName, tool_name)
-        const tool_class = tool_classes.get(tool_name);
-        if (!tool_class) {
+        const factory = this._tool_factories.get(tool_name);
+        if (!factory) {
             return;
         }
         this.tool?.deselect?.();
-        this.tool = new tool_class();
+        this.tool = factory();
         this.tool.init_editor(this);
 
         init_canvas(this.tool, this.tool_canvas_signal, this.tool_bounds_signal);

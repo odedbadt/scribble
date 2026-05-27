@@ -1,21 +1,22 @@
 import { ClickAndDragTool } from "./click_and_drag_tool"
-import { Editor } from "./editor";
-import { SettingName, settings } from "./settings_registry";
-import { Vector2, bounding_rect } from "./types";
+import { Vector2 } from "./types";
 import { drawLine, drawThickLine, parseColor, RGBA } from "./pixel_utils";
 import { mandala_mode } from "./mandala_mode";
+import { ReadonlySignal } from "@preact/signals";
 
 export class LineTool extends ClickAndDragTool {
     protected _stroke_color: RGBA;
 
-    constructor() {
+    constructor(
+        private _fore_color: ReadonlySignal<string>,
+        private _line_width: ReadonlySignal<number>,
+    ) {
         super();
         this._stroke_color = [0, 0, 0, 255];
     }
 
     editing_start() {
-        const colorStr = settings.peek<string>(SettingName.ForeColor);
-        this._stroke_color = parseColor(colorStr);
+        this._stroke_color = parseColor(this._fore_color.peek());
     }
 
     editing_drag(from: Vector2, to: Vector2) {
@@ -23,7 +24,7 @@ export class LineTool extends ClickAndDragTool {
             return false;
         }
 
-        const lw = settings.peek<number>(SettingName.LineWidth);
+        const lw = this._line_width.peek();
         const radius = Math.floor(lw / 2);
         const context = this.context!;
         const canvas = this.canvas!;
