@@ -4,72 +4,69 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Monorepo Context
 
-This package lives inside a TypeScript npm workspace at `../` alongside two sibling packages:
-- **`tsutils`** (`@oded/tsutils`) — shared utilities: vec2, color, canvas, three_utils
-- **`plato`** (`@oded/plato`) — 3D Platonic solids visualization
-
-Scrib does **not** depend on `tsutils` or `plato`; the packages are independently bundled.
+This package lives inside a TypeScript npm workspace at `../` alongside two sibling packages (`tsutils`, `plato`). Scrib does **not** import `@oded/tsutils` or `@oded/plato`; it is independently bundled.
 
 From the **workspace root** (`../`):
-- `npm run build` — compiles all packages via `tsc -b` (TypeScript project references)
-- `npm run bundle` — webpack bundles all packages into `/dist/` (outputs `dist/scrib/bundle.js`)
+- `npm run build` — `tsc -b` across all workspace packages (project references)
+- `npm run bundle` — webpack across all packages, outputs to `../dist/`
 - `npm run clean` — clears dist directories
-
-The root webpack (`../webpack.config.cjs`) aliases `@oded/tsutils` to its source files for development.
 
 ## Commands (within this package)
 
-- **Build:** `npm run build` — runs webpack locally, outputs to `static/ts/` (main.bundle.js, three_demo.bundle.js)
-- **Run tests:** `node tests/test_undo_redo_buffer.mjs` (no npm test script configured)
-- **Serve:** `node server.js` (Express server)
-
-Webpack operates in development mode with source maps enabled. TypeScript is compiled via ts-loader using `tsconfig.json`.
+- **Build:** `npm run build` — runs the local `webpack.config.js`, outputs `main.bundle.js` and `three_demo.bundle.js` to `distro/`. Webpack runs in `development` mode with source maps; `ts-loader` uses the local `tsconfig.json`.
+- **Serve:** `node server.js` — Express on `PORT` (default 8080) with optional `BASE_PATH` prefix. Static at `/`, bundles at `/distro`.
+- **E2E / visual regression:** `npm test` (Playwright). The config (`playwright.config.ts`) auto-starts `python3 -m http.server 9191` as the test webServer; tests load `http://localhost:9191`. Snapshots live under `tests/snapshots/` with `maxDiffPixelRatio: 0.001`.
+- **Standalone test:** `node tests/test_undo_redo_buffer.mjs` and `node tests/test_ghost_layer.mjs` (plain Node, no harness).
+- **Single Playwright test:** `npx playwright test tests/test_line_tool_artifacts.spec.ts` (or any `.spec.ts`).
 
 ## Architecture
 
-### Canvas Layering
+### Canvas layering and rendering
 
-The app uses three canvas layers:
-1. **Document canvas** — persistent artwork storage
-2. **Tool canvas** — live drawing overlay (active tool renders here, then commits to document)
-3. **View canvas** — WebGL display via Three.js (orthographic camera + nearest-filter textures for pixel-perfect rendering)
+Drawing is layered over three conceptual surfaces:
+1. **Layer canvases** — managed by `LayerStack` (`layer_stack.ts`). Multiple stacked `Layer`s, each its own offscreen canvas. The stack also maintains a `composite_canvas` (full composite) and an `above_composite_canvas` (composite of layers above the active one) so the renderer can show the active layer in isolation when needed.
+2. **Tool canvas** — a transient overlay created per tool via `init_canvas`; the active tool draws here, then commits into the active layer (`tool_to_document` in `utils.ts`) on `stop()`.
+3. **View canvas** — `<canvas id="view-canvas">` driven by `ScribRenderer` (`scrib_renderer.ts`), which uses Three.js (`OrthographicCamera`, `NearestFilter` `CanvasTexture`s, custom GLSL in `glsl_shader_code.ts`) to composite layers + overlay + anchors with pixel-perfect scaling.
 
-Three.js (`scrib_renderer.ts`) renders document and overlay textures using custom GLSL shaders (`glsl_shader_code.ts`).
+`Editor` (`editor.ts`) owns the `LayerStack`, routes pointer events to the active tool, and converts view→document coordinates via `view_coords_to_doc_coords` using `view_port_signal`. `document_canvas`/`document_context` are getters that proxy to `layer_stack.active_layer`.
 
-### Tool Hierarchy
+### Tool hierarchy
 
-All drawing tools extend from `EditingTool` (abstract base), then either `ClickTool` or `ClickAndDragTool`:
+All tools extend `EditingTool` (`editing_tool.ts`) and are registered in the `tool_classes` map at the top of `editor.ts`. Two intermediate base classes:
 
-```
-EditingTool
-├── ClickTool → FloodFill, Dropper, ClearAll
-└── ClickAndDragTool → Scribble, Line, Rect, Circle, Eraser, CursorSize
-```
+- **`ClickTool`** (`click_tool.ts`) — single-click commit. Subclasses: `Floodfill`, `Dropper`, `ClearAllTool`, `StampTool`, `TileFillTool`, `CursorSize`.
+- **`ClickAndDragTool`** (`click_and_drag_tool.ts`) — start/drag/stop strokes. Subclasses include `ScribbleTool`, `LineTool`, `BezierTool`, `RectTool`, `CircleTool`, `EraserTool`, `ScraperTool`, `PolygonTool`, `TopoHullTool`, `HeartTool`, `CloudStampTool`, `RevealBrush`, `SelectionTool`, `GlyphSizingTool`.
 
-Tool lifecycle: `select() → start() → drag()* → stop()`. The `Editor` class (`editor.ts`) routes pointer events to the active tool and handles coordinate conversion (view → document space).
+Tool lifecycle: `select() → start() → drag()* → stop()` (with optional `hover()`, `cancel()`, `keydown()`, `pointer_leave()`, `deselect()`, `on_doc_origin_shift()`). `init_editor(editor)` wires per-tool callbacks for undo capture (single-layer, multi-layer, clipped, etc.).
 
-### State Management
+### Undo/redo
 
-Two signal-based registries (using `@preact/signals`):
-- **`SettingsRegistry`** (`settings_registry.ts`) — drawing settings: `ForeColor`, `BackColor`, `LineWidth`
-- **`StateRegistry`** (`state_registry.ts`) — UI state: `SelectedToolName` (supports previous-value restoration for tools like Dropper)
+`ActionHistory` (`action_history.ts`) records `UndoableAction`s. Tools never mutate history directly — they call `editor.begin_undo_capture*` before drawing and `editor.push_undo_snapshot*` on commit. Variants: full-canvas, clipped-rect, single-layer, and multi-layer, so a tool only snapshots the bytes it actually changed. `tests/test_undo_redo_buffer.mjs` exercises the buffer.
 
-### Pixel Drawing
+### State management
 
-All drawing is pixel-perfect (no anti-aliasing). `pixel_utils.ts` contains the core algorithms:
-- Bresenham's line algorithm (`drawLine`, `drawThickLine`)
-- Midpoint circle algorithm (`drawCircle`, `drawFilledCircle`)
-- Direct `ImageData` manipulation via `setPixel`/`getPixel`
+Two signal-based registries (`@preact/signals`):
+- **`SettingsRegistry`** (`settings_registry.ts`) — drawing settings (`ForeColor`, `BackColor`, `LineWidth`, ...).
+- **`StateRegistry`** (`state_registry.ts`) — UI state (`SelectedToolName`, with previous-value restoration for momentary tools like Dropper).
 
-### Entry Points
+Other singleton modules: `anchor_manager` (snap anchors), `mandala_mode` (symmetry), `ghost_layer` (reference image), `color_token_registry` (palette tokens used by GLSL color-token shader), `fill_pattern`.
 
-- `src/ts/main_app.ts` → `main.bundle.js` — full drawing application
-- `src/ts/three_demo.ts` → `three_demo.bundle.js` — Three.js rendering demo
+### Pixel drawing
+
+`pixel_utils.ts` is the pixel-perfect (no anti-aliasing) primitive layer: Bresenham `drawLine`/`drawThickLine`, midpoint `drawCircle`/`drawFilledCircle`, direct `ImageData` `setPixel`/`getPixel`, plus `extract_sub_image`.
+
+### Entry points
+
+- `src/ts/main_app.ts` → `distro/main.bundle.js` — full app (loaded by `index.html`).
+- `src/ts/three_demo.ts` → `distro/three_demo.bundle.js` — Three.js rendering demo (`three_demo.html`).
 
 ### Backend
 
-Express server (`server.js`) + Python backend (`main.py`) with Google App Engine deployment (`app.yaml`). Firebase integration is present in dependencies but usage is in archived code.
+- `server.js` — Express static server (Node ≥ 20).
+- `main.py` + `app.yaml` + `requirements.txt` — Python/Google App Engine deployment.
+- Firebase and `googleapis` are present in `package.json` but not actively imported by current TypeScript sources.
 
-### Archived Code
+### TypeScript build notes
 
-`src/ts/old/` is excluded from compilation and should be ignored entirely.
+- `tsconfig.json` has `composite: true`, `outDir: ./distro`, `rootDir: ./src/ts`, `strict: true`, custom `typeRoots: ["./types", "./node_modules/@types"]`.
+- The `exclude` glob `src/ts/old/*.ts` is a vestige — the directory does not currently exist.
