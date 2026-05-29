@@ -29,7 +29,6 @@ import { Signal } from "@preact/signals";
 import { mandala_mode } from "./mandala_mode"
 import { setPixel, RGBA, extract_sub_image } from "./pixel_utils"
 import { anchor_manager, SNAP_RADIUS_SCREEN_PX } from "./anchor_manager"
-import { settings, SettingName } from './settings_registry';
 import { nextFillOutlineState } from './FillOutlineState';
 import { State } from './state';
 export class Editor {
@@ -60,6 +59,7 @@ export class Editor {
     view_port_signal: Signal<Rect>;
     document_dirty_signal: Signal<number>;
     private _tool_factories: Map<string, () => EditingTool>;
+    private _state: State;
 
     /** The active drawing canvas — proxies to the current layer. */
     get document_canvas(): HTMLCanvasElement { return this.layer_stack.active_layer.canvas; }
@@ -82,6 +82,7 @@ export class Editor {
         this.tool = new NopTool();
         this.view_canvas = view_canvas;
         this._last_hover_spot = null;
+        this._state = state;
         this._tool_factories = new Map<string, () => EditingTool>([
             ["polygon",      () => new PolygonTool(state.fore_color, state.line_width, state.fill_color, state.fill_outline)],
             ["topo_hull",    () => new TopoHullTool(state.fore_color, state.line_width)],
@@ -134,7 +135,6 @@ export class Editor {
         }
     }
     select_tool(tool_name: string) {
-        //state_registry.set(StateValue.SelectedToolName, tool_name)
         const factory = this._tool_factories.get(tool_name);
         if (!factory) {
             return;
@@ -469,10 +469,8 @@ export class Editor {
         }
         // Handle tristate fill/outline cycling with 'F' key
         if (event.code === 'KeyF') {
-            let state = settings.peek<number>(SettingName.FillOutline) ?? 0;
-            state = nextFillOutlineState(state);
-            settings.set(SettingName.FillOutline, state);
-            // Optionally, update UI here if needed
+            const next = nextFillOutlineState(this._state.fill_outline.peek() ?? 0);
+            this._state.fill_outline.value = next;
         }
         this.tool.keydown?.(event);
     }

@@ -46,9 +46,9 @@ test.describe('BezierTool commit', () => {
         await page.evaluate(() => {
             (window as any).app.select_tool('bezier');
             // outline-only mode (fill_outline = 2)
-            (window as any).app.settings.set('fill_outline', 2);
+            (window as any).app.state.fill_outline.value = 2;
             // BezierClosed = false (single-segment mode) — already default, but be explicit
-            (window as any).app.settings.set('bezier_closed', false);
+            (window as any).app.state.bezier_closed.value = false;
         });
 
         const canvas = page.locator('#view-canvas');

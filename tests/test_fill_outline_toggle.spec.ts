@@ -3,7 +3,7 @@ import { test, expect, Page } from '@playwright/test';
 // Helper to set fill/outline mode
 async function setFillOutlineMode(page: Page, mode: 0 | 1 | 2) {
     await page.evaluate((mode) => {
-        (window as any).app.settings.set('fill_outline', mode);
+        (window as any).app.state.fill_outline.value = mode;
     }, mode);
 }
 

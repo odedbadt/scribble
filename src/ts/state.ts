@@ -17,8 +17,8 @@ export class State {
 
     constructor() {
         // Auto-track the value that selected_tool_name held just before its current
-        // value, regardless of how the change was made (direct assignment, factory
-        // wiring, or the legacy state_registry bridge).
+        // value, regardless of how the change was made (direct assignment or
+        // factory wiring).
         let last: string | undefined = undefined;
         this.selected_tool_name.subscribe(v => {
             this._previous_tool_name.value = last;

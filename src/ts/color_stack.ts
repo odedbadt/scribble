@@ -1,5 +1,4 @@
 import { MainApp } from "./main_app";
-import { SettingName, settings } from "./settings_registry";
 import { dist2, dist2_to_set } from "./utils";
 
 export type ColorSlot = 'line' | 'fill' | 'back';
@@ -93,13 +92,13 @@ export class ColorStack {
         const color_string = `rgba(${color[0]},${color[1]},${color[2]},255)`;
         this._suppress_signal_stage = true;
         if (slot === 'line') {
-            settings.set(SettingName.ForeColor, color_string);
+            this._app.state.fore_color.value = color_string;
             this._color_selector_div_line.style.backgroundColor = color_string
         } else if (slot === 'fill') {
-            settings.set(SettingName.FillColor, color_string);
+            this._app.state.fill_color.value = color_string;
             this._color_selector_div_fill.style.backgroundColor = color_string
         } else {
-            settings.set(SettingName.BackColor, color_string);
+            this._app.state.back_color.value = color_string;
             this._color_selector_div_back.style.backgroundColor = color_string
         }
         this._suppress_signal_stage = false;

@@ -45,9 +45,7 @@ Tool lifecycle: `select() → start() → drag()* → stop()` (with optional `ho
 
 ### State management
 
-Two signal-based registries (`@preact/signals`):
-- **`SettingsRegistry`** (`settings_registry.ts`) — drawing settings (`ForeColor`, `BackColor`, `LineWidth`, ...).
-- **`StateRegistry`** (`state_registry.ts`) — UI state (`SelectedToolName`, with previous-value restoration for momentary tools like Dropper).
+**`State`** (`state.ts`) owns typed `@preact/signals` for everything tools and the UI care about: `fore_color`, `fill_color`, `back_color`, `line_width`, `fill_outline`, `heart_south`, `bezier_closed`, `bezier_manual_cp`, `selected_tool_name`, plus an auto-tracked `previous_tool_name` (for momentary tools like Dropper). `MainApp` constructs the single `State` instance and threads it into the `Editor`, which builds a tool-factory map: each entry pulls only the signals that tool needs and passes them into the constructor (`editor.ts:85-106`). Tools never read app-wide state from globals — every dependency arrives via constructor.
 
 Other singleton modules: `anchor_manager` (snap anchors), `mandala_mode` (symmetry), `ghost_layer` (reference image), `color_token_registry` (palette tokens used by GLSL color-token shader), `fill_pattern`.
 

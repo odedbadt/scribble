@@ -7,9 +7,7 @@ import { Rect, RectToRectMapping } from "./types";
 //import { GoogleDrive } from "./gdrive"
 import { Signal, signal, computed, effect } from "@preact/signals";
 import { ScribRenderer } from "./scrib_renderer";
-import { SettingName, settings } from './settings_registry'
 import { FillOutlineState, nextFillOutlineState, fillOutlineClass } from './FillOutlineState'
-import { StateValue, state_registry } from "./state_registry";
 import { State } from "./state";
 import { mandala_mode } from "./mandala_mode";
 import { anchor_manager } from "./anchor_manager";
@@ -42,7 +40,6 @@ function parse_rgba_string(s: string): number[] | null {
 }
 export class MainApp {
     public overlay_canvas_signal = signal<CanvasRenderingContext2D>();
-    public settings = settings;
     public state = new State();
     private scrib_renderer: ScribRenderer;
     private anchor_canvas_signal = signal<HTMLCanvasElement>(null as any);
@@ -121,34 +118,8 @@ export class MainApp {
         // Re-render anchor overlay whenever anchors change
         anchor_manager.dirty.subscribe(() => this._redraw_anchor_canvas());
 
-        this._bridge_legacy_registries();
-
-        settings.bulkSet({
-            fore_color: 'rgba(255,0,0,255)',
-            fill_color: 'rgba(255,255,255,255)',
-            back_color: 'rgba(255,255,255,255)',
-            line_width: 10,
-            fill_outline: 0, // Both by default
-            filled: true,
-        });
         this.init_canvases();
         this.scrib_renderer.init();
-    }
-
-    private _bridge_legacy_registries(): void {
-        const pair = <T>(a: Signal<T>, b: Signal<T>): void => {
-            a.subscribe(v => { if (b.peek() !== v) b.value = v; });
-            b.subscribe(v => { if (a.peek() !== v) a.value = v; });
-        };
-        pair(this.state.fore_color,        settings.get<string>(SettingName.ForeColor));
-        pair(this.state.fill_color,        settings.get<string>(SettingName.FillColor));
-        pair(this.state.back_color,        settings.get<string>(SettingName.BackColor));
-        pair(this.state.line_width,        settings.get<number>(SettingName.LineWidth));
-        pair(this.state.fill_outline,      settings.get<FillOutlineState>(SettingName.FillOutline));
-        pair(this.state.heart_south,       settings.get<'smooth' | 'straight'>(SettingName.HeartSouth));
-        pair(this.state.bezier_closed,     settings.get<boolean>(SettingName.BezierClosed));
-        pair(this.state.bezier_manual_cp,  settings.get<boolean>(SettingName.BezierManualCP));
-        pair(this.state.selected_tool_name, state_registry.use_signal<string>(StateValue.SelectedToolName, this.state.selected_tool_name.value));
     }
 
     init_canvases() {
@@ -178,11 +149,11 @@ export class MainApp {
         this.editor.select_tool(tool_name)
     }
     select_tool(tool_name: string) {
-        state_registry.set<string>(StateValue.SelectedToolName, tool_name);
+        this.state.selected_tool_name.value = tool_name;
         this._perform_select_tool(tool_name);
     }
     set_line_width(v: number) {
-        settings.set(SettingName.LineWidth, Math.max(1, Math.round(v)));
+        this.state.line_width.value = Math.max(1, Math.round(v));
     }
     load_image(url: string) {
         const img = new Image();
@@ -282,7 +253,7 @@ export class MainApp {
             mandala_panel.classList.toggle('visible', mandala_mode.enabled);
             rect_button.classList.toggle('tool-disabled', mandala_mode.enabled);
             // If rect was selected when mandala turns on, switch to scribble
-            if (mandala_mode.enabled && state_registry.peek<string>(StateValue.SelectedToolName) === 'rect') {
+            if (mandala_mode.enabled && this.state.selected_tool_name.peek() === 'rect') {
                 this.select_tool('scribble');
             }
         });
@@ -305,11 +276,11 @@ export class MainApp {
         const fillable_buttons = document.getElementsByClassName('fillable');
 
         const updateFillstyleVisual = () => {
-            const state = (settings.peek<number>(SettingName.FillOutline) ?? 0) as FillOutlineState;
-            const foreColor = settings.peek<string>(SettingName.ForeColor);
-            const fillColor = settings.peek<string>(SettingName.FillColor);
+            const mode = (this.state.fill_outline.peek() ?? 0) as FillOutlineState;
+            const foreColor = this.state.fore_color.peek();
+            const fillColor = this.state.fill_color.peek();
             fillstyle_button.style.backgroundImage = 'none';
-            switch (state) {
+            switch (mode) {
                 case FillOutlineState.Both:
                     fillstyle_button.style.backgroundColor = fillColor;
                     fillstyle_button.style.boxShadow = `inset 0 0 0 5px ${foreColor}`;
@@ -326,11 +297,11 @@ export class MainApp {
         };
 
         fillstyle_button.addEventListener('click', () => {
-            let state = settings.peek<number>(SettingName.FillOutline) ?? 0;
-            state = nextFillOutlineState(state);
-            settings.set(SettingName.FillOutline, state);
+            let mode = this.state.fill_outline.peek() ?? 0;
+            mode = nextFillOutlineState(mode);
+            this.state.fill_outline.value = mode;
             fillstyle_button.classList.remove('filled', 'tristate');
-            const cls = fillOutlineClass(state);
+            const cls = fillOutlineClass(mode);
             if (cls) fillstyle_button.classList.add(cls);
             // Visual feedback for fillable tool buttons
             Array.from(fillable_buttons).forEach(btn => {
@@ -338,11 +309,11 @@ export class MainApp {
                 if (cls) btn.classList.add(cls);
             });
         });
-        // Sync fillstyle button with setting
+        // Sync fillstyle button with setting (peek matches the original one-shot init behavior)
         effect(() => {
-            let state = settings.peek<number>(SettingName.FillOutline) ?? 0;
+            const mode = this.state.fill_outline.peek() ?? 0;
             fillstyle_button.classList.remove('filled', 'tristate');
-            const cls = fillOutlineClass(state);
+            const cls = fillOutlineClass(mode);
             if (cls) fillstyle_button.classList.add(cls);
             Array.from(fillable_buttons).forEach(btn => {
                 btn.classList.remove('filled', 'tristate');
@@ -350,8 +321,8 @@ export class MainApp {
             });
             updateFillstyleVisual();
         });
-        settings.get(SettingName.ForeColor).subscribe(() => updateFillstyleVisual());
-        settings.get(SettingName.FillColor).subscribe(() => updateFillstyleVisual());
+        this.state.fore_color.subscribe(() => updateFillstyleVisual());
+        this.state.fill_color.subscribe(() => updateFillstyleVisual());
 
         // Pattern fill toggle button
         const fill_pattern_toggle_btn = document.getElementsByClassName('fill_pattern_toggle')[0] as HTMLElement;
@@ -390,23 +361,23 @@ export class MainApp {
         // Each entry defines icon, toggle, and optional pressed-state check.
         // Add entries here when a tool needs a contextual control.
         type ToolCtrl = { icon: () => string; toggle: () => void; is_pressed?: () => boolean };
-        settings.set(SettingName.HeartSouth, 'smooth');
-        settings.set(SettingName.BezierClosed, false);
-        settings.set(SettingName.BezierManualCP, false);
+        this.state.heart_south.value = 'smooth';
+        this.state.bezier_closed.value = false;
+        this.state.bezier_manual_cp.value = false;
 
         const tool_ctrl_defs: Record<string, ToolCtrl> = {
             'heart': {
-                icon: () => settings.peek<string>(SettingName.HeartSouth) === 'straight' ? '♥V' : '♥∪',
+                icon: () => this.state.heart_south.peek() === 'straight' ? '♥V' : '♥∪',
                 toggle: () => {
-                    const straight = settings.peek<string>(SettingName.HeartSouth) !== 'straight';
-                    settings.set(SettingName.HeartSouth, straight ? 'straight' : 'smooth');
+                    const straight = this.state.heart_south.peek() !== 'straight';
+                    this.state.heart_south.value = straight ? 'straight' : 'smooth';
                 },
-                is_pressed: () => settings.peek<string>(SettingName.HeartSouth) === 'straight',
+                is_pressed: () => this.state.heart_south.peek() === 'straight',
             },
             'bezier': {
-                icon: () => settings.peek<boolean>(SettingName.BezierManualCP) ? '⌃●' : '⌃○',
-                toggle: () => settings.set(SettingName.BezierManualCP, !settings.peek<boolean>(SettingName.BezierManualCP)),
-                is_pressed: () => settings.peek<boolean>(SettingName.BezierManualCP),
+                icon: () => this.state.bezier_manual_cp.peek() ? '⌃●' : '⌃○',
+                toggle: () => { this.state.bezier_manual_cp.value = !this.state.bezier_manual_cp.peek(); },
+                is_pressed: () => this.state.bezier_manual_cp.peek(),
             },
             'scraper': {
                 icon: () => '⊘',
@@ -425,7 +396,7 @@ export class MainApp {
         const tool_ctrl_btn = document.getElementById('tool-ctrl-btn') as HTMLElement;
         tool_ctrl_btn.style.display = 'none';
         tool_ctrl_btn.addEventListener('click', () => {
-            const current_tool = state_registry.peek<string>(StateValue.SelectedToolName) ?? '';
+            const current_tool = this.state.selected_tool_name.peek() ?? '';
             const ctrl = tool_ctrl_defs[current_tool];
             if (!ctrl) return;
             ctrl.toggle();
@@ -435,15 +406,15 @@ export class MainApp {
 
         const tool_ctrl_2_defs: Record<string, ToolCtrl> = {
             'bezier': {
-                icon: () => settings.peek<boolean>(SettingName.BezierClosed) ? '⊃●' : '⊃○',
-                toggle: () => settings.set(SettingName.BezierClosed, !settings.peek<boolean>(SettingName.BezierClosed)),
-                is_pressed: () => settings.peek<boolean>(SettingName.BezierClosed),
+                icon: () => this.state.bezier_closed.peek() ? '⊃●' : '⊃○',
+                toggle: () => { this.state.bezier_closed.value = !this.state.bezier_closed.peek(); },
+                is_pressed: () => this.state.bezier_closed.peek(),
             },
         };
         const tool_ctrl_btn_2 = document.getElementById('tool-ctrl-btn-2') as HTMLElement;
         tool_ctrl_btn_2.style.display = 'none';
         tool_ctrl_btn_2.addEventListener('click', () => {
-            const current_tool = state_registry.peek<string>(StateValue.SelectedToolName) ?? '';
+            const current_tool = this.state.selected_tool_name.peek() ?? '';
             const ctrl2 = tool_ctrl_2_defs[current_tool];
             if (!ctrl2) return;
             ctrl2.toggle();
@@ -451,8 +422,7 @@ export class MainApp {
             tool_ctrl_btn_2.classList.toggle('pressed', ctrl2.is_pressed?.() ?? false);
         });
 
-        const select_tool_signal = state_registry.use_signal<string>(StateValue.SelectedToolName, 'scribble');
-        select_tool_signal.subscribe((tool_name) => {
+        this.state.selected_tool_name.subscribe((tool_name) => {
             const ctrl = tool_ctrl_defs[tool_name];
             tool_ctrl_btn.style.display = ctrl ? 'flex' : 'none';
             if (ctrl) {
@@ -592,8 +562,7 @@ export class MainApp {
                 // Retroactively update the token's color — all strokes change instantly via GPU uniform
                 const rgba: RGBA = [rgb_color[0], rgb_color[1], rgb_color[2], 255];
                 color_token_registry.tokens[active_token_idx].color.value = rgba;
-                settings.set(SettingName.ForeColor,
-                    `rgba(${rgb_color[0]},${rgb_color[1]},${rgb_color[2]},255)`);
+                this.state.fore_color.value = `rgba(${rgb_color[0]},${rgb_color[1]},${rgb_color[2]},255)`;
                 return;
             }
             if (trackColorOnDrag) {
@@ -609,8 +578,7 @@ export class MainApp {
             if (active_token_idx !== null) {
                 const rgba: RGBA = [rgb_color[0], rgb_color[1], rgb_color[2], 255];
                 color_token_registry.tokens[active_token_idx].color.value = rgba;
-                settings.set(SettingName.ForeColor,
-                    `rgba(${rgb_color[0]},${rgb_color[1]},${rgb_color[2]},255)`);
+                this.state.fore_color.value = `rgba(${rgb_color[0]},${rgb_color[1]},${rgb_color[2]},255)`;
                 return;
             }
             if (trackColorOnDrag) {
@@ -679,24 +647,24 @@ export class MainApp {
             event.preventDefault();
         });
         document.getElementById('color-selector-div-back')!!.addEventListener('click', () => {
-            const tmp_back = settings.peek(SettingName.BackColor);
-            settings.set(SettingName.BackColor, settings.peek(SettingName.ForeColor));
-            settings.set(SettingName.ForeColor, tmp_back);
+            const tmp_back = this.state.back_color.peek();
+            this.state.back_color.value = this.state.fore_color.peek();
+            this.state.fore_color.value = tmp_back;
         })
         // Prevent inner swatch clicks from bubbling up to the back swatch.
         document.getElementById('color-selector-div-fill')!.addEventListener('click', (e) => e.stopPropagation());
         document.getElementById('color-selector-div-line')!.addEventListener('click', (e) => e.stopPropagation());
-        settings.get(SettingName.ForeColor).subscribe((color_string: string) => {
+        this.state.fore_color.subscribe((color_string: string) => {
             document.getElementById('color-selector-div-line')!.style.backgroundColor = color_string;
             const rgb = parse_rgba_string(color_string);
             if (rgb) this.color_stack.stage_from_signal(rgb, 'line');
         });
-        settings.get(SettingName.FillColor).subscribe((color_string: string) => {
+        this.state.fill_color.subscribe((color_string: string) => {
             document.getElementById('color-selector-div-fill')!.style.backgroundColor = color_string;
             const rgb = parse_rgba_string(color_string);
             if (rgb) this.color_stack.stage_from_signal(rgb, 'fill');
         });
-        settings.get(SettingName.BackColor).subscribe((color_string: string) => {
+        this.state.back_color.subscribe((color_string: string) => {
             document.getElementById('color-selector-div-back')!.style.backgroundColor = color_string;
             const rgb = parse_rgba_string(color_string);
             if (rgb) this.color_stack.stage_from_signal(rgb, 'back');
@@ -933,7 +901,7 @@ export class MainApp {
                 const active_idx = color_token_registry.active_index.peek();
                 if (active_idx !== null) {
                     const tc = color_token_registry.tokens[active_idx].color.peek();
-                    settings.set(SettingName.ForeColor, `rgba(${tc[0]},${tc[1]},${tc[2]},255)`);
+                    this.state.fore_color.value = `rgba(${tc[0]},${tc[1]},${tc[2]},255)`;
                 }
             });
             container.appendChild(btn);

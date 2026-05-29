@@ -39,8 +39,8 @@ test.describe('BezierTool two strokes', () => {
         await page.evaluate(() => {
             (window as any).app.select_tool('bezier');
             // mode 0 = both fill + outline (triggers the flood-fill-before-outline bug)
-            (window as any).app.settings.set('fill_outline', 0);
-            (window as any).app.settings.set('bezier_closed', false);
+            (window as any).app.state.fill_outline.value = 0;
+            (window as any).app.state.bezier_closed.value = false;
         });
 
         const canvas = page.locator('#view-canvas');
