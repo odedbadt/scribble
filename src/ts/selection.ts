@@ -1,8 +1,8 @@
 import { ClickAndDragTool } from "./click_and_drag_tool";
+import { ReadonlySignal, Signal } from "@preact/signals";
 import { clipboard } from "./clipboard";
 import { setPixel, RGBA } from "./pixel_utils";
 import { Rect, Vector2, bounding_rect, vfloor } from "./types";
-import { state_registry, StateValue } from "./state_registry";
 
 /** Draw a 1px marching-ants outline (alternating black/white pixels) on an ImageData. */
 function draw_selection_outline(imageData: ImageData, w: number, h: number): void {
@@ -22,6 +22,14 @@ function draw_selection_outline(imageData: ImageData, w: number, h: number): voi
 
 export class SelectionTool extends ClickAndDragTool {
     private _selection: Rect | null = null;
+
+    constructor(
+        fore_color: ReadonlySignal<string>,
+        line_width: ReadonlySignal<number>,
+        private _selected_tool_name: Signal<string>,
+    ) {
+        super(fore_color, line_width);
+    }
 
     editing_start(): void {
         // New drag clears old selection
@@ -64,7 +72,7 @@ export class SelectionTool extends ClickAndDragTool {
         // Clear selection display and hand off to stamp tool
         this._clear_selection_display();
         this._selection = null;
-        state_registry.set(StateValue.SelectedToolName, 'stamp');
+        this._selected_tool_name.value = 'stamp';
     }
 
     hover_action(at: Vector2): void {

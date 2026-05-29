@@ -1,5 +1,5 @@
 import { ClickAndDragTool } from "./click_and_drag_tool";
-import { SettingName, settings } from "./settings_registry";
+import { ReadonlySignal } from "@preact/signals";
 import { Vector2 } from "./types";
 import { drawLine, drawThickLine, RGBA } from "./pixel_utils";
 import { mandala_mode } from "./mandala_mode";
@@ -18,8 +18,11 @@ export class RevealBrush extends ClickAndDragTool {
     // Marker color used as a temporary mask before ghost pixels are sampled
     private readonly _marker: RGBA = [1, 1, 1, 255];
 
-    constructor() {
-        super();
+    constructor(
+        fore_color: ReadonlySignal<string>,
+        line_width: ReadonlySignal<number>,
+    ) {
+        super(fore_color, line_width);
         // Reveal brush always shows its overlay (it's previewing the reveal, not hiding it)
         this._suppress_overlay_in_ghost_mode = false;
     }
@@ -30,7 +33,7 @@ export class RevealBrush extends ClickAndDragTool {
     }
 
     editing_drag(from: Vector2, to: Vector2) {
-        const lw = settings.peek<number>(SettingName.LineWidth);
+        const lw = this._line_width.peek();
         const radius = Math.floor(lw / 2);
         const prev = this._prev ?? to;
         this._prev = { ...to };

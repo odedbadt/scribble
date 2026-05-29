@@ -1,10 +1,13 @@
 import { EditingTool } from "./editing_tool"
 import { Editor } from "./editor";
-import { settings, SettingName } from "./settings_registry";
+import { ReadonlySignal } from "@preact/signals";
 import { Vector2, unit_rect } from "./types";
 import { parse_RGBA, tool_to_document } from "./utils";
 
 export abstract class ClickTool extends EditingTool {
+    constructor(protected _fore_color: ReadonlySignal<string>) {
+        super();
+    }
     init() {
         this.start = this.start.bind(this);
         this.drag = this.drag.bind(this);
@@ -19,8 +22,7 @@ export abstract class ClickTool extends EditingTool {
             throw new Error("Cannot stop tool if editor is not full initialized")
         }
         this.editing_stop(at);
-        const color = settings.peek<string>(SettingName.ForeColor);
-        const color_array = parse_RGBA(color)
+        const color_array = parse_RGBA(this._fore_color.peek())
         tool_to_document(this.canvas!,
             this.canvas_bounds_mapping_signal!.value, this.document_context, color_array);
         this.publish_signals();

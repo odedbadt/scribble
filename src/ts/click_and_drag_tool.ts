@@ -3,9 +3,8 @@ import { Editor } from "./editor";
 import { MainApp } from "./main_app";
 import { Rect, Vector2, RectToRectMapping, unit_rect, vfloor } from "./types";
 
-import { signal, computed, effect } from "@preact/signals";
+import { ReadonlySignal, signal, computed, effect } from "@preact/signals";
 import { parse_RGBA, tool_to_document, tool_to_token_canvas, tool_to_ghost_canvas, clear_canvas, rect_union } from "./utils";
-import { settings, SettingName } from "./settings_registry";
 import { drawFilledCircle, parseColor, RGBA, setPixel } from "./pixel_utils";
 import { mandala_mode } from "./mandala_mode";
 import { color_token_registry } from "./color_token_registry";
@@ -24,6 +23,13 @@ export abstract class ClickAndDragTool extends EditingTool {
     private _hover_circle_cache: ImageData | null = null;
     private _hover_circle_cache_radius = -1;
     private _hover_circle_cache_color = '';
+
+    constructor(
+        protected _fore_color: ReadonlySignal<string>,
+        protected _line_width: ReadonlySignal<number>,
+    ) {
+        super();
+    }
     init() {
         this.start = this.start.bind(this);
         this.drag = this.drag.bind(this);
@@ -83,10 +89,10 @@ export abstract class ClickAndDragTool extends EditingTool {
         this.hover_action(at);
     }
     hover_color(): RGBA {
-        return parseColor(settings.peek<string>(SettingName.ForeColor));
+        return parseColor(this._fore_color.peek());
     }
     hover_action(at: Vector2) {
-        const lw = settings.peek<number>(SettingName.LineWidth);
+        const lw = this._line_width.peek();
         const radius = Math.floor(lw / 2);
         const hoverColor = this.hover_color();
         const colorStr = `rgba(${hoverColor[0]},${hoverColor[1]},${hoverColor[2]},${hoverColor[3]})`;

@@ -1,37 +1,48 @@
 import { ClickAndDragTool } from "./click_and_drag_tool";
-import { SettingName, settings } from "./settings_registry";
+import { ReadonlySignal } from "@preact/signals";
+import { FillOutlineState } from "./FillOutlineState";
 import { Vector2 } from "./types";
 import { drawFilledHeart, drawHeartOutline, drawFilledStraightSouthHeart, drawStraightSouthHeartOutline, parseColor, RGBA } from "./pixel_utils";
 import { mandala_mode } from "./mandala_mode";
 
 export class HeartTool extends ClickAndDragTool {
     protected _line_color: RGBA = [0, 0, 0, 255];
-    protected _fill_color: RGBA = [255, 255, 255, 255];
-    protected _fill_outline: number = 0; // 0: both, 1: fill only, 2: outline only
+    protected _fill_rgba: RGBA = [255, 255, 255, 255];
+    protected _fill_mode: number = 0; // 0: both, 1: fill only, 2: outline only
+
+    constructor(
+        fore_color: ReadonlySignal<string>,
+        line_width: ReadonlySignal<number>,
+        private _fill_color: ReadonlySignal<string>,
+        private _fill_outline: ReadonlySignal<FillOutlineState>,
+        private _heart_south: ReadonlySignal<'smooth' | 'straight'>,
+    ) {
+        super(fore_color, line_width);
+    }
 
     editing_start() {
-        this._line_color = parseColor(settings.peek<string>(SettingName.ForeColor));
-        this._fill_color = parseColor(settings.peek<string>(SettingName.FillColor));
-        this._fill_outline = settings.peek<number>(SettingName.FillOutline) ?? 0;
+        this._line_color = parseColor(this._fore_color.peek());
+        this._fill_rgba = parseColor(this._fill_color.peek());
+        this._fill_mode = this._fill_outline.peek() ?? 0;
     }
 
     editing_drag(from: Vector2, to: Vector2) {
         const r = Math.max(1, Math.floor(Math.sqrt(
             (to.x - from.x) ** 2 + (to.y - from.y) ** 2
         )));
-        const lw = settings.peek<number>(SettingName.LineWidth);
+        const lw = this._line_width.peek();
         const thickness = Math.max(1, lw);
 
-        const straight = settings.peek<string>(SettingName.HeartSouth) === 'straight';
+        const straight = this._heart_south.peek() === 'straight';
         const drawAt = (imageData: ImageData, cx: number, cy: number) => {
             // 0: both, 1: fill only, 2: outline only
-            if (this._fill_outline === 0 || this._fill_outline === 1) {
+            if (this._fill_mode === 0 || this._fill_mode === 1) {
                 if (straight) {
-                    drawFilledStraightSouthHeart(imageData, cx, cy, r, this._fill_color);
+                    drawFilledStraightSouthHeart(imageData, cx, cy, r, this._fill_rgba);
                 } else {
-                    drawFilledHeart(imageData, cx, cy, r, this._fill_color);
+                    drawFilledHeart(imageData, cx, cy, r, this._fill_rgba);
                 }
-                if (this._fill_outline === 1) {
+                if (this._fill_mode === 1) {
                     // Clear outline to transparent (approximate by clearing pixels near the edge)
                     const bound = Math.ceil(r * 1.5) + 1;
                     for (let dy = -bound; dy <= bound; dy++) {
@@ -46,13 +57,13 @@ export class HeartTool extends ClickAndDragTool {
                     }
                 }
             }
-            if (this._fill_outline === 0 || this._fill_outline === 2) {
+            if (this._fill_mode === 0 || this._fill_mode === 2) {
                 if (straight) {
                     drawStraightSouthHeartOutline(imageData, cx, cy, r, thickness, this._line_color);
                 } else {
                     drawHeartOutline(imageData, cx, cy, r, thickness, this._line_color);
                 }
-                if (this._fill_outline === 2) {
+                if (this._fill_mode === 2) {
                     // Clear fill area to transparent (approximate by clearing pixels inside)
                     const bound = Math.ceil(r * 1.5) + 1;
                     for (let dy = -bound + thickness; dy <= bound - thickness; dy++) {

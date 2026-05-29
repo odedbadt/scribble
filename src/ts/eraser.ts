@@ -1,17 +1,12 @@
 import { ScribbleTool } from "./scribble";
-import { SettingName, settings } from "./settings_registry";
 import { parseColor, RGBA } from "./pixel_utils";
 import { color_token_registry } from "./color_token_registry";
 import { tool_erase_token_canvas, tool_erase_ghost_canvas } from "./utils";
 import { ghost_layer } from "./ghost_layer";
 
 export class EraserTool extends ScribbleTool {
-    constructor() {
-        super();
-    }
-
     editing_start() {
-        this._stroke_color = parseColor(settings.peek<string>(SettingName.BackColor));
+        this._stroke_color = parseColor(this._back_color.peek());
         this._prev = null;
         this.editing_drag(this.drag_start!, this.drag_start!);
     }
@@ -33,10 +28,10 @@ export class EraserTool extends ScribbleTool {
             ghost_layer.dirty.value++;
             return;
         }
-        super.commit_to_document(settings.peek<string>(SettingName.BackColor));
+        super.commit_to_document(this._back_color.peek());
     }
 
     hover_color(): RGBA {
-        return parseColor(settings.peek<string>(SettingName.BackColor));
+        return parseColor(this._back_color.peek());
     }
 }

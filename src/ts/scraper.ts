@@ -1,5 +1,4 @@
 import { ScribbleTool } from "./scribble";
-import { SettingName, settings } from "./settings_registry";
 import { drawLine, drawThickLine, parseColor, RGBA } from "./pixel_utils";
 import { Vector2 } from "./types";
 import { mandala_mode } from "./mandala_mode";
@@ -21,10 +20,6 @@ export class ScraperTool extends ScribbleTool {
     /** Tracks which pixels have already been processed this stroke (prevents double-erase on overlapping segments). */
     private _visited: Uint8Array | null = null;
     private _visited_doc_w = 0;
-
-    constructor() {
-        super();
-    }
 
     editing_start() {
         this._is_topmost_mode = !!(this.get_alt_key?.());
@@ -81,7 +76,7 @@ export class ScraperTool extends ScribbleTool {
     private _apply_hole_topmost_perpixel(from: Vector2, to: Vector2) {
         if (!this.layer_stack || !this.document_canvas) return;
 
-        const lw = settings.peek<number>(SettingName.LineWidth);
+        const lw = this._line_width.peek();
         const radius = Math.floor(lw / 2);
         const prev = this._prev ?? to;
         this._prev = { ...to };
@@ -197,7 +192,7 @@ export class ScraperTool extends ScribbleTool {
         from: Vector2,
         to: Vector2,
     ) {
-        const lw = settings.peek<number>(SettingName.LineWidth);
+        const lw = this._line_width.peek();
         const radius = Math.floor(lw / 2);
         const prev = this._prev ?? to;
         this._prev = { ...to };
@@ -261,7 +256,7 @@ export class ScraperTool extends ScribbleTool {
     }
 
     hover_color(): RGBA {
-        return parseColor(settings.peek<string>(SettingName.BackColor));
+        return parseColor(this._back_color.peek());
     }
 
     hover_action(at: Vector2) {
@@ -274,7 +269,7 @@ export class ScraperTool extends ScribbleTool {
 
     /** Renders the scraper cursor as a per-pixel preview of what will be revealed. */
     private _hover_hole_preview(at: Vector2) {
-        const lw = settings.peek<number>(SettingName.LineWidth);
+        const lw = this._line_width.peek();
         const radius = Math.floor(lw / 2);
         const margin = 1;
         const half = radius + margin;

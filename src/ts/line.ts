@@ -2,18 +2,9 @@ import { ClickAndDragTool } from "./click_and_drag_tool"
 import { Vector2 } from "./types";
 import { drawLine, drawThickLine, parseColor, RGBA } from "./pixel_utils";
 import { mandala_mode } from "./mandala_mode";
-import { ReadonlySignal } from "@preact/signals";
 
 export class LineTool extends ClickAndDragTool {
-    protected _stroke_color: RGBA;
-
-    constructor(
-        private _fore_color: ReadonlySignal<string>,
-        private _line_width: ReadonlySignal<number>,
-    ) {
-        super();
-        this._stroke_color = [0, 0, 0, 255];
-    }
+    protected _stroke_color: RGBA = [0, 0, 0, 255];
 
     editing_start() {
         this._stroke_color = parseColor(this._fore_color.peek());

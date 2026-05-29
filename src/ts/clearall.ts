@@ -1,16 +1,20 @@
 import { EditingTool } from "./editing_tool";
-import { SettingName, settings } from "./settings_registry";
+import { ReadonlySignal } from "@preact/signals";
 import { Vector2 } from "./types";
 import { anchor_manager } from "./anchor_manager";
 import { mandala_mode } from "./mandala_mode";
 
 export class ClearAllTool extends EditingTool {
 
+    constructor(private _back_color: ReadonlySignal<string>) {
+        super();
+    }
+
     select() {
         if (this.document_canvas == null || this.document_context == null) {
             throw new Error("Cannot select tool if editor is not fully initialized")
         }
-        const color = settings.peek<string>(SettingName.BackColor);
+        const color = this._back_color.peek();
         this.begin_undo_capture?.();
         this.document_context.fillStyle = color;
         this.document_context.fillRect(0, 0, this.document_canvas.width, this.document_canvas.height);

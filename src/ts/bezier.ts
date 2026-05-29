@@ -1,5 +1,6 @@
 import { EditingTool } from "./editing_tool";
-import { SettingName, settings } from "./settings_registry";
+import { ReadonlySignal } from "@preact/signals";
+import { FillOutlineState } from "./FillOutlineState";
 import { Vector2 } from "./types";
 import { drawLine, drawThickLine, parseColor, setPixel, RGBA } from "./pixel_utils";
 import { tool_to_document } from "./utils";
@@ -140,9 +141,21 @@ export class BezierTool extends EditingTool {
 
     // ── shared ──
     private _stroke_color: RGBA = [0, 0, 0, 255];
-    private _fill_color: RGBA = [255, 255, 255, 255];
-    private _fill_outline: number = 0; // 0: both, 1: fill only, 2: outline only
+    private _fill_rgba: RGBA = [255, 255, 255, 255];
+    private _fill_mode: number = 0; // 0: both, 1: fill only, 2: outline only
     private _start_buttons = 0;
+
+    constructor(
+        private _fore_color: ReadonlySignal<string>,
+        private _back_color: ReadonlySignal<string>,
+        private _line_width: ReadonlySignal<number>,
+        private _fill_color: ReadonlySignal<string>,
+        private _fill_outline: ReadonlySignal<FillOutlineState>,
+        private _bezier_closed: ReadonlySignal<boolean>,
+        private _bezier_manual_cp: ReadonlySignal<boolean>,
+    ) {
+        super();
+    }
 
     select() { this._reset(); }
     deselect() { this._reset(); }
@@ -154,10 +167,10 @@ export class BezierTool extends EditingTool {
     start(at: Vector2, buttons: number) {
         this._start_buttons = buttons;
         const is_right = (buttons & 2) !== 0;
-        this._stroke_color = parseColor(settings.peek<string>(is_right ? SettingName.BackColor : SettingName.ForeColor));
-        this._fill_color = parseColor(settings.peek<string>(SettingName.FillColor));
-        this._fill_outline = settings.peek<number>(SettingName.FillOutline) ?? 0;
-        if (settings.peek<boolean>(SettingName.BezierClosed)) {
+        this._stroke_color = parseColor((is_right ? this._back_color : this._fore_color).peek());
+        this._fill_rgba = parseColor(this._fill_color.peek());
+        this._fill_mode = this._fill_outline.peek() ?? 0;
+        if (this._bezier_closed.peek()) {
             this._multi_start(at);
         } else {
             this._single_start(at);
@@ -165,7 +178,7 @@ export class BezierTool extends EditingTool {
     }
 
     drag(at: Vector2) {
-        if (settings.peek<boolean>(SettingName.BezierClosed)) {
+        if (this._bezier_closed.peek()) {
             this._multi_drag(at);
         } else {
             this._single_drag(at);
@@ -173,7 +186,7 @@ export class BezierTool extends EditingTool {
     }
 
     stop(at: Vector2) {
-        if (settings.peek<boolean>(SettingName.BezierClosed)) {
+        if (this._bezier_closed.peek()) {
             this._multi_stop(at);
         } else {
             this._single_stop(at);
@@ -181,7 +194,7 @@ export class BezierTool extends EditingTool {
     }
 
     hover(at: Vector2) {
-        if (settings.peek<boolean>(SettingName.BezierClosed)) {
+        if (this._bezier_closed.peek()) {
             if (this._anchors.length > 0 && !this._dragging_tangent) this._multi_render(at);
         } else {
             if (this._phase !== 'idle' && !this._in_drag) this._single_render(at);
@@ -189,7 +202,7 @@ export class BezierTool extends EditingTool {
     }
 
     pointer_leave() {
-        if (settings.peek<boolean>(SettingName.BezierClosed)) {
+        if (this._bezier_closed.peek()) {
             if (this._anchors.length > 0) this._multi_render(null);
         } else {
             if (this._phase !== 'idle') this._single_render(null);
@@ -240,7 +253,7 @@ export class BezierTool extends EditingTool {
         const dims = this._setup_canvas(); if (!dims) return;
         const { docW, docH } = dims;
         const imageData = new ImageData(docW, docH);
-        const radius = Math.floor((settings.peek<number>(SettingName.LineWidth) ?? 1) / 2);
+        const radius = Math.floor((this._line_width.peek() ?? 1) / 2);
         const p0 = this._p0!;
         let p1: Vector2, p2: Vector2, p3: Vector2;
         if (this._phase === 'set-endpoints') {
@@ -268,7 +281,7 @@ export class BezierTool extends EditingTool {
         const dims = this._setup_canvas(); if (!dims) { this._reset(); return; }
         const { docW, docH } = dims;
         const imageData = new ImageData(docW, docH);
-        const radius = Math.floor((settings.peek<number>(SettingName.LineWidth) ?? 1) / 2);
+        const radius = Math.floor((this._line_width.peek() ?? 1) / 2);
         // Single-segment bezier is an open curve — fill has no enclosed interior, so always draw outline only.
         draw_bezier_curve(imageData, this._p0, this._p1, this._p2, this._p3, radius, this._stroke_color);
         this.context!.putImageData(imageData, 0, 0);
@@ -299,7 +312,7 @@ export class BezierTool extends EditingTool {
         const anchor: SplineAnchor = { pt };
         this._anchors.push(anchor);
 
-        if (settings.peek<boolean>(SettingName.BezierManualCP)) {
+        if (this._bezier_manual_cp.peek()) {
             this._dragging_tangent = true;
         }
         this._multi_render(pt);
@@ -327,7 +340,7 @@ export class BezierTool extends EditingTool {
         const dims = this._setup_canvas(); if (!dims) return;
         const { docW, docH } = dims;
         const imageData = new ImageData(docW, docH);
-        const radius = Math.floor((settings.peek<number>(SettingName.LineWidth) ?? 1) / 2);
+        const radius = Math.floor((this._line_width.peek() ?? 1) / 2);
 
         // Draw committed segments as open spline
         if (this._anchors.length >= 2) {
@@ -354,7 +367,7 @@ export class BezierTool extends EditingTool {
         }
 
         // Anchor markers
-        const show_handles = settings.peek<boolean>(SettingName.BezierManualCP);
+        const show_handles = this._bezier_manual_cp.peek();
         for (const a of this._anchors) {
             draw_handle_square(imageData, a.pt, ENDPOINT_COLOR);
             if (show_handles && a.tangent) {
@@ -375,17 +388,17 @@ export class BezierTool extends EditingTool {
         const dims = this._setup_canvas(); if (!dims) { this._reset(); return; }
         const { docW, docH } = dims;
         const imageData = new ImageData(docW, docH);
-        const radius = Math.floor((settings.peek<number>(SettingName.LineWidth) ?? 1) / 2);
+        const radius = Math.floor((this._line_width.peek() ?? 1) / 2);
         // 0: both, 1: fill only, 2: outline only
-        if (this._fill_outline === 0 || this._fill_outline === 2) {
+        if (this._fill_mode === 0 || this._fill_mode === 2) {
             draw_spline_closed(imageData, this._anchors, radius, this._stroke_color);
         }
-        if (this._fill_outline === 0 || this._fill_outline === 1) {
+        if (this._fill_mode === 0 || this._fill_mode === 1) {
             // Flood-fill from centroid
             let cx = 0, cy = 0;
             for (const a of this._anchors) { cx += a.pt.x; cy += a.pt.y; }
             cx /= this._anchors.length; cy /= this._anchors.length;
-            flood_fill_transparent(imageData, cx, cy, this._fill_color);
+            flood_fill_transparent(imageData, cx, cy, this._fill_rgba);
         }
         this.context!.putImageData(imageData, 0, 0);
         this._do_commit();

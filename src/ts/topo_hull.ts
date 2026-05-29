@@ -1,5 +1,4 @@
 import { ClickAndDragTool } from "./click_and_drag_tool";
-import { SettingName, settings } from "./settings_registry";
 import { Vector2 } from "./types";
 import { drawLine, drawThickLine, drawFilledCircle, setPixel, parseColor, RGBA } from "./pixel_utils";
 
@@ -58,7 +57,7 @@ export class TopoHullTool extends ClickAndDragTool {
         this._is_right_stroke = (this._start_buttons & 2) !== 0 && (this._alt_held || this._has_session);
         const p = this.drag_start!;
         if (!this._alt_held || !this._has_session) {
-            const lw = settings.peek<number>(SettingName.LineWidth);
+            const lw = this._line_width.peek();
             const margin = Math.floor(lw / 2) + 2;
             this._ox = Math.floor(p.x) - margin;
             this._oy = Math.floor(p.y) - margin;
@@ -101,7 +100,7 @@ export class TopoHullTool extends ClickAndDragTool {
     private _commit_and_clear() {
         if ((this.drag_start || this._has_session) && this.canvas && this.canvas_bounds_mapping) {
             this.begin_undo_capture?.(this.canvas_bounds_mapping.to);
-            super.commit_to_document(settings.peek<string>(SettingName.ForeColor));
+            super.commit_to_document(this._fore_color.peek());
             this.document_dirty_signal!.value++;
             this.push_undo_snapshot?.();
         }
@@ -115,7 +114,7 @@ export class TopoHullTool extends ClickAndDragTool {
     }
 
     private _expand(to: Vector2) {
-        const lw = settings.peek<number>(SettingName.LineWidth);
+        const lw = this._line_width.peek();
         const margin = Math.floor(lw / 2) + 2;
         const newOX = Math.min(this._ox, Math.floor(to.x) - margin);
         const newOY = Math.min(this._oy, Math.floor(to.y) - margin);
@@ -136,9 +135,9 @@ export class TopoHullTool extends ClickAndDragTool {
         this._ensure_canvases();
         this._expand(to);
         const ctx = this._is_right_stroke ? this._neg_ctx! : this._pos_ctx!;
-        const lw = settings.peek<number>(SettingName.LineWidth);
+        const lw = this._line_width.peek();
         const radius = Math.floor(lw / 2);
-        const color = parseColor(settings.peek<string>(SettingName.ForeColor));
+        const color = parseColor(this._fore_color.peek());
         const data = ctx.getImageData(0, 0, this._cw, this._ch);
         if (!from) {
             const tx = Math.round(to.x - this._ox), ty = Math.round(to.y - this._oy);
@@ -180,7 +179,7 @@ export class TopoHullTool extends ClickAndDragTool {
         const total = w * h;
         const posData = this._pos_ctx!.getImageData(0, 0, w, h).data;
         const negData = this._neg_ctx!.getImageData(0, 0, w, h).data;
-        const color = parseColor(settings.peek<string>(SettingName.ForeColor));
+        const color = parseColor(this._fore_color.peek());
         const posOut = this._bfs_outside(posData, w, h);
         const negOut = this._bfs_outside(negData, w, h);
 

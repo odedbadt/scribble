@@ -1,8 +1,7 @@
 import { ClickAndDragTool } from "./click_and_drag_tool";
+import { ReadonlySignal, Signal } from "@preact/signals";
 import { clipboard } from "./clipboard";
 import { Vector2 } from "./types";
-import { state_registry, StateValue } from "./state_registry";
-import { settings, SettingName } from "./settings_registry";
 import { drawFilledCircle, parseColor } from "./pixel_utils";
 
 export type GlyphFn = (imageData: ImageData, cx: number, cy: number, r: number) => void;
@@ -19,6 +18,14 @@ export function set_pending_glyph(fn: GlyphFn) { pending_glyph_fn = fn; }
  */
 export class GlyphSizingTool extends ClickAndDragTool {
     private _glyph_fn: GlyphFn | null = null;
+
+    constructor(
+        fore_color: ReadonlySignal<string>,
+        line_width: ReadonlySignal<number>,
+        private _selected_tool_name: Signal<string>,
+    ) {
+        super(fore_color, line_width);
+    }
 
     select(): void {
         // pending_glyph_fn is read lazily in editing_start() to survive the double-instantiation
@@ -56,14 +63,14 @@ export class GlyphSizingTool extends ClickAndDragTool {
         this.canvas!.height = 1;
         this.canvas_signal!.value = null;
         // Switch to stamp tool
-        state_registry.set(StateValue.SelectedToolName, 'stamp');
+        this._selected_tool_name.value = 'stamp';
     }
 
     /** Ignore mandala mode — show a plain cursor during glyph sizing. */
     hover_action(at: Vector2): void {
-        const lw = settings.peek<number>(SettingName.LineWidth);
+        const lw = this._line_width.peek();
         const radius = Math.floor(lw / 2);
-        const color = parseColor(settings.peek<string>(SettingName.ForeColor));
+        const color = parseColor(this._fore_color.peek());
         const margin = 1;
         const half = radius + margin;
         const size = half * 2 + 1;

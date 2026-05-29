@@ -1,29 +1,35 @@
 import { ClickAndDragTool } from "./click_and_drag_tool"
 import { Editor } from "./editor";
-import { SettingName, settings } from "./settings_registry";
+import { ReadonlySignal } from "@preact/signals";
 import { Vector2 } from "./types";
 import { drawLine, drawThickLine, drawFilledCircle, parseColor, RGBA } from "./pixel_utils";
 import { mandala_mode } from "./mandala_mode";
 
 export class ScribbleTool extends ClickAndDragTool {
     protected _prev: Vector2 | null = null;
-    protected _stroke_color: RGBA;
+    protected _stroke_color: RGBA = [0, 0, 0, 255];
 
-    constructor() {
-        super()
-        this._stroke_color = [0, 0, 0, 255];
+    constructor(
+        fore_color: ReadonlySignal<string>,
+        line_width: ReadonlySignal<number>,
+        protected _back_color: ReadonlySignal<string>,
+    ) {
+        super(fore_color, line_width);
     }
 
     editing_start() {
-        const is_right = (this._start_buttons & 2) !== 0;
-        const colorStr = settings.peek<string>(is_right ? SettingName.BackColor : SettingName.ForeColor);
-        this._stroke_color = parseColor(colorStr);
+        this._stroke_color = parseColor(this._stroke_color_string());
         this._prev = null;
         this.editing_drag(this.drag_start!, this.drag_start!);
     }
 
+    protected _stroke_color_string(): string {
+        const is_right = (this._start_buttons & 2) !== 0;
+        return (is_right ? this._back_color : this._fore_color).peek();
+    }
+
     editing_drag(from: Vector2, to: Vector2) {
-        const lw = settings.peek<number>(SettingName.LineWidth);
+        const lw = this._line_width.peek();
         const radius = Math.floor(lw / 2);
         const prev = this._prev ?? to;
         this._prev = { ...to };
@@ -81,8 +87,7 @@ export class ScribbleTool extends ClickAndDragTool {
 
     commit_to_document(color: string | null = null) {
         if (color == null) {
-            const is_right = (this._start_buttons & 2) !== 0;
-            color = settings.peek<string>(is_right ? SettingName.BackColor : SettingName.ForeColor);
+            color = this._stroke_color_string();
         }
         super.commit_to_document(color);
     }

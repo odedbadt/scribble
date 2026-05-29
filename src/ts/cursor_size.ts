@@ -1,10 +1,22 @@
 import { ClickAndDragTool } from "./click_and_drag_tool"
-import { SettingName, settings } from "./settings_registry";
-import { state_registry, StateValue } from "./state_registry";
+import { ReadonlySignal, Signal } from "@preact/signals";
 import { Vector2 } from "./types";
 import { drawFilledCircle, parseColor } from "./pixel_utils";
 
 export class CursorSize extends ClickAndDragTool {
+    constructor(
+        fore_color: ReadonlySignal<string>,
+        line_width: Signal<number>,
+        private _selected_tool_name: Signal<string>,
+        private _previous_tool_name: ReadonlySignal<string | undefined>,
+    ) {
+        super(fore_color, line_width);
+    }
+
+    private get _line_width_writable(): Signal<number> {
+        return this._line_width as Signal<number>;
+    }
+
     start(at: Vector2, buttons: number) {
         super.start(at, buttons);
     }
@@ -29,11 +41,11 @@ export class CursorSize extends ClickAndDragTool {
         const ctx = this.context!;
         // Canvas was just reset (width assignment clears it) — allocate fresh zeroed buffer
         const imageData = new ImageData(size, size);
-        const color = parseColor(settings.peek<string>(SettingName.ForeColor));
+        const color = parseColor(this._fore_color.peek());
         drawFilledCircle(imageData, half, half, radius, color);
         ctx.putImageData(imageData, 0, 0);
 
-        settings.set(SettingName.LineWidth, radius * 2);
+        this._line_width_writable.value = radius * 2;
         this.publish_signals();
     }
 
@@ -42,9 +54,12 @@ export class CursorSize extends ClickAndDragTool {
         super.stop(at);
         // Single click (no drag) → 1px
         if (start && at.x === start.x && at.y === start.y) {
-            settings.set(SettingName.LineWidth, 1);
+            this._line_width_writable.value = 1;
         }
-        state_registry.pop(StateValue.SelectedToolName);
+        const prev = this._previous_tool_name.peek();
+        if (prev !== undefined) {
+            this._selected_tool_name.value = prev;
+        }
     }
 
     commit_to_document() {

@@ -1,5 +1,6 @@
 import { EditingTool } from "./editing_tool";
-import { SettingName, settings } from "./settings_registry";
+import { ReadonlySignal } from "@preact/signals";
+import { FillOutlineState } from "./FillOutlineState";
 import { Vector2 } from "./types";
 import { drawLine, drawThickLine, drawFilledPolygon, drawPolygonOutline, parseColor, setPixel, RGBA } from "./pixel_utils";
 import { tool_to_document } from "./utils";
@@ -9,9 +10,18 @@ const CLOSE_RADIUS_DOC = 10; // doc pixels to snap-close the polygon
 export class PolygonTool extends EditingTool {
     private _vertices: Vector2[] = [];
     private _line_color: RGBA = [0, 0, 0, 255];
-    private _fill_color: RGBA = [255, 255, 255, 255];
-    private _fill_outline: number = 0; // 0: both, 1: fill only, 2: outline only
+    private _fill_rgba: RGBA = [255, 255, 255, 255];
+    private _fill_mode: number = 0; // 0: both, 1: fill only, 2: outline only
     private _last_click_time: number = 0;
+
+    constructor(
+        private _fore_color: ReadonlySignal<string>,
+        private _line_width: ReadonlySignal<number>,
+        private _fill_color: ReadonlySignal<string>,
+        private _fill_outline: ReadonlySignal<FillOutlineState>,
+    ) {
+        super();
+    }
 
     select() {
         this._vertices = [];
@@ -22,9 +32,9 @@ export class PolygonTool extends EditingTool {
         const is_double = now - this._last_click_time < 300;
         this._last_click_time = now;
 
-        this._line_color = parseColor(settings.peek<string>(SettingName.ForeColor));
-        this._fill_color = parseColor(settings.peek<string>(SettingName.FillColor));
-        this._fill_outline = settings.peek<number>(SettingName.FillOutline) ?? 0;
+        this._line_color = parseColor(this._fore_color.peek());
+        this._fill_rgba = parseColor(this._fill_color.peek());
+        this._fill_mode = this._fill_outline.peek() ?? 0;
 
         if (this._vertices.length >= 2) {
             const first = this._vertices[0];
@@ -79,7 +89,7 @@ export class PolygonTool extends EditingTool {
 
         const ctx = this.context;
         const imageData = ctx.getImageData(0, 0, docW, docH);
-        const lw = settings.peek<number>(SettingName.LineWidth);
+        const lw = this._line_width.peek();
         const radius = Math.floor(lw / 2);
         const color = this._line_color;
 
@@ -126,13 +136,13 @@ export class PolygonTool extends EditingTool {
 
         const ctx = this.context!;
         const imageData = ctx.getImageData(0, 0, docW, docH);
-        const lw = settings.peek<number>(SettingName.LineWidth);
+        const lw = this._line_width.peek();
         const color = this._line_color;
 
         // 0: both, 1: fill only, 2: outline only
-        if (this._fill_outline === 0 || this._fill_outline === 1) {
-            drawFilledPolygon(imageData, this._vertices, this._fill_color);
-            if (this._fill_outline === 1) {
+        if (this._fill_mode === 0 || this._fill_mode === 1) {
+            drawFilledPolygon(imageData, this._vertices, this._fill_rgba);
+            if (this._fill_mode === 1) {
                 // Clear outline to transparent (approximate by clearing pixels near the edge)
                 // We'll use the outline function to mark edge pixels
                 const edgeMask = new Uint8ClampedArray(docW * docH * 4);
@@ -142,9 +152,9 @@ export class PolygonTool extends EditingTool {
                 }
             }
         }
-        if (this._fill_outline === 0 || this._fill_outline === 2) {
+        if (this._fill_mode === 0 || this._fill_mode === 2) {
             drawPolygonOutline(imageData, this._vertices, Math.floor(lw / 2), color);
-            if (this._fill_outline === 2) {
+            if (this._fill_mode === 2) {
                 // Clear fill area to transparent (approximate by clearing pixels inside)
                 // We'll use the fill function to mark fill pixels
                 const fillMask = new Uint8ClampedArray(docW * docH * 4);

@@ -1,5 +1,5 @@
 import { ClickTool } from "./click_tool"
-import { settings, SettingName } from "./settings_registry";
+import { ReadonlySignal } from "@preact/signals";
 import { Rect, Vector2 } from "./types";
 import { parse_RGBA, rect_union } from "./utils";
 import { mandala_mode } from "./mandala_mode";
@@ -73,13 +73,20 @@ function _floodfill(context: CanvasRenderingContext2D,
 }
 
 export class Floodfill extends ClickTool {
+    constructor(
+        fore_color: ReadonlySignal<string>,
+        private _back_color: ReadonlySignal<string>,
+    ) {
+        super(fore_color);
+    }
+
     drag(at: Vector2) {}
     stop(at: Vector2) {}
     select() {}
 
     hover(at: Vector2) {
         if (!this.context) return;
-        const color = parseColor(settings.peek<string>(SettingName.ForeColor));
+        const color = parseColor(this._fore_color.peek());
         const ctx = this.context!;
         const radius = 2;
 
@@ -137,7 +144,7 @@ export class Floodfill extends ClickTool {
         const active_token_idx = color_token_registry.active_index.peek();
         const is_token_mode = active_token_idx !== null;
 
-        const fill_color = parse_RGBA(settings.peek<string>(SettingName.ForeColor));
+        const fill_color = parse_RGBA(this._fore_color.peek());
         const white = new Uint8ClampedArray([255, 255, 255, 255]);
 
         const positions = mandala_mode.enabled
@@ -238,7 +245,7 @@ export class Floodfill extends ClickTool {
         this.begin_undo_capture?.();
         let dirty: Rect | null = null;
         const pattern = fill_pattern.enabled.value ? fill_pattern.data ?? undefined : undefined;
-        const back_color = pattern ? parse_RGBA(settings.peek<string>(SettingName.BackColor)) : undefined;
+        const back_color = pattern ? parse_RGBA(this._back_color.peek()) : undefined;
         for (const pos of positions) {
             const replaced_color = this.document_context!.getImageData(
                 Math.floor(pos.x), Math.floor(pos.y), 1, 1

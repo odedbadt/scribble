@@ -1,6 +1,6 @@
 import { EditingTool } from "./editing_tool";
+import { ReadonlySignal } from "@preact/signals";
 import { Vector2 } from "./types";
-import { SettingName, settings } from "./settings_registry";
 import { drawCloud, drawRainbow, RGBA } from "./pixel_utils";
 
 const CLOUD_COLOR: RGBA = [170, 170, 170, 255];
@@ -9,8 +9,12 @@ const GHOST_COLOR: RGBA = [170, 170, 170, 120];
 export class CloudStampTool extends EditingTool {
     private _last_pos: Vector2 | null = null;
 
+    constructor(private _line_width: ReadonlySignal<number>) {
+        super();
+    }
+
     private _cloud_size(): number {
-        const lw = settings.peek<number>(SettingName.LineWidth) ?? 1;
+        const lw = this._line_width.peek() ?? 1;
         return Math.max(12, Math.floor(lw * 5));
     }
 
