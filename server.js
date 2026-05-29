@@ -12,6 +12,7 @@ const router = express.Router();
 
 // Static assets (css, js bundles, images like butterfly.svg)
 router.use(express.static(path.join(__dirname, "static")));
+router.use("/static", express.static(path.join(__dirname, "static")));
 router.use("/stamps", express.static(path.join(__dirname, "static/stamps")));
 
 // List available SVG stamp files
