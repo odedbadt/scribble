@@ -62820,8 +62820,8 @@ class MainApp {
         img.src = url;
     }
     init_load_save() {
+        const native = window.scribNative;
         document.getElementById('save_button').addEventListener('click', async () => {
-            // Recomposite all layers, then export the composite canvas
             this.layer_stack.recomposite();
             const composite = this.layer_stack.composite_canvas;
             const w = composite.width;
@@ -62836,6 +62836,11 @@ class MainApp {
             const blob = await new Promise(resolve => offscreen.toBlob(resolve, 'image/png'));
             if (!blob)
                 return;
+            if (native) {
+                const bytes = new Uint8Array(await blob.arrayBuffer());
+                await native.saveFile(bytes, { suggestedName: 'image.png' });
+                return;
+            }
             const handle = await window.showSaveFilePicker({
                 suggestedName: 'image.png',
                 types: [{ description: 'PNG image', accept: { 'image/png': ['.png'] } }],
@@ -62857,7 +62862,16 @@ class MainApp {
             }
             file_input.value = '';
         });
-        document.getElementById('load_button').addEventListener('click', () => {
+        document.getElementById('load_button').addEventListener('click', async () => {
+            if (native) {
+                const result = await native.openFile();
+                if (result.canceled || !result.bytes)
+                    return;
+                const blob = new Blob([result.bytes], { type: 'image/png' });
+                const url = URL.createObjectURL(blob);
+                this.load_image(url);
+                return;
+            }
             file_input.click();
         });
     }
