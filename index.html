@@ -42,18 +42,30 @@
             }
         });
         document.body.addEventListener('touchend', function() { startX = null; });
+        // Drawer handle button
+        var drawerHandle = document.getElementById('mobile-drawer-handle');
+        if (drawerHandle) {
+            drawerHandle.addEventListener('click', function() {
+                if (open) closeSelector(); else openSelector();
+            });
+        }
         // Close on tap outside
         document.addEventListener('touchstart', function(e) {
-            if (open && !toolSel.contains(e.target)) closeSelector();
+            if (!open) return;
+            if (toolSel.contains(e.target)) return;
+            if (e.target.closest('.mobile-fab')) return;
+            closeSelector();
         }, true);
         // Tool selection
         toolSel.addEventListener('click', function(e) {
             var btn = e.target.closest('[data-tool]');
-            if (btn) {
-                toolSel.querySelectorAll('[data-tool]').forEach(b => b.classList.remove('selected'));
-                btn.classList.add('selected');
-                if (window.app && window.app.select_tool) window.app.select_tool(btn.dataset.tool);
+            if (!btn) return;
+            if (btn.dataset.tool === 'clearall') {
+                if (!confirm('Clear the entire drawing?')) return;
             }
+            toolSel.querySelectorAll('[data-tool]').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            if (window.app && window.app.select_tool) window.app.select_tool(btn.dataset.tool);
         });
         // Color selection
         toolSel.addEventListener('click', function(e) {
@@ -76,6 +88,45 @@
                 if (window.app && window.app.set_line_width) window.app.set_line_width(parseInt(slider.value));
             });
         }
+        // Fill/outline tristate button
+        var fsBtn = document.getElementById('mobile-fillstyle-btn');
+        var fsLabel = fsBtn && fsBtn.querySelector('.fs-label');
+        var fsLabels = ['Fill + Outline', 'Fill only', 'Outline only'];
+        if (fsBtn) {
+            fsBtn.addEventListener('click', function() {
+                if (!window.app || !window.app.cycle_fill_outline) return;
+                var next = window.app.cycle_fill_outline();
+                fsLabel.textContent = fsLabels[next] || fsLabels[0];
+            });
+        }
+        // More colors expander — on mobile only, relocate the HSL canvases into the mobile drawer
+        var moreBtn = document.getElementById('mobile-more-colors-btn');
+        var morePanel = document.getElementById('mobile-more-colors-panel');
+        var isMobileEnv = window.matchMedia('(max-width: 800px), (pointer: coarse)').matches;
+        if (moreBtn && morePanel && isMobileEnv) {
+            var pickersRow = document.getElementById('color-pickers-row');
+            if (pickersRow) morePanel.appendChild(pickersRow);
+            moreBtn.addEventListener('click', function() {
+                var isOpen = morePanel.classList.toggle('open');
+                moreBtn.textContent = isOpen ? 'More colors ▴' : 'More colors ▾';
+                if (isOpen && window.app && window.app.replot_palette) {
+                    setTimeout(function() { window.app.replot_palette(); }, 0);
+                }
+            });
+        }
+        // Floating action buttons
+        var undoBtn = document.getElementById('mobile-undo-btn');
+        var redoBtn = document.getElementById('mobile-redo-btn');
+        var saveBtn = document.getElementById('mobile-save-btn');
+        if (undoBtn) undoBtn.addEventListener('click', function() {
+            if (window.app && window.app.undo) window.app.undo();
+        });
+        if (redoBtn) redoBtn.addEventListener('click', function() {
+            if (window.app && window.app.redo) window.app.redo();
+        });
+        if (saveBtn) saveBtn.addEventListener('click', function() {
+            if (window.app && window.app.save) window.app.save();
+        });
     });
     </script>
     <!-- TOP BAR: menu bar -->
@@ -228,13 +279,38 @@
             <div class="gallery-grid"></div>
         </div>
     </div>
+    <!-- Floating mobile action buttons (over canvas) -->
+    <button id="mobile-undo-btn" class="mobile-fab" aria-label="Undo">
+        <svg class="icon"><use href="static/icons/sprite.svg#undo-arrows"/></svg>
+    </button>
+    <button id="mobile-redo-btn" class="mobile-fab" aria-label="Redo">
+        <svg class="icon"><use href="static/icons/sprite.svg#redo-arrows"/></svg>
+    </button>
+    <button id="mobile-save-btn" class="mobile-fab" aria-label="Save">💾</button>
+    <button id="mobile-drawer-handle" class="mobile-fab" aria-label="Open tools">☰</button>
+
     <!-- Minimal floating tool/color selector for mobile -->
-    <div id="mobile-tool-selector" style="display:none">
+    <div id="mobile-tool-selector">
         <!-- Tools row -->
         <div class="mobile-section-label">Tools</div>
         <div class="mobile-tools-row">
-            <button class="mobile-tool-btn selected" data-tool="scribble" aria-label="Pen">✏️</button>
-            <button class="mobile-tool-btn" data-tool="eraser" aria-label="Eraser">🧹</button>
+            <button class="mobile-tool-btn selected" data-tool="scribble" aria-label="Pen"><svg class="icon"><use href="static/icons/sprite.svg#pen-pencil"/></svg></button>
+            <button class="mobile-tool-btn" data-tool="line" aria-label="Line"><svg class="icon"><use href="static/icons/sprite.svg#pen-tool-pen"/></svg></button>
+            <button class="mobile-tool-btn mobile-tool-rect" data-tool="rect" aria-label="Rectangle"></button>
+            <button class="mobile-tool-btn mobile-tool-circle" data-tool="circle" aria-label="Circle"></button>
+            <button class="mobile-tool-btn" data-tool="bezier" aria-label="Bezier"><svg class="icon"><use href="static/icons/sprite.svg#pen-tool-2"/></svg></button>
+            <button class="mobile-tool-btn mobile-tool-polygon" data-tool="polygon" aria-label="Polygon">⬠</button>
+            <button class="mobile-tool-btn" data-tool="floodfill" aria-label="Fill"><svg class="icon"><use href="static/icons/sprite.svg#paint-bucket-2"/></svg></button>
+            <button class="mobile-tool-btn" data-tool="dropper" aria-label="Dropper"><svg class="icon"><use href="static/icons/sprite.svg#dropper-tools-and-utensils"/></svg></button>
+            <button class="mobile-tool-btn" data-tool="eraser" aria-label="Eraser"><svg class="icon"><use href="static/icons/sprite.svg#eraser-1"/></svg></button>
+            <button class="mobile-tool-btn" data-tool="clearall" aria-label="Clear all"><svg class="icon"><use href="static/icons/sprite.svg#delete"/></svg></button>
+        </div>
+        <!-- Fill / outline tristate (shapes only) -->
+        <div class="mobile-section-label">Fill style</div>
+        <div class="mobile-tools-row">
+            <button id="mobile-fillstyle-btn" class="mobile-fillstyle-btn" aria-label="Fill style">
+                <span class="fs-label">Fill+Outline</span>
+            </button>
         </div>
         <!-- Size slider -->
         <div class="mobile-section-label">Size</div>
@@ -262,6 +338,9 @@
             <button class="mobile-color-btn" data-color="#ff00ff" style="background:#f0f"></button>
             <button class="mobile-color-btn" data-color="#ff80c0" style="background:#f8c"></button>
         </div>
+        <!-- HSL picker expander -->
+        <button id="mobile-more-colors-btn" class="mobile-expander-btn">More colors ▾</button>
+        <div id="mobile-more-colors-panel"></div>
     </div>
 </body>
 

@@ -2,74 +2,89 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Monorepo Context
+## Commands
 
-This package lives inside a TypeScript npm workspace at `../` alongside two sibling packages:
-- **`tsutils`** (`@oded/tsutils`) — shared utilities: vec2, color, canvas, three_utils
-- **`plato`** (`@oded/plato`) — 3D Platonic solids visualization
+- **Build:** `npm run build` — runs webpack locally, outputs both bundles to `distro/` (`main.bundle.js`, `three_demo.bundle.js`). `index.html` loads scripts directly from `distro/`.
+- **Test:** `npm test` — Playwright suite (see Testing). Webserver: `python3 -m http.server 9191` (auto-started, reused if already running). Snapshot diffs use `maxDiffPixelRatio: 0.001`.
+- **Single Playwright test:** `npx playwright test tests/test_line_tool_artifacts.spec.ts`
+- **Node tests (no DOM):** `node tests/test_undo_redo_buffer.mjs`, `node tests/test_ghost_layer.mjs`
+- **Express server:** `node server.js` — serves `index.html`, `static/`, `distro/`, and a `/stamps-list` JSON endpoint. Honors `PORT` and `BASE_PATH` env vars.
+- **Electron dev:** `npm run electron:dev` — loads `index.html` via `file://` with IPC `scrib:save`/`scrib:open` for native PNG dialogs (`electron/main.cjs`, `electron/preload.cjs`).
 
-Scrib does **not** depend on `tsutils` or `plato`; the packages are independently bundled.
-
-From the **workspace root** (`../`):
-- `npm run build` — compiles all packages via `tsc -b` (TypeScript project references)
-- `npm run bundle` — webpack bundles all packages into `/dist/` (outputs `dist/scrib/bundle.js`)
-- `npm run clean` — clears dist directories
-
-The root webpack (`../webpack.config.cjs`) aliases `@oded/tsutils` to its source files for development.
-
-## Commands (within this package)
-
-- **Build:** `npm run build` — runs webpack locally, outputs to `static/ts/` (main.bundle.js, three_demo.bundle.js)
-- **Run tests:** `node tests/test_undo_redo_buffer.mjs` (no npm test script configured)
-- **Serve:** `node server.js` (Express server)
-
-Webpack operates in development mode with source maps enabled. TypeScript is compiled via ts-loader using `tsconfig.json`.
+Webpack is development mode with source maps. TypeScript compiles via ts-loader using `tsconfig.json` (`outDir: ./distro`, `rootDir: ./src/ts`, strict).
 
 ## Architecture
 
 ### Canvas Layering
 
-The app uses three canvas layers:
-1. **Document canvas** — persistent artwork storage
-2. **Tool canvas** — live drawing overlay (active tool renders here, then commits to document)
-3. **View canvas** — WebGL display via Three.js (orthographic camera + nearest-filter textures for pixel-perfect rendering)
+Drawing surfaces are layered:
+1. **Layer stack** (`layer_stack.ts`) — multiple persistent document layers, each its own `HTMLCanvasElement`. The active layer receives edits; a `composite_canvas` and an `above_composite_canvas` (everything above the active layer) are kept up to date for the renderer.
+2. **Tool / overlay canvas** — live drawing preview for the active tool, committed to the active layer on `stop()`.
+3. **View canvas** — WebGL display via Three.js (orthographic camera, nearest-filter textures for pixel-perfect output).
 
-Three.js (`scrib_renderer.ts`) renders document and overlay textures using custom GLSL shaders (`glsl_shader_code.ts`).
+`scrib_renderer.ts` uploads the composites + overlay as textures and runs custom GLSL from `glsl_shader_code.ts`.
 
 ### Tool Hierarchy
 
-All drawing tools extend from `EditingTool` (abstract base), then either `ClickTool` or `ClickAndDragTool`:
+All tools extend `EditingTool` (`editing_tool.ts`), then either `ClickTool` or `ClickAndDragTool`. The registry lives in `editor.ts` (`tool_classes` map) and is the source of truth for tool names:
 
 ```
 EditingTool
-├── ClickTool → FloodFill, Dropper, ClearAll
-└── ClickAndDragTool → Scribble, Line, Rect, Circle, Eraser, CursorSize
+├── ClickTool        → Floodfill, Dropper, ClearAllTool, CursorSize
+└── ClickAndDragTool → ScribbleTool, LineTool, BezierTool, RectTool, CircleTool,
+                       PolygonTool, TopoHullTool, HeartTool, CloudStampTool,
+                       EraserTool, ScraperTool, SelectionTool, StampTool,
+                       TileFillTool, GlyphSizingTool, RevealBrush
 ```
 
-Tool lifecycle: `select() → start() → drag()* → stop()`. The `Editor` class (`editor.ts`) routes pointer events to the active tool and handles coordinate conversion (view → document space).
+Tool lifecycle: `select() → start() → drag()* → stop()`. `Editor` (`editor.ts`) routes pointer events, manages alt-key state for layer picking, snaps to anchors via `anchor_manager`, and converts view → document coordinates.
 
-### State Management
+### State / Settings
 
 Two signal-based registries (using `@preact/signals`):
-- **`SettingsRegistry`** (`settings_registry.ts`) — drawing settings: `ForeColor`, `BackColor`, `LineWidth`
-- **`StateRegistry`** (`state_registry.ts`) — UI state: `SelectedToolName` (supports previous-value restoration for tools like Dropper)
+- **`settings_registry.ts`** — drawing settings (`ForeColor`, `BackColor`, `LineWidth`, fill style, etc.).
+- **`state_registry.ts`** — UI state (`SelectedToolName`, with previous-value restoration for tools like Dropper).
+
+Other signal-driven subsystems: `color_token_registry` (palette tokens), `mandala_mode`, `anchor_manager` (snap anchors, `SNAP_RADIUS_SCREEN_PX`), `ghost_layer`, `fill_pattern`, `stamp_gallery`.
+
+### Undo / Redo
+
+`action_history.ts` stores `UndoableAction` entries. `Editor` captures a per-stroke `_undo_before` (single layer) or `_undo_before_layers` (multi-layer ops) before edits, then commits an action on `stop()`. The non-DOM logic is covered by `tests/test_undo_redo_buffer.mjs`.
 
 ### Pixel Drawing
 
-All drawing is pixel-perfect (no anti-aliasing). `pixel_utils.ts` contains the core algorithms:
-- Bresenham's line algorithm (`drawLine`, `drawThickLine`)
-- Midpoint circle algorithm (`drawCircle`, `drawFilledCircle`)
-- Direct `ImageData` manipulation via `setPixel`/`getPixel`
+All drawing is pixel-perfect (no AA). `pixel_utils.ts`:
+- Bresenham (`drawLine`, `drawThickLine`)
+- Midpoint circle (`drawCircle`, `drawFilledCircle`)
+- Direct `ImageData` via `setPixel` / `getPixel`, `extract_sub_image`, `RGBA` type
 
 ### Entry Points
 
-- `src/ts/main_app.ts` → `main.bundle.js` — full drawing application
-- `src/ts/three_demo.ts` → `three_demo.bundle.js` — Three.js rendering demo
+- `src/ts/main_app.ts` → `distro/main.bundle.js` — full drawing app (`MainApp` class)
+- `src/ts/three_demo.ts` → `distro/three_demo.bundle.js` — Three.js rendering demo
+
+### Mobile UI
+
+Single bundle, runtime-switched via CSS media query `@media (max-width: 800px), (pointer: coarse)` (`static/style.css`). All 18 tools are compiled in; mobile exposes a curated subset.
+
+- **Drawer** `#mobile-tool-selector` — 8 tools (scribble, line, rect, circle, floodfill, dropper, eraser, clearall), fill/outline tristate, size slider, 16 quick swatches, expandable "More colors".
+- **Floating action buttons** (`.mobile-fab`, direct children of `body`, also excepted from the body-children hide rule in `static/style.css`) — `#mobile-undo-btn`, `#mobile-redo-btn`, `#mobile-save-btn`, `#mobile-drawer-handle`.
+- **HSL picker relocation** — the desktop `#color-pickers-row` (containing `#hl-selector-canvas` + `#sat-selector-canvas`) is moved into `#mobile-more-colors-panel` at `DOMContentLoaded` *only when the mobile media query matches*. Pointer-event listeners follow the nodes. `MainApp.replot_palette()` resizes canvas internal dims to displayed dims and re-plots after the move (called on first expander open).
+- **Public app methods used by the mobile script** — `app.select_tool`, `app.set_line_width`, `app.color_stack.select_color`, `app.cycle_fill_outline`, `app.undo`, `app.redo`, `app.save`, `app.replot_palette`. Defined on `MainApp` in `main_app.ts`.
+- **Deferred to v2** — mandala, layers, bezier/polygon/topo_hull, selection+cut, scraper, stamps+gallery, ghost/reveal, color tokens, anchor snap, heart/cloud_stamp/tile_fill/glyph_sizing.
+
+Touch gestures: two-finger pan/zoom handled in `MainApp.init_touch_gestures()`. Single-touch drawing routes through `editor.ts`'s pointer event handlers (coalesced for high-rate touch).
+
+### Testing
+
+Playwright (`playwright.config.ts`) runs Chromium against `http://localhost:9191` with viewport `1280×720`. Snapshots live under `tests/snapshots/{testFilePath}/`. The webserver is `python3 -m http.server 9191` with `reuseExistingServer: true`. Adding a new visual test means: write the spec, run it once to capture baselines, then commit the resulting PNGs.
+
+Mobile smoke tests live in `tests/_mobile_smoke.spec.ts` and run via `playwright.mobile.config.ts` against Pixel 7 emulation (Chromium with `pointer: coarse` + 412 px viewport): `npx playwright test --config=playwright.mobile.config.ts`. Requires a server on `:9192` (e.g. `python3 -m http.server 9192`).
 
 ### Backend
 
-Express server (`server.js`) + Python backend (`main.py`) with Google App Engine deployment (`app.yaml`). Firebase integration is present in dependencies but usage is in archived code.
+`server.js` — Express dev server.
 
 ### Archived Code
 
-`src/ts/old/` is excluded from compilation and should be ignored entirely.
+`src/ts/old/` is excluded from compilation (see `tsconfig.json`) — ignore entirely.

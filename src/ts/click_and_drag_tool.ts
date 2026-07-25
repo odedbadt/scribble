@@ -20,6 +20,13 @@ export abstract class ClickAndDragTool extends EditingTool {
      * RevealBrush sets this false — its preview shows the actual ghost pixels.
      */
     protected _suppress_overlay_in_ghost_mode = true;
+    /**
+     * Pointer pressure from the most recent drag sample (0..1).
+     * 0.5 is the PointerEvent default when no real pressure is reported;
+     * stylus devices (Apple Pencil, S Pen) report variable values.
+     * Tools may consult this to modulate stroke width, etc.
+     */
+    protected _last_pressure: number = 0.5;
     // Cached filled-circle ImageData for hover cursor — reused while radius/color are unchanged
     private _hover_circle_cache: ImageData | null = null;
     private _hover_circle_cache_radius = -1;
@@ -59,10 +66,11 @@ export abstract class ClickAndDragTool extends EditingTool {
         }
         super.publish_signals();
     }
-    drag(at: Vector2): void {
+    drag(at: Vector2, pressure: number = 0.5): void {
         if (!this.drag_start) {
             return;
         }
+        this._last_pressure = pressure;
         this.editing_drag(vfloor(this.drag_start), vfloor(at));
         this.publish_signals();
     }

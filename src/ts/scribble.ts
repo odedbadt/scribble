@@ -23,7 +23,15 @@ export class ScribbleTool extends ClickAndDragTool {
     }
 
     editing_drag(from: Vector2, to: Vector2) {
-        const lw = settings.peek<number>(SettingName.LineWidth);
+        const base_lw = settings.peek<number>(SettingName.LineWidth);
+        // Pressure modulates width on stylus input (Apple Pencil, S Pen). Mouse/finger
+        // report 0.5 (no real pressure) and skip this branch entirely, leaving the
+        // base width — and the pixel-perfect Bresenham output — unchanged.
+        let lw = base_lw;
+        if (this._last_pressure !== 0.5 && this._last_pressure > 0) {
+            const factor = Math.max(0.4, Math.min(1.6, 0.4 + 1.2 * this._last_pressure));
+            lw = Math.max(1, Math.round(base_lw * factor));
+        }
         const radius = Math.floor(lw / 2);
         const prev = this._prev ?? to;
         this._prev = { ...to };

@@ -186,36 +186,7 @@ export class MainApp {
             openFile: () => Promise<{ canceled: boolean; bytes?: ArrayBuffer }>;
         } | undefined;
 
-        document.getElementById('save_button')!.addEventListener('click', async () => {
-            this.layer_stack.recomposite();
-            const composite = this.layer_stack.composite_canvas;
-            const w = composite.width;
-            const h = composite.height;
-            const ctx = composite.getContext('2d')!;
-            const imageData = ctx.getImageData(0, 0, w, h);
-            const offscreen = document.createElement('canvas');
-            offscreen.width = w;
-            offscreen.height = h;
-            const offCtx = offscreen.getContext('2d')!;
-            offCtx.putImageData(imageData, 0, 0);
-            const blob = await new Promise<Blob | null>(resolve =>
-                offscreen.toBlob(resolve, 'image/png'));
-            if (!blob) return;
-
-            if (native) {
-                const bytes = new Uint8Array(await blob.arrayBuffer());
-                await native.saveFile(bytes, { suggestedName: 'image.png' });
-                return;
-            }
-
-            const handle = await (window as any).showSaveFilePicker({
-                suggestedName: 'image.png',
-                types: [{ description: 'PNG image', accept: { 'image/png': ['.png'] } }],
-            });
-            const writable = await handle.createWritable();
-            await writable.write(blob);
-            await writable.close();
-        });
+        document.getElementById('save_button')!.addEventListener('click', () => this.save());
 
         const file_input = document.getElementById('file_input')! as HTMLInputElement;
         file_input.addEventListener('change', (event: Event) => {
@@ -248,6 +219,106 @@ export class MainApp {
         click_for_a_second('redo_button', () => {
             this.editor.redo()
         })
+    }
+
+    undo() { this.editor.undo(); }
+    redo() { this.editor.redo(); }
+
+    /** Re-sync palette canvas internal dims to displayed dims and re-plot. Call after relocating the canvases into the mobile drawer. */
+    replot_palette() {
+        const hl = this.palette_hl_canvas;
+        const sat = this.palette_sat_canvas;
+        if (hl.offsetWidth > 0 && hl.offsetHeight > 0) {
+            hl.width = hl.offsetWidth;
+            hl.height = hl.offsetHeight;
+        }
+        if (sat.offsetWidth > 0 && sat.offsetHeight > 0) {
+            sat.width = sat.offsetWidth;
+            sat.height = sat.offsetHeight;
+        }
+        this.palette.plot();
+    }
+
+    async save() {
+        this.layer_stack.recomposite();
+        const composite = this.layer_stack.composite_canvas;
+        const w = composite.width;
+        const h = composite.height;
+        const ctx = composite.getContext('2d')!;
+        const imageData = ctx.getImageData(0, 0, w, h);
+        const offscreen = document.createElement('canvas');
+        offscreen.width = w;
+        offscreen.height = h;
+        offscreen.getContext('2d')!.putImageData(imageData, 0, 0);
+        const blob = await new Promise<Blob | null>(resolve =>
+            offscreen.toBlob(resolve, 'image/png'));
+        if (!blob) return;
+
+        const native = (window as any).scribNative as {
+            saveFile: (bytes: Uint8Array, opts: { suggestedName?: string }) => Promise<{ canceled: boolean }>;
+        } | undefined;
+        if (native) {
+            const bytes = new Uint8Array(await blob.arrayBuffer());
+            await native.saveFile(bytes, { suggestedName: 'image.png' });
+            return;
+        }
+
+        const cap = (window as any).Capacitor;
+        if (cap?.isNativePlatform?.()) {
+            // Write to the app cache, then hand the URI to the system share sheet so
+            // the user can route to Photos / Drive / etc.
+            const { Filesystem, Directory } = await import('@capacitor/filesystem');
+            const { Share } = await import('@capacitor/share');
+            const base64 = await new Promise<string>(resolve => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    const s = (reader.result as string) || '';
+                    resolve(s.split(',', 2)[1] || '');
+                };
+                reader.readAsDataURL(blob);
+            });
+            const filename = `scrib-${Date.now()}.png`;
+            const written = await Filesystem.writeFile({
+                path: filename,
+                data: base64,
+                directory: Directory.Cache,
+            });
+            try {
+                await Share.share({ url: written.uri, dialogTitle: 'Save drawing' });
+            } catch {
+                // User dismissed the share sheet; the file is still in the cache.
+            }
+            return;
+        }
+
+        const showSave = (window as any).showSaveFilePicker as
+            ((opts: any) => Promise<any>) | undefined;
+        if (showSave) {
+            const handle = await showSave({
+                suggestedName: 'image.png',
+                types: [{ description: 'PNG image', accept: { 'image/png': ['.png'] } }],
+            });
+            const writable = await handle.createWritable();
+            await writable.write(blob);
+            await writable.close();
+            return;
+        }
+
+        // Mobile / older browsers: anchor download
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'image.png';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    cycle_fill_outline() {
+        const next = nextFillOutlineState((settings.peek<number>(SettingName.FillOutline) ?? 0) as FillOutlineState);
+        settings.set(SettingName.FillOutline, next);
+        return next;
     }
 
     init_buttons() {

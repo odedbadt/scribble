@@ -74,7 +74,7 @@ export abstract class EditingTool {
     }
     abstract select(): void
     abstract start(at: Vector2, buttons: number): void;
-    abstract drag(at: Vector2): void;
+    abstract drag(at: Vector2, pressure?: number): void;
     stop(at: Vector2): void {
         this.canvas_signal!.value = null;
     }
@@ -94,7 +94,7 @@ export class NopTool extends EditingTool {
     }
     start(at: Vector2, buttons: number) {
     }
-    drag(at: Vector2) {
+    drag(at: Vector2, pressure?: number) {
     }
     stop(at: Vector2) {
     }

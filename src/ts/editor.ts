@@ -159,6 +159,15 @@ export class Editor {
     }
     pointerdown(event: MouseEvent) {
         event.preventDefault();
+        // Palm guard: PointerEvent.width/height report the contact-patch size in CSS px.
+        // Fingers/styli are ~10–25 px; palms are typically 50 px+. Drop oversized touches
+        // before they start a stroke. Skip the guard for mouse/pen pointer types.
+        const ptype = (event as any).pointerType;
+        if (ptype === 'touch') {
+            const w = (event as any).width ?? 0;
+            const h = (event as any).height ?? 0;
+            if (w > 40 || h > 40) return;
+        }
         this.alt_key = event.altKey;
         const raw = this.view_coords_to_doc_coords({ x: event.offsetX, y: event.offsetY });
         const radius = this.snap_radius_doc();
@@ -252,7 +261,8 @@ export class Editor {
                     this.snap_radius_doc()
                 ).pt;
                 if (mandala_mode.enabled && mandala_mode.center === null) continue;
-                this.tool.drag(pt);
+                const pressure = (sample as any).pressure ?? 0.5;
+                this.tool.drag(pt, pressure);
             }
             // Hover cursor: skip on touch (no hover concept; also avoids stale-event flash)
             if ((event as any).pointerType !== 'touch') {
