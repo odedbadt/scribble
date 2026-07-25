@@ -948,6 +948,13 @@ class ClickAndDragTool extends _editing_tool__WEBPACK_IMPORTED_MODULE_0__.Editin
          * RevealBrush sets this false — its preview shows the actual ghost pixels.
          */
         this._suppress_overlay_in_ghost_mode = true;
+        /**
+         * Pointer pressure from the most recent drag sample (0..1).
+         * 0.5 is the PointerEvent default when no real pressure is reported;
+         * stylus devices (Apple Pencil, S Pen) report variable values.
+         * Tools may consult this to modulate stroke width, etc.
+         */
+        this._last_pressure = 0.5;
         // Cached filled-circle ImageData for hover cursor — reused while radius/color are unchanged
         this._hover_circle_cache = null;
         this._hover_circle_cache_radius = -1;
@@ -987,10 +994,11 @@ class ClickAndDragTool extends _editing_tool__WEBPACK_IMPORTED_MODULE_0__.Editin
         }
         super.publish_signals();
     }
-    drag(at) {
+    drag(at, pressure = 0.5) {
         if (!this.drag_start) {
             return;
         }
+        this._last_pressure = pressure;
         this.editing_drag((0,_types__WEBPACK_IMPORTED_MODULE_1__.vfloor)(this.drag_start), (0,_types__WEBPACK_IMPORTED_MODULE_1__.vfloor)(at));
         this.publish_signals();
     }
@@ -1731,7 +1739,7 @@ class NopTool extends EditingTool {
     }
     start(at, buttons) {
     }
-    drag(at) {
+    drag(at, pressure) {
     }
     stop(at) {
     }
@@ -1912,6 +1920,16 @@ class Editor {
     }
     pointerdown(event) {
         event.preventDefault();
+        // Palm guard: PointerEvent.width/height report the contact-patch size in CSS px.
+        // Fingers/styli are ~10–25 px; palms are typically 50 px+. Drop oversized touches
+        // before they start a stroke. Skip the guard for mouse/pen pointer types.
+        const ptype = event.pointerType;
+        if (ptype === 'touch') {
+            const w = event.width ?? 0;
+            const h = event.height ?? 0;
+            if (w > 40 || h > 40)
+                return;
+        }
         this.alt_key = event.altKey;
         const raw = this.view_coords_to_doc_coords({ x: event.offsetX, y: event.offsetY });
         const radius = this.snap_radius_doc();
@@ -2006,7 +2024,8 @@ class Editor {
                 const pt = _anchor_manager__WEBPACK_IMPORTED_MODULE_25__.anchor_manager.snap(this.view_coords_to_doc_coords({ x: sample.offsetX, y: sample.offsetY }), this.snap_radius_doc()).pt;
                 if (_mandala_mode__WEBPACK_IMPORTED_MODULE_23__.mandala_mode.enabled && _mandala_mode__WEBPACK_IMPORTED_MODULE_23__.mandala_mode.center === null)
                     continue;
-                this.tool.drag(pt);
+                const pressure = sample.pressure ?? 0.5;
+                this.tool.drag(pt, pressure);
             }
             // Hover cursor: skip on touch (no hover concept; also avoids stale-event flash)
             if (event.pointerType !== 'touch') {
@@ -5610,7 +5629,15 @@ class ScribbleTool extends _click_and_drag_tool__WEBPACK_IMPORTED_MODULE_0__.Cli
         this.editing_drag(this.drag_start, this.drag_start);
     }
     editing_drag(from, to) {
-        const lw = _settings_registry__WEBPACK_IMPORTED_MODULE_1__.settings.peek(_settings_registry__WEBPACK_IMPORTED_MODULE_1__.SettingName.LineWidth);
+        const base_lw = _settings_registry__WEBPACK_IMPORTED_MODULE_1__.settings.peek(_settings_registry__WEBPACK_IMPORTED_MODULE_1__.SettingName.LineWidth);
+        // Pressure modulates width on stylus input (Apple Pencil, S Pen). Mouse/finger
+        // report 0.5 (no real pressure) and skip this branch entirely, leaving the
+        // base width — and the pixel-perfect Bresenham output — unchanged.
+        let lw = base_lw;
+        if (this._last_pressure !== 0.5 && this._last_pressure > 0) {
+            const factor = Math.max(0.4, Math.min(1.6, 0.4 + 1.2 * this._last_pressure));
+            lw = Math.max(1, Math.round(base_lw * factor));
+        }
         const radius = Math.floor(lw / 2);
         const prev = this._prev ?? to;
         this._prev = { ...to };
@@ -62625,6 +62652,9 @@ class WebGLRenderer {
 /******/ 		return module.exports;
 /******/ 	}
 /******/ 	
+/******/ 	// expose the modules object (__webpack_modules__)
+/******/ 	__webpack_require__.m = __webpack_modules__;
+/******/ 	
 /************************************************************************/
 /******/ 	/* webpack/runtime/define property getters */
 /******/ 	(() => {
@@ -62638,9 +62668,89 @@ class WebGLRenderer {
 /******/ 		};
 /******/ 	})();
 /******/ 	
+/******/ 	/* webpack/runtime/ensure chunk */
+/******/ 	(() => {
+/******/ 		__webpack_require__.f = {};
+/******/ 		// This file contains only the entry chunk.
+/******/ 		// The chunk loading function for additional chunks
+/******/ 		__webpack_require__.e = (chunkId) => {
+/******/ 			return Promise.all(Object.keys(__webpack_require__.f).reduce((promises, key) => {
+/******/ 				__webpack_require__.f[key](chunkId, promises);
+/******/ 				return promises;
+/******/ 			}, []));
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/get javascript chunk filename */
+/******/ 	(() => {
+/******/ 		// This function allow to reference async chunks
+/******/ 		__webpack_require__.u = (chunkId) => {
+/******/ 			// return url for filenames based on template
+/******/ 			return "" + chunkId + ".bundle.js";
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/global */
+/******/ 	(() => {
+/******/ 		__webpack_require__.g = (function() {
+/******/ 			if (typeof globalThis === 'object') return globalThis;
+/******/ 			try {
+/******/ 				return this || new Function('return this')();
+/******/ 			} catch (e) {
+/******/ 				if (typeof window === 'object') return window;
+/******/ 			}
+/******/ 		})();
+/******/ 	})();
+/******/ 	
 /******/ 	/* webpack/runtime/hasOwnProperty shorthand */
 /******/ 	(() => {
 /******/ 		__webpack_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/load script */
+/******/ 	(() => {
+/******/ 		var inProgress = {};
+/******/ 		var dataWebpackPrefix = "scrib:";
+/******/ 		// loadScript function to load a script via script tag
+/******/ 		__webpack_require__.l = (url, done, key, chunkId) => {
+/******/ 			if(inProgress[url]) { inProgress[url].push(done); return; }
+/******/ 			var script, needAttach;
+/******/ 			if(key !== undefined) {
+/******/ 				var scripts = document.getElementsByTagName("script");
+/******/ 				for(var i = 0; i < scripts.length; i++) {
+/******/ 					var s = scripts[i];
+/******/ 					if(s.getAttribute("src") == url || s.getAttribute("data-webpack") == dataWebpackPrefix + key) { script = s; break; }
+/******/ 				}
+/******/ 			}
+/******/ 			if(!script) {
+/******/ 				needAttach = true;
+/******/ 				script = document.createElement('script');
+/******/ 		
+/******/ 				script.charset = 'utf-8';
+/******/ 				script.timeout = 120;
+/******/ 				if (__webpack_require__.nc) {
+/******/ 					script.setAttribute("nonce", __webpack_require__.nc);
+/******/ 				}
+/******/ 				script.setAttribute("data-webpack", dataWebpackPrefix + key);
+/******/ 		
+/******/ 				script.src = url;
+/******/ 			}
+/******/ 			inProgress[url] = [done];
+/******/ 			var onScriptComplete = (prev, event) => {
+/******/ 				// avoid mem leaks in IE.
+/******/ 				script.onerror = script.onload = null;
+/******/ 				clearTimeout(timeout);
+/******/ 				var doneFns = inProgress[url];
+/******/ 				delete inProgress[url];
+/******/ 				script.parentNode && script.parentNode.removeChild(script);
+/******/ 				doneFns && doneFns.forEach((fn) => (fn(event)));
+/******/ 				if(prev) return prev(event);
+/******/ 			}
+/******/ 			var timeout = setTimeout(onScriptComplete.bind(null, undefined, { type: 'timeout', target: script }), 120000);
+/******/ 			script.onerror = onScriptComplete.bind(null, script.onerror);
+/******/ 			script.onload = onScriptComplete.bind(null, script.onload);
+/******/ 			needAttach && document.head.appendChild(script);
+/******/ 		};
 /******/ 	})();
 /******/ 	
 /******/ 	/* webpack/runtime/make namespace object */
@@ -62652,6 +62762,119 @@ class WebGLRenderer {
 /******/ 			}
 /******/ 			Object.defineProperty(exports, '__esModule', { value: true });
 /******/ 		};
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/publicPath */
+/******/ 	(() => {
+/******/ 		var scriptUrl;
+/******/ 		if (__webpack_require__.g.importScripts) scriptUrl = __webpack_require__.g.location + "";
+/******/ 		var document = __webpack_require__.g.document;
+/******/ 		if (!scriptUrl && document) {
+/******/ 			if (document.currentScript && document.currentScript.tagName.toUpperCase() === 'SCRIPT')
+/******/ 				scriptUrl = document.currentScript.src;
+/******/ 			if (!scriptUrl) {
+/******/ 				var scripts = document.getElementsByTagName("script");
+/******/ 				if(scripts.length) {
+/******/ 					var i = scripts.length - 1;
+/******/ 					while (i > -1 && (!scriptUrl || !/^http(s?):/.test(scriptUrl))) scriptUrl = scripts[i--].src;
+/******/ 				}
+/******/ 			}
+/******/ 		}
+/******/ 		// When supporting browsers where an automatic publicPath is not supported you must specify an output.publicPath manually via configuration
+/******/ 		// or pass an empty string ("") and set the __webpack_public_path__ variable from your code to use your own logic.
+/******/ 		if (!scriptUrl) throw new Error("Automatic publicPath is not supported in this browser");
+/******/ 		scriptUrl = scriptUrl.replace(/#.*$/, "").replace(/\?.*$/, "").replace(/\/[^\/]+$/, "/");
+/******/ 		__webpack_require__.p = scriptUrl;
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/jsonp chunk loading */
+/******/ 	(() => {
+/******/ 		// no baseURI
+/******/ 		
+/******/ 		// object to store loaded and loading chunks
+/******/ 		// undefined = chunk not loaded, null = chunk preloaded/prefetched
+/******/ 		// [resolve, reject, Promise] = chunk loading, 0 = chunk loaded
+/******/ 		var installedChunks = {
+/******/ 			"main": 0
+/******/ 		};
+/******/ 		
+/******/ 		__webpack_require__.f.j = (chunkId, promises) => {
+/******/ 				// JSONP chunk loading for javascript
+/******/ 				var installedChunkData = __webpack_require__.o(installedChunks, chunkId) ? installedChunks[chunkId] : undefined;
+/******/ 				if(installedChunkData !== 0) { // 0 means "already installed".
+/******/ 		
+/******/ 					// a Promise means "currently loading".
+/******/ 					if(installedChunkData) {
+/******/ 						promises.push(installedChunkData[2]);
+/******/ 					} else {
+/******/ 						if(true) { // all chunks have JS
+/******/ 							// setup Promise in chunk cache
+/******/ 							var promise = new Promise((resolve, reject) => (installedChunkData = installedChunks[chunkId] = [resolve, reject]));
+/******/ 							promises.push(installedChunkData[2] = promise);
+/******/ 		
+/******/ 							// start chunk loading
+/******/ 							var url = __webpack_require__.p + __webpack_require__.u(chunkId);
+/******/ 							// create error before stack unwound to get useful stacktrace later
+/******/ 							var error = new Error();
+/******/ 							var loadingEnded = (event) => {
+/******/ 								if(__webpack_require__.o(installedChunks, chunkId)) {
+/******/ 									installedChunkData = installedChunks[chunkId];
+/******/ 									if(installedChunkData !== 0) installedChunks[chunkId] = undefined;
+/******/ 									if(installedChunkData) {
+/******/ 										var errorType = event && (event.type === 'load' ? 'missing' : event.type);
+/******/ 										var realSrc = event && event.target && event.target.src;
+/******/ 										error.message = 'Loading chunk ' + chunkId + ' failed.\n(' + errorType + ': ' + realSrc + ')';
+/******/ 										error.name = 'ChunkLoadError';
+/******/ 										error.type = errorType;
+/******/ 										error.request = realSrc;
+/******/ 										installedChunkData[1](error);
+/******/ 									}
+/******/ 								}
+/******/ 							};
+/******/ 							__webpack_require__.l(url, loadingEnded, "chunk-" + chunkId, chunkId);
+/******/ 						}
+/******/ 					}
+/******/ 				}
+/******/ 		};
+/******/ 		
+/******/ 		// no prefetching
+/******/ 		
+/******/ 		// no preloaded
+/******/ 		
+/******/ 		// no HMR
+/******/ 		
+/******/ 		// no HMR manifest
+/******/ 		
+/******/ 		// no on chunks loaded
+/******/ 		
+/******/ 		// install a JSONP callback for chunk loading
+/******/ 		var webpackJsonpCallback = (parentChunkLoadingFunction, data) => {
+/******/ 			var [chunkIds, moreModules, runtime] = data;
+/******/ 			// add "moreModules" to the modules object,
+/******/ 			// then flag all "chunkIds" as loaded and fire callback
+/******/ 			var moduleId, chunkId, i = 0;
+/******/ 			if(chunkIds.some((id) => (installedChunks[id] !== 0))) {
+/******/ 				for(moduleId in moreModules) {
+/******/ 					if(__webpack_require__.o(moreModules, moduleId)) {
+/******/ 						__webpack_require__.m[moduleId] = moreModules[moduleId];
+/******/ 					}
+/******/ 				}
+/******/ 				if(runtime) var result = runtime(__webpack_require__);
+/******/ 			}
+/******/ 			if(parentChunkLoadingFunction) parentChunkLoadingFunction(data);
+/******/ 			for(;i < chunkIds.length; i++) {
+/******/ 				chunkId = chunkIds[i];
+/******/ 				if(__webpack_require__.o(installedChunks, chunkId) && installedChunks[chunkId]) {
+/******/ 					installedChunks[chunkId][0]();
+/******/ 				}
+/******/ 				installedChunks[chunkId] = 0;
+/******/ 			}
+/******/ 		
+/******/ 		}
+/******/ 		
+/******/ 		var chunkLoadingGlobal = self["webpackChunkscrib"] = self["webpackChunkscrib"] || [];
+/******/ 		chunkLoadingGlobal.forEach(webpackJsonpCallback.bind(null, 0));
+/******/ 		chunkLoadingGlobal.push = webpackJsonpCallback.bind(null, chunkLoadingGlobal.push.bind(chunkLoadingGlobal));
 /******/ 	})();
 /******/ 	
 /************************************************************************/
@@ -62821,34 +63044,7 @@ class MainApp {
     }
     init_load_save() {
         const native = window.scribNative;
-        document.getElementById('save_button').addEventListener('click', async () => {
-            this.layer_stack.recomposite();
-            const composite = this.layer_stack.composite_canvas;
-            const w = composite.width;
-            const h = composite.height;
-            const ctx = composite.getContext('2d');
-            const imageData = ctx.getImageData(0, 0, w, h);
-            const offscreen = document.createElement('canvas');
-            offscreen.width = w;
-            offscreen.height = h;
-            const offCtx = offscreen.getContext('2d');
-            offCtx.putImageData(imageData, 0, 0);
-            const blob = await new Promise(resolve => offscreen.toBlob(resolve, 'image/png'));
-            if (!blob)
-                return;
-            if (native) {
-                const bytes = new Uint8Array(await blob.arrayBuffer());
-                await native.saveFile(bytes, { suggestedName: 'image.png' });
-                return;
-            }
-            const handle = await window.showSaveFilePicker({
-                suggestedName: 'image.png',
-                types: [{ description: 'PNG image', accept: { 'image/png': ['.png'] } }],
-            });
-            const writable = await handle.createWritable();
-            await writable.write(blob);
-            await writable.close();
-        });
+        document.getElementById('save_button').addEventListener('click', () => this.save());
         const file_input = document.getElementById('file_input');
         file_input.addEventListener('change', (event) => {
             const input = event.target;
@@ -62882,6 +63078,96 @@ class MainApp {
         click_for_a_second('redo_button', () => {
             this.editor.redo();
         });
+    }
+    undo() { this.editor.undo(); }
+    redo() { this.editor.redo(); }
+    /** Re-sync palette canvas internal dims to displayed dims and re-plot. Call after relocating the canvases into the mobile drawer. */
+    replot_palette() {
+        const hl = this.palette_hl_canvas;
+        const sat = this.palette_sat_canvas;
+        if (hl.offsetWidth > 0 && hl.offsetHeight > 0) {
+            hl.width = hl.offsetWidth;
+            hl.height = hl.offsetHeight;
+        }
+        if (sat.offsetWidth > 0 && sat.offsetHeight > 0) {
+            sat.width = sat.offsetWidth;
+            sat.height = sat.offsetHeight;
+        }
+        this.palette.plot();
+    }
+    async save() {
+        this.layer_stack.recomposite();
+        const composite = this.layer_stack.composite_canvas;
+        const w = composite.width;
+        const h = composite.height;
+        const ctx = composite.getContext('2d');
+        const imageData = ctx.getImageData(0, 0, w, h);
+        const offscreen = document.createElement('canvas');
+        offscreen.width = w;
+        offscreen.height = h;
+        offscreen.getContext('2d').putImageData(imageData, 0, 0);
+        const blob = await new Promise(resolve => offscreen.toBlob(resolve, 'image/png'));
+        if (!blob)
+            return;
+        const native = window.scribNative;
+        if (native) {
+            const bytes = new Uint8Array(await blob.arrayBuffer());
+            await native.saveFile(bytes, { suggestedName: 'image.png' });
+            return;
+        }
+        const cap = window.Capacitor;
+        if (cap?.isNativePlatform?.()) {
+            // Write to the app cache, then hand the URI to the system share sheet so
+            // the user can route to Photos / Drive / etc.
+            const { Filesystem, Directory } = await Promise.all(/*! import() */[__webpack_require__.e("vendors-node_modules_capacitor_core_dist_index_js"), __webpack_require__.e("node_modules_capacitor_filesystem_dist_esm_index_js")]).then(__webpack_require__.bind(__webpack_require__, /*! @capacitor/filesystem */ "./node_modules/@capacitor/filesystem/dist/esm/index.js"));
+            const { Share } = await Promise.all(/*! import() */[__webpack_require__.e("vendors-node_modules_capacitor_core_dist_index_js"), __webpack_require__.e("node_modules_capacitor_share_dist_esm_index_js")]).then(__webpack_require__.bind(__webpack_require__, /*! @capacitor/share */ "./node_modules/@capacitor/share/dist/esm/index.js"));
+            const base64 = await new Promise(resolve => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    const s = reader.result || '';
+                    resolve(s.split(',', 2)[1] || '');
+                };
+                reader.readAsDataURL(blob);
+            });
+            const filename = `scrib-${Date.now()}.png`;
+            const written = await Filesystem.writeFile({
+                path: filename,
+                data: base64,
+                directory: Directory.Cache,
+            });
+            try {
+                await Share.share({ url: written.uri, dialogTitle: 'Save drawing' });
+            }
+            catch {
+                // User dismissed the share sheet; the file is still in the cache.
+            }
+            return;
+        }
+        const showSave = window.showSaveFilePicker;
+        if (showSave) {
+            const handle = await showSave({
+                suggestedName: 'image.png',
+                types: [{ description: 'PNG image', accept: { 'image/png': ['.png'] } }],
+            });
+            const writable = await handle.createWritable();
+            await writable.write(blob);
+            await writable.close();
+            return;
+        }
+        // Mobile / older browsers: anchor download
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'image.png';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+    cycle_fill_outline() {
+        const next = (0,_FillOutlineState__WEBPACK_IMPORTED_MODULE_8__.nextFillOutlineState)((_settings_registry__WEBPACK_IMPORTED_MODULE_7__.settings.peek(_settings_registry__WEBPACK_IMPORTED_MODULE_7__.SettingName.FillOutline) ?? 0));
+        _settings_registry__WEBPACK_IMPORTED_MODULE_7__.settings.set(_settings_registry__WEBPACK_IMPORTED_MODULE_7__.SettingName.FillOutline, next);
+        return next;
     }
     init_buttons() {
         // Toolbar fold button: exclusive page flip (only one page visible at a time)

@@ -39,7 +39,7 @@ export declare abstract class EditingTool {
     init_editor(editor: Editor): void;
     abstract select(): void;
     abstract start(at: Vector2, buttons: number): void;
-    abstract drag(at: Vector2): void;
+    abstract drag(at: Vector2, pressure?: number): void;
     stop(at: Vector2): void;
     /** Abort an in-progress stroke without committing to the document. */
     cancel(): void;
@@ -53,7 +53,7 @@ export declare abstract class EditingTool {
 export declare class NopTool extends EditingTool {
     select(): void;
     start(at: Vector2, buttons: number): void;
-    drag(at: Vector2): void;
+    drag(at: Vector2, pressure?: number): void;
     stop(at: Vector2): void;
     hover(at: Vector2): void;
 }

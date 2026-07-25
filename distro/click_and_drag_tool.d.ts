@@ -11,6 +11,13 @@ export declare abstract class ClickAndDragTool extends EditingTool {
      * RevealBrush sets this false — its preview shows the actual ghost pixels.
      */
     protected _suppress_overlay_in_ghost_mode: boolean;
+    /**
+     * Pointer pressure from the most recent drag sample (0..1).
+     * 0.5 is the PointerEvent default when no real pressure is reported;
+     * stylus devices (Apple Pencil, S Pen) report variable values.
+     * Tools may consult this to modulate stroke width, etc.
+     */
+    protected _last_pressure: number;
     private _hover_circle_cache;
     private _hover_circle_cache_radius;
     private _hover_circle_cache_color;
@@ -20,7 +27,7 @@ export declare abstract class ClickAndDragTool extends EditingTool {
     editing_start(): void;
     /** Override: suppress the tool-canvas overlay while dragging in ghost mode. */
     publish_signals(): void;
-    drag(at: Vector2): void;
+    drag(at: Vector2, pressure?: number): void;
     /** Abort the current stroke without committing it to the document. */
     cancel(): void;
     hover(at: Vector2): false | undefined;
