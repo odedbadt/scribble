@@ -1,45 +1,19 @@
 {
   "name": "scrib",
-  "type": "module",
+  "private": true,
   "version": "1.0.0",
-  "description": "scribble app",
-  "main": "electron/main.cjs",
-  "directories": {
-    "test": "tests"
-  },
-  "scripts": {
-    "test": "playwright test",
-    "build": "webpack",
-    "electron:dev": "electron ."
-  },
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "@preact/signals": "^2.0.4",
-    "@types/gapi.client.drive-v3": "^0.0.5",
-    "ejs": "^3.1.10",
-    "express": "^4.21.1",
-    "googleapis": "^144.0.0",
-    "jest": "^29.7.0",
-    "rxjs": "^7.8.1",
-    "three": "^0.172.0"
-  },
+  "description": "scribble app monorepo",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "engines": {
     "node": ">=20.0.0"
   },
-  "devDependencies": {
-    "@playwright/test": "1.55",
-    "@types/gapi": "^0.0.47",
-    "@types/gapi.auth2": "^0.0.61",
-    "@types/gapi.client.drive": "^3.0.15",
-    "@types/jsdom": "^27.0.0",
-    "@types/three": "^0.172.0",
-    "electron": "^42.3.0",
-    "jsdom": "^27.0.0",
-    "ts-loader": "^9.x.x",
-    "typescript": "^5.7.3",
-    "vitest": "^3.2.4",
-    "webpack": "^5.95.0",
-    "webpack-cli": "^5.1.4"
+  "scripts": {
+    "build:web": "npm -w @scrib/web run build",
+    "test:web": "npm -w @scrib/web run test",
+    "dev:web": "npm -w @scrib/web run dev",
+    "dev:desktop": "npm -w @scrib/desktop run dev"
   }
 }

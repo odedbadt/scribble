@@ -17,7 +17,7 @@ function createWindow() {
         },
     });
 
-    win.loadFile(path.join(__dirname, '..', 'index.html'));
+    win.loadFile(path.join(__dirname, '..', '..', 'web', 'index.html'));
 
     if (isDev) {
         win.webContents.openDevTools({ mode: 'detach' });
