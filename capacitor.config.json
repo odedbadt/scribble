@@ -1,8 +1,0 @@
-{
-  "appId": "com.scrib",
-  "appName": "Scrib",
-  "webDir": "dist-android",
-  "android": {
-    "allowMixedContent": false
-  }
-}

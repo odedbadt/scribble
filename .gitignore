@@ -9,13 +9,5 @@ dbg
 static/icons/backup/
 static/icons/.ipynb_checkpoints/
 static/icons/Untitled.ipynb
-dist-android/
-android/.gradle/
-android/build/
-android/app/build/
-android/capacitor-cordova-android-plugins/build/
-android/local.properties
-.gradle/
-scrib.jks
 test-results/
 .claude/

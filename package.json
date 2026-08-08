@@ -10,13 +10,7 @@
   "scripts": {
     "test": "playwright test",
     "build": "webpack",
-    "electron:dev": "electron .",
-    "android:stage": "rm -rf dist-android && mkdir -p dist-android && npm run build && cp index.html dist-android/ && cp -R distro static dist-android/",
-    "android:sync": "npm run android:stage && npx cap sync android",
-    "android:dev": "npm run android:sync && npx cap open android",
-    "android:debug": "npm run android:sync && (cd android && ./gradlew assembleDebug)",
-    "android:release": "npm run android:sync && (cd android && ./gradlew assembleRelease)",
-    "android:install": "npm run android:sync && (cd android && ./gradlew installDebug)"
+    "electron:dev": "electron ."
   },
   "author": "",
   "license": "ISC",
@@ -34,11 +28,6 @@
     "node": ">=20.0.0"
   },
   "devDependencies": {
-    "@capacitor/android": "^8.4.1",
-    "@capacitor/cli": "^8.4.1",
-    "@capacitor/core": "^8.4.1",
-    "@capacitor/filesystem": "^8.1.2",
-    "@capacitor/share": "^8.0.1",
     "@playwright/test": "1.55",
     "@types/gapi": "^0.0.47",
     "@types/gapi.auth2": "^0.0.61",

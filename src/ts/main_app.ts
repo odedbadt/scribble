@@ -64,8 +64,6 @@ export class MainApp {
     tool_bounds_signal: any;
     document_dirty_signal: Signal<number>;
     view_port_signal: Signal<Rect>;
-    /** True while a two-finger gesture (pan/zoom) is active — drawing events are suppressed. */
-    private _in_touch_gesture = false;
 
     constructor() {
         this.view_canvas = document.getElementById('view-canvas')! as HTMLCanvasElement;
@@ -159,9 +157,6 @@ export class MainApp {
         state_registry.set<string>(StateValue.SelectedToolName, tool_name);
         this._perform_select_tool(tool_name);
     }
-    set_line_width(v: number) {
-        settings.set(SettingName.LineWidth, Math.max(1, Math.round(v)));
-    }
     load_image(url: string) {
         const img = new Image();
         img.addEventListener('load', () => {
@@ -221,24 +216,6 @@ export class MainApp {
         })
     }
 
-    undo() { this.editor.undo(); }
-    redo() { this.editor.redo(); }
-
-    /** Re-sync palette canvas internal dims to displayed dims and re-plot. Call after relocating the canvases into the mobile drawer. */
-    replot_palette() {
-        const hl = this.palette_hl_canvas;
-        const sat = this.palette_sat_canvas;
-        if (hl.offsetWidth > 0 && hl.offsetHeight > 0) {
-            hl.width = hl.offsetWidth;
-            hl.height = hl.offsetHeight;
-        }
-        if (sat.offsetWidth > 0 && sat.offsetHeight > 0) {
-            sat.width = sat.offsetWidth;
-            sat.height = sat.offsetHeight;
-        }
-        this.palette.plot();
-    }
-
     async save() {
         this.layer_stack.recomposite();
         const composite = this.layer_stack.composite_canvas;
@@ -263,34 +240,6 @@ export class MainApp {
             return;
         }
 
-        const cap = (window as any).Capacitor;
-        if (cap?.isNativePlatform?.()) {
-            // Write to the app cache, then hand the URI to the system share sheet so
-            // the user can route to Photos / Drive / etc.
-            const { Filesystem, Directory } = await import('@capacitor/filesystem');
-            const { Share } = await import('@capacitor/share');
-            const base64 = await new Promise<string>(resolve => {
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                    const s = (reader.result as string) || '';
-                    resolve(s.split(',', 2)[1] || '');
-                };
-                reader.readAsDataURL(blob);
-            });
-            const filename = `scrib-${Date.now()}.png`;
-            const written = await Filesystem.writeFile({
-                path: filename,
-                data: base64,
-                directory: Directory.Cache,
-            });
-            try {
-                await Share.share({ url: written.uri, dialogTitle: 'Save drawing' });
-            } catch {
-                // User dismissed the share sheet; the file is still in the cache.
-            }
-            return;
-        }
-
         const showSave = (window as any).showSaveFilePicker as
             ((opts: any) => Promise<any>) | undefined;
         if (showSave) {
@@ -304,7 +253,7 @@ export class MainApp {
             return;
         }
 
-        // Mobile / older browsers: anchor download
+        // Older browsers without showSaveFilePicker: anchor download
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -313,12 +262,6 @@ export class MainApp {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-    }
-
-    cycle_fill_outline() {
-        const next = nextFillOutlineState((settings.peek<number>(SettingName.FillOutline) ?? 0) as FillOutlineState);
-        settings.set(SettingName.FillOutline, next);
-        return next;
     }
 
     init_buttons() {
@@ -557,8 +500,8 @@ export class MainApp {
         const fore = document.getElementById('fore')!!!;
         const canvas_area = document.getElementById('view-canvas')!!;
         // rAF-gate for pointermove: stash latest event and drain once per animation
-        // frame so getImageData/putImageData doesn't block the event pipeline 120×/sec
-        // on high-rate touch devices. Coalesced events preserve full stroke fidelity.
+        // frame so getImageData/putImageData doesn't block the event pipeline.
+        // Coalesced events preserve full stroke fidelity.
         let pendingMoveEvent: PointerEvent | null = null;
         let moveRafPending = false;
         const flushPendingMove = () => {
@@ -573,8 +516,6 @@ export class MainApp {
         ["pointerdown", "pointerup", "pointerout", "pointerleave", "pointermove", "click", "keydown"].forEach((ename) => {
             canvas_area.addEventListener(ename, (ev) => {
                 ev.preventDefault();
-                // Suppress drawing events while a two-finger gesture is active.
-                if (this._in_touch_gesture && ename !== 'keydown') return;
                 if (ename === 'pointerdown') {
                     // Commit staged palette color to history the moment a stroke begins.
                     const btn = (ev as MouseEvent).button;
@@ -618,7 +559,7 @@ export class MainApp {
     }
 
     init_color_selector() {
-        // Only resize if visible — offsetWidth/Height is 0 when hidden (e.g. on mobile),
+        // Only resize if visible — offsetWidth/Height is 0 when hidden,
         // and setting canvas size to 0 causes getImageData to throw a DOMException.
         const hlW = this.palette_hl_canvas.offsetWidth;
         const hlH = this.palette_hl_canvas.offsetHeight;
@@ -875,111 +816,6 @@ export class MainApp {
         //this.select_tool('circle');
         //this.init_view_canvas_size();
         this.init_scroll();
-        this.init_touch_gestures();
-    }
-
-    /**
-     * Pinch-to-zoom and two-finger pan via Pointer Events.
-     *
-     * The Pointer Events stream already fires on the view-canvas for drawing.
-     * We intercept it here: when exactly 2 pointers are active we switch to
-     * gesture mode (pan + zoom) and suppress drawing.  The combined formula
-     * keeps the document point under the gesture midpoint stationary while
-     * the finger-spread ratio drives zoom — handling pan, zoom, or both at once.
-     */
-    init_touch_gestures() {
-        const canvas = this.view_canvas;
-        // Current positions for each active pointer.
-        const ptrs = new Map<number, { x: number; y: number }>();
-        // Positions as of the last committed viewport update (one rAF ago).
-        let prev_ptrs = new Map<number, { x: number; y: number }>();
-        let raf_pending = false;
-
-        const clamp_vp = (x: number, y: number, w: number, h: number): Rect => {
-            const dw = this.layer_stack.composite_canvas.width;
-            const dh = this.layer_stack.composite_canvas.height;
-            return {
-                x: Math.max(0, Math.min(x, Math.max(0, dw - w))),
-                y: Math.max(0, Math.min(y, Math.max(0, dh - h))),
-                w,
-                h,
-            };
-        };
-
-        /**
-         * Apply one gesture frame: both pointers' positions are up-to-date
-         * so M0/M1 and D0/D1 are accurate, eliminating per-event intermediate jitter.
-         */
-        const apply_gesture = () => {
-            raf_pending = false;
-            if (ptrs.size !== 2 || !this._in_touch_gesture) return;
-            const [id0, id1] = [...ptrs.keys()];
-            const curr0 = ptrs.get(id0)!;
-            const curr1 = ptrs.get(id1)!;
-            const prev0 = prev_ptrs.get(id0);
-            const prev1 = prev_ptrs.get(id1);
-            // First frame: just snapshot positions, nothing to diff against yet.
-            if (!prev0 || !prev1) {
-                prev_ptrs = new Map(ptrs);
-                return;
-            }
-            const M0 = { x: (prev0.x + prev1.x) / 2, y: (prev0.y + prev1.y) / 2 };
-            const M1 = { x: (curr0.x + curr1.x) / 2, y: (curr0.y + curr1.y) / 2 };
-            const D0 = Math.hypot(prev0.x - prev1.x, prev0.y - prev1.y);
-            const D1 = Math.hypot(curr0.x - curr1.x, curr0.y - curr1.y);
-            prev_ptrs = new Map(ptrs);
-            if (D0 < 1 || D1 < 1) return;
-
-            const vp = this.view_port_signal.value;
-            const scale = D0 / D1;
-
-            // Document point anchored under the midpoint of the gesture.
-            const doc_M0 = {
-                x: vp.x + M0.x / canvas.clientWidth  * vp.w,
-                y: vp.y + M0.y / canvas.clientHeight * vp.h,
-            };
-
-            const aspect = vp.w / vp.h;
-            const dh = this.layer_stack.composite_canvas.height;
-            const new_h = Math.max(1, Math.min(vp.h * scale, dh));
-            const new_w = new_h * aspect;
-
-            const new_x = doc_M0.x - M1.x / canvas.clientWidth  * new_w;
-            const new_y = doc_M0.y - M1.y / canvas.clientHeight * new_h;
-
-            this.view_port_signal.value = clamp_vp(new_x, new_y, new_w, new_h);
-        };
-
-        const on_down = (ev: PointerEvent) => {
-            ptrs.set(ev.pointerId, { x: ev.offsetX, y: ev.offsetY });
-            if (ptrs.size === 2) {
-                this._in_touch_gesture = true;
-                this.editor.cancel_stroke();
-                prev_ptrs = new Map(ptrs);
-            }
-        };
-
-        const on_move = (ev: PointerEvent) => {
-            if (!ptrs.has(ev.pointerId)) return;
-            ptrs.set(ev.pointerId, { x: ev.offsetX, y: ev.offsetY });
-            if (ptrs.size === 2 && this._in_touch_gesture && !raf_pending) {
-                raf_pending = true;
-                requestAnimationFrame(apply_gesture);
-            }
-        };
-
-        const on_up = (ev: PointerEvent) => {
-            ptrs.delete(ev.pointerId);
-            prev_ptrs.delete(ev.pointerId);
-            if (ptrs.size < 2) {
-                this._in_touch_gesture = false;
-            }
-        };
-
-        canvas.addEventListener('pointerdown',   on_down,   { passive: true });
-        canvas.addEventListener('pointermove',   on_move,   { passive: true });
-        canvas.addEventListener('pointerup',     on_up,     { passive: true });
-        canvas.addEventListener('pointercancel', on_up,     { passive: true });
     }
 
     init_token_panel() {

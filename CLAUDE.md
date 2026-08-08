@@ -63,23 +63,13 @@ All drawing is pixel-perfect (no AA). `pixel_utils.ts`:
 - `src/ts/main_app.ts` → `distro/main.bundle.js` — full drawing app (`MainApp` class)
 - `src/ts/three_demo.ts` → `distro/three_demo.bundle.js` — Three.js rendering demo
 
-### Mobile UI
+### Platform Target
 
-Single bundle, runtime-switched via CSS media query `@media (max-width: 800px), (pointer: coarse)` (`static/style.css`). All 18 tools are compiled in; mobile exposes a curated subset.
-
-- **Drawer** `#mobile-tool-selector` — 8 tools (scribble, line, rect, circle, floodfill, dropper, eraser, clearall), fill/outline tristate, size slider, 16 quick swatches, expandable "More colors".
-- **Floating action buttons** (`.mobile-fab`, direct children of `body`, also excepted from the body-children hide rule in `static/style.css`) — `#mobile-undo-btn`, `#mobile-redo-btn`, `#mobile-save-btn`, `#mobile-drawer-handle`.
-- **HSL picker relocation** — the desktop `#color-pickers-row` (containing `#hl-selector-canvas` + `#sat-selector-canvas`) is moved into `#mobile-more-colors-panel` at `DOMContentLoaded` *only when the mobile media query matches*. Pointer-event listeners follow the nodes. `MainApp.replot_palette()` resizes canvas internal dims to displayed dims and re-plots after the move (called on first expander open).
-- **Public app methods used by the mobile script** — `app.select_tool`, `app.set_line_width`, `app.color_stack.select_color`, `app.cycle_fill_outline`, `app.undo`, `app.redo`, `app.save`, `app.replot_palette`. Defined on `MainApp` in `main_app.ts`.
-- **Deferred to v2** — mandala, layers, bezier/polygon/topo_hull, selection+cut, scraper, stamps+gallery, ghost/reveal, color tokens, anchor snap, heart/cloud_stamp/tile_fill/glyph_sizing.
-
-Touch gestures: two-finger pan/zoom handled in `MainApp.init_touch_gestures()`. Single-touch drawing routes through `editor.ts`'s pointer event handlers (coalesced for high-rate touch).
+Web app targets desktop and laptop browsers only. Mobile/tablet support is delivered by separate native Expo React Native apps (see the tri-fork plan). Prior mobile drawer/FAB/touch-gesture code has been removed from this codebase.
 
 ### Testing
 
 Playwright (`playwright.config.ts`) runs Chromium against `http://localhost:9191` with viewport `1280×720`. Snapshots live under `tests/snapshots/{testFilePath}/`. The webserver is `python3 -m http.server 9191` with `reuseExistingServer: true`. Adding a new visual test means: write the spec, run it once to capture baselines, then commit the resulting PNGs.
-
-Mobile smoke tests live in `tests/_mobile_smoke.spec.ts` and run via `playwright.mobile.config.ts` against Pixel 7 emulation (Chromium with `pointer: coarse` + 412 px viewport): `npx playwright test --config=playwright.mobile.config.ts`. Requires a server on `:9192` (e.g. `python3 -m http.server 9192`).
 
 ### Backend
 
