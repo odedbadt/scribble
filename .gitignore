@@ -11,3 +11,8 @@ static/icons/.ipynb_checkpoints/
 static/icons/Untitled.ipynb
 test-results/
 .claude/
+
+# Android signing keys — never commit these
+*.jks
+*.keystore
+key.properties
