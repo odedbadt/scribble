@@ -1,20 +1,37 @@
+/* ── Tokens ───────────────────────────────────────────────────────────────
+   Chrome geometry lives here so the rails, the canvas and the pop-out panels
+   can never drift apart. Change a rail width in one place, not eight.       */
+
+:root {
+    --topbar-h: 22px;
+    --rail-left-w: 100px;
+    --rail-right-w: 50px;
+    --btn: 50px;
+
+    --panel-bg: rgb(235, 235, 226);
+    --chrome-bg: #fff;
+    --hairline: #dde;
+    --edge: #bbb;
+    --accent: rgb(100, 100, 210);
+
+    --mono: monospace;
+
+    /* Stacking order — one scale, so nothing accidentally covers anything. */
+    --z-panel: 40;
+    --z-topbar: 50;
+    --z-dropdown: 200;
+    --z-modal: 1000;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
 body {
     margin: 0;
     overflow: hidden;
-}
-
-#fore {
-    background-color: white;
-    visibility: hidden;
-    position: absolute;
-    left: 0vw;
-    top: 0vh;
-    width: 100vw;
-    height: 100vh;
-    overflow: hidden;
-    padding: 0;
-    margin: 0;
-
 }
 
 /* ── Top bar ──────────────────────────────────────────────────────────────── */
@@ -24,15 +41,14 @@ body {
     top: 0;
     left: 0;
     right: 0;
-    height: 22px;
-    background-color: white;
-    border-bottom: 1px solid #dde;
+    height: var(--topbar-h);
+    background-color: var(--chrome-bg);
+    border-bottom: 1px solid var(--hairline);
     display: flex;
     flex-direction: row;
     align-items: stretch;
-    z-index: 50;
-    box-sizing: border-box;
-    font-family: monospace;
+    z-index: var(--z-topbar);
+    font-family: var(--mono);
     font-size: 12px;
 }
 
@@ -43,28 +59,30 @@ body {
 }
 
 .top-menu-label {
+    /* stretch to the bar's content box instead of hardcoding 22px, which
+       overflowed once the 1px bottom border was counted */
+    display: flex;
+    align-items: center;
     padding: 0 8px;
-    height: 22px;
-    line-height: 22px;
     cursor: default;
     user-select: none;
     color: #333;
 }
 
 .top-menu-item:hover .top-menu-label {
-    background-color: rgb(100, 100, 210);
+    background-color: var(--accent);
     color: white;
 }
 
 .top-menu-dropdown {
     display: none;
     position: absolute;
-    top: 22px;
+    top: var(--topbar-h);
     left: 0;
-    background: white;
-    border: 1px solid #bbb;
+    background: var(--chrome-bg);
+    border: 1px solid var(--edge);
     box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.2);
-    z-index: 200;
+    z-index: var(--z-dropdown);
     min-width: 100px;
 }
 
@@ -81,7 +99,7 @@ body {
 }
 
 .top-menu-action:hover {
-    background-color: rgb(100, 100, 210);
+    background-color: var(--accent);
     color: white;
 }
 
@@ -94,24 +112,26 @@ body {
 #toolbar {
     position: absolute;
     left: 0;
-    top: 22px;
-    width: 100px;
+    top: var(--topbar-h);
     bottom: 0;
-    background-color: white;
-    border-right: 1px solid #dde;
+    width: var(--rail-left-w);
+    background-color: var(--chrome-bg);
+    border-right: 1px solid var(--hairline);
     display: flex;
     flex-direction: column;
     padding: 0;
     margin: 0;
-    box-sizing: border-box;
     overflow-y: auto;
     overflow-x: hidden;
+    scrollbar-width: thin;
 }
 
+/* Fractions, not two fixed 50px columns: the fixed pair was 1px wider than
+   the rail's content box, so the right column was silently clipped. */
 #toolbar-page-1,
 #toolbar-page-2 {
     display: grid;
-    grid-template-columns: repeat(2, 50px);
+    grid-template-columns: repeat(2, 1fr);
     flex-shrink: 0;
 }
 
@@ -128,24 +148,23 @@ body {
 }
 
 #toolbar-fold-btn {
-    width: 100px;
+    width: 100%;
     height: 30px;
-    font-family: monospace;
+    font-family: var(--mono);
     font-size: 14px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    box-sizing: border-box;
-    border-top: 1px solid #dde;
+    border-top: 1px solid var(--hairline);
 }
 
 /* control buttons below tools: 2-per-row grid */
 #toolbar-controls {
     display: grid;
-    grid-template-columns: repeat(2, 50px);
+    grid-template-columns: repeat(2, 1fr);
     flex-shrink: 0;
-    border-top: 1px solid #dde;
+    border-top: 1px solid var(--hairline);
 }
 
 #tool-controls-slot {
@@ -154,7 +173,7 @@ body {
 
 #tool-ctrl-btn,
 #tool-ctrl-btn-2 {
-    font-family: monospace;
+    font-family: var(--mono);
     font-size: 20px;
     display: none; /* shown by JS only when active tool has a contextual control */
 }
@@ -163,15 +182,14 @@ body {
 
 #right-toolbar {
     position: absolute;
-    top: 22px;
+    top: var(--topbar-h);
     right: 0;
-    width: 50px;
     bottom: 0;
-    background-color: white;
-    border-left: 1px solid #dde;
+    width: var(--rail-right-w);
+    background-color: var(--chrome-bg);
+    border-left: 1px solid var(--hairline);
     display: flex;
     flex-direction: column;
-    box-sizing: border-box;
     overflow: hidden;
 }
 
@@ -180,7 +198,7 @@ body {
     flex: 0 0 120px;
     display: flex;
     flex-direction: row;
-    border-bottom: 1px solid #bbb;
+    border-bottom: 1px solid var(--edge);
 }
 
 #hl-selector-canvas {
@@ -189,17 +207,15 @@ body {
     height: 100%;
     cursor: crosshair;
     display: block;
-    box-sizing: border-box;
-    border-right: 1px solid #bbb;
+    border-right: 1px solid var(--edge);
 }
 
 #sat-selector-canvas {
     flex: 1;
-    width: 36px;
+    width: auto;
     height: 100%;
     cursor: crosshair;
     display: block;
-    box-sizing: border-box;
 }
 
 /* Color token panel: 2×4 grid */
@@ -210,9 +226,8 @@ body {
     grid-template-rows: repeat(4, 1fr);
     gap: 2px;
     padding: 2px;
-    box-sizing: border-box;
     background: rgb(210, 210, 200);
-    border-bottom: 1px solid #bbb;
+    border-bottom: 1px solid var(--edge);
 }
 
 .color-token-btn {
@@ -234,13 +249,13 @@ body {
 /* Fore/fill/back indicator */
 #color-selector-div-back {
     flex: 0 0 26px;
-    width: 50px;
+    width: 100%;
     background: rgb(210, 210, 200);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-bottom: 1px solid #bbb;
+    border-bottom: 1px solid var(--edge);
 }
 
 #color-selector-div-fill {
@@ -270,7 +285,7 @@ body {
 #color-stack-live-track {
     flex: 0 0 16px;
     height: 16px;
-    width: 50px;
+    width: 100%;
     font-size: 8px;
     padding: 0;
     border: none;
@@ -283,16 +298,16 @@ body {
 }
 
 #color-stack-section .color_stack_item {
-    flex: 1;
-    width: 50px;
+    flex: 1 1 0;
+    width: 100%;
     height: auto;
-    min-height: 8px;
+    /* shrink rather than spill out of the rail on short viewports */
+    min-height: 4px;
 }
 
-.button,
-.buttonsize {
-    width: 50px;
-    height: 50px;
+.button {
+    width: 100%;
+    height: var(--btn);
     background-size: contain;
     background-position: center;
     background-repeat: no-repeat;
@@ -305,12 +320,6 @@ body {
     align-items: center;
     justify-content: center;
 }
-
-.color_stack_item {
-    width: 50px;
-    height: auto;
-}
-
 
 .button.tool-disabled {
     opacity: 0.35;
@@ -325,12 +334,11 @@ body {
 }
 
 #canvas-area {
-    background-color: white;
-    width: calc(100vw - 151px);
-    height: calc(100vh - 22px);
+    background-color: var(--chrome-bg);
     position: absolute;
-    left: 101px;
-    top: 22px;
+    left: var(--rail-left-w);
+    right: var(--rail-right-w);
+    top: var(--topbar-h);
     bottom: 0;
     overflow: hidden;
     padding: 0;
@@ -368,7 +376,7 @@ body {
     right: 0;
     bottom: 0;
     background: rgba(0, 0, 0, 0.65);
-    z-index: 1000;
+    z-index: var(--z-modal);
     align-items: center;
     justify-content: center;
 }
@@ -377,7 +385,7 @@ body {
     background: #f5f5f0;
     padding: 16px;
     border-radius: 4px;
-    font-family: monospace;
+    font-family: var(--mono);
     max-height: 90vh;
     overflow: auto;
 }
@@ -412,7 +420,7 @@ body {
 }
 
 .debug-btn {
-    font-family: monospace;
+    font-family: var(--mono);
     font-size: 12px;
     cursor: pointer;
     justify-content: center;
@@ -435,9 +443,6 @@ body {
     font-size: 16px;
 }
 
-.scribble {
-}
-
 .rect {
     background-image: url("rect.png");
     background-repeat: no-repeat;
@@ -448,10 +453,6 @@ body {
     background-repeat: no-repeat;
 }
 
-.line {
-}
-
-
 .circle {
     background-image: url(circle.png);
     background-repeat: no-repeat;
@@ -460,9 +461,6 @@ body {
 .circle.filled {
     background-image: url(circle.filled.png);
     background-repeat: no-repeat;
-}
-
-.dropper {
 }
 
 .cursor_size {
@@ -479,48 +477,12 @@ body {
 .heart,
 .cloud_stamp,
 .bezier {
-    font-family: monospace;
+    font-family: var(--mono);
     font-size: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
     color: #333;
-}
-
-.bezier {
-}
-
-.anchor {
-}
-
-.floodfill {
-}
-
-.selection {
-}
-
-.stamp {
-}
-
-.scraper {
-}
-
-.eraser {
-}
-
-.clearall {
-}
-
-.menu-bar-button {
-    background-color: white;
-    box-shadow: inset 3px 3px 5px #eee, inset -3px -3px 5px #aaa;
-    /* Emboss effect */
-}
-
-.undo {
-}
-
-.redo {
 }
 
 .button .icon {
@@ -561,16 +523,18 @@ body {
 #mandala-panel {
     display: none;
     position: fixed;
-    left: 100px;
-    top: 22px;
+    left: var(--rail-left-w);
+    /* anchored to the foot of the rail, near the mandala button in the
+       controls grid. It used to share the layer panel's top-left corner,
+       where the two popovers covered each other outright. */
+    bottom: 8px;
     width: 90px;
     background: rgb(210, 210, 200);
-    border: 1px solid #bbb;
+    border: 1px solid var(--edge);
     padding: 6px 4px;
-    font-family: monospace;
+    font-family: var(--mono);
     font-size: 11px;
-    box-sizing: border-box;
-    z-index: 10;
+    z-index: var(--z-panel);
 }
 
 #mandala-panel.visible {
@@ -590,7 +554,7 @@ body {
     box-shadow: inset 0px 2px 3px rgb(151, 151, 140), inset 0px -2px 3px rgb(112, 112, 103);
     border: none;
     cursor: pointer;
-    font-family: monospace;
+    font-family: var(--mono);
     font-size: 12px;
     padding: 1px 5px;
     min-width: 18px;
@@ -604,17 +568,19 @@ body {
 
 #layer-panel {
     position: fixed;
-    top: 22px;
-    left: 100px;
+    top: var(--topbar-h);
+    left: var(--rail-left-w);
     width: 180px;
-    max-height: calc(100vh - 44px);
-    background: rgb(235, 235, 226);
-    border: 1px solid #bbb;
+    max-height: calc(100vh - var(--topbar-h) * 2);
+    background: var(--panel-bg);
+    border: 1px solid var(--edge);
     border-top: none;
     box-shadow: 3px 3px 8px rgba(0, 0, 0, 0.25);
     display: flex;
     flex-direction: column;
-    z-index: 100;
+    /* below the top bar: while closed this panel slides up behind it, and at
+       z-index 100 its tail used to cover the File menu */
+    z-index: var(--z-panel);
     transform: translateY(-110%);
     transition: transform 0.18s ease;
     pointer-events: none;
@@ -730,7 +696,7 @@ body {
 
 .layer-name {
     flex: 1;
-    font-family: monospace;
+    font-family: var(--mono);
     font-size: 10px;
     white-space: nowrap;
     overflow: hidden;
@@ -781,9 +747,9 @@ body {
 #add-layer-btn {
     background: rgb(200, 200, 190);
     border: none;
-    border-top: 1px solid #bbb;
+    border-top: 1px solid var(--edge);
     cursor: pointer;
-    font-family: monospace;
+    font-family: var(--mono);
     font-size: 10px;
     padding: 3px 6px;
     text-align: left;
@@ -794,7 +760,6 @@ body {
     background: rgb(180, 180, 170);
 }
 
-
 /* ─── Stamp Gallery Modal ─────────────────────────────────────────────────── */
 
 .gallery-modal-overlay {
@@ -802,7 +767,7 @@ body {
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.55);
-    z-index: 1000;
+    z-index: var(--z-modal);
     align-items: center;
     justify-content: center;
 }
@@ -821,7 +786,7 @@ body {
     display: flex;
     flex-direction: column;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
-    font-family: monospace;
+    font-family: var(--mono);
 }
 
 .gallery-modal-header {
